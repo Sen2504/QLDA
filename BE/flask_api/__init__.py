@@ -11,11 +11,13 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from flask_api.routes.task_routes import task_bp, task_status_bp
-    app.register_blueprint(task_bp)
+    from flask_api.routes.task_status_routes import task_status_bp
+    from flask_api.routes.user_routes import user_bp
     app.register_blueprint(task_status_bp)
+    app.register_blueprint(user_bp)
 
     # Import models để Flask-Migrate nhận diện
-    from flask_api.routes.models.task_models import Task, TaskStatus # noqa: F401
+    from flask_api.models.task_status_models import TaskStatus
+    from flask_api.models.user_models import User
 
     return app
