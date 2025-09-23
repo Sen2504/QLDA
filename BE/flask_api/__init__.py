@@ -58,11 +58,10 @@ def create_app():
 
     # Đăng ký các blueprint
     from .auth.routes import auth_bp
-    from .routes.user_routes import user_bp   # ✅ quan trọng
-
-    app.register_blueprint(auth_bp, url_prefix="/auth")
-    app.register_blueprint(user_bp)           # ✅ KHÔNG thêm url_prefix nữa vì user_bp đã có /api/users
-
+    from .routes.user_routes import user_bp   
+    from .routes.task_status_routes import task_status_bp
     
-
+    app.register_blueprint(task_status_bp, url_prefix="/api/task_status")
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(user_bp)           
     return app

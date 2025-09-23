@@ -16,11 +16,11 @@ class UserSchema(Schema):
     created_at = fields.DateTime(dump_only=True)
 
     @validates("name")
-    def validate_name(self, value, **kwargs):  # ✅ nhận **kwargs để compatible v4
+    def validate_name(self, value, **kwargs):  # nhận **kwargs để compatible v4
         if not re.match(r"^[^\W\d_]+(?:\s[^\W\d_]+)*$", value.strip(), flags=re.UNICODE):
             raise ValidationError("Tên chỉ được chứa chữ và khoảng trắng (không số, không ký tự đặc biệt).")
 
     @validates("password")
-    def validate_password(self, value, **kwargs):  # ✅ nhận **kwargs
+    def validate_password(self, value, **kwargs):  
         if len(value or "") < 6:
             raise ValidationError("Mật khẩu phải có ít nhất 6 ký tự.")
