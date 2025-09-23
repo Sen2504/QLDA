@@ -1,14 +1,53 @@
 from flask import Blueprint, request, jsonify
+from marshmallow import ValidationError
 from flask_api.extensions import db
 from flask_api.models.user_models import User
 from flask_api.schemas.user_schemas import UserSchema
 
 user_bp = Blueprint("user_bp", __name__, url_prefix="/api/users")
+user_bp.strict_slashes = False  # cho phép /api/users và /api/users/
 
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
+# ----------------- CREATE -----------------
+@user_bp.route("", methods=["POST"])
+@user_bp.route("/", methods=["POST"])
+def create_user():
+    data = request.get_json() or {}
 
+    try:
+        # validate các field đầu vào; password là load_only trong schema
+        payload = user_schema.load(data, partial=("name", "skillset"))
+    except ValidationError as err:
+        return jsonify({"error": err.messages}), 400
+
+    email = (payload.get("email") or "").strip().lower()
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "Email đã tồn tại."}), 400
+
+    user = User(
+        name=payload.get("name"),
+        email=email,
+        skillset=payload.get("skillset"),
+    )
+    if payload.get("password"):
+        user.set_password(payload["password"])
+
+    db.session.add(user)
+    db.session.commit()
+    return jsonify(user_schema.dump(user)), 201
+
+
+# ----------------- READ ALL -----------------
+@user_bp.route("", methods=["GET"])
+@user_bp.route("/", methods=["GET"])
+def get_all_users():
+    users = User.query.all()
+    return jsonify(users_schema.dump(users)), 200
+
+
+# ----------------- READ ONE -----------------
 @user_bp.route("/<int:user_id>", methods=["GET"])
 def get_user(user_id):
     user = User.query.get(user_id)
@@ -17,6 +56,7 @@ def get_user(user_id):
     return jsonify(user_schema.dump(user)), 200
 
 
+# ----------------- UPDATE FULL -----------------
 @user_bp.route("/<int:user_id>", methods=["PUT"])
 def update_user(user_id):
     user = User.query.get(user_id)
@@ -25,28 +65,26 @@ def update_user(user_id):
 
     data = request.get_json() or {}
     try:
-        user_data = user_schema.load(data)  # validate full input
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        payload = user_schema.load(data)  # yêu cầu đủ field theo schema
+    except ValidationError as err:
+        return jsonify({"error": err.messages}), 400
 
-    # check trùng email (trừ chính nó)
-    if User.query.filter(User.Email == user_data["Email"], User.id != user_id).first():
+    # unique email (trừ chính nó)
+    email = (payload.get("email") or "").strip().lower()
+    if User.query.filter(User.email == email, User.id != user_id).first():
         return jsonify({"error": "Email đã được sử dụng."}), 400
 
-    # check trùng Name_user (trừ chính nó)
-    if User.query.filter(User.Name_user == user_data["Name_user"], User.id != user_id).first():
-        return jsonify({"error": "Tên người dùng đã tồn tại."}), 400
-
-    # cập nhật
-    user.Name_user = user_data["Name_user"]
-    user.Email = user_data["Email"]
-    user.Password = user_data["Password"]  # ⚠️ chưa hash
-    user.Skills_set = user_data.get("Skills_set")
+    user.name = payload.get("name")
+    user.email = email
+    user.skillset = payload.get("skillset")
+    if payload.get("password"):
+        user.set_password(payload["password"])
 
     db.session.commit()
     return jsonify(user_schema.dump(user)), 200
 
 
+# ----------------- UPDATE PARTIAL -----------------
 @user_bp.route("/<int:user_id>", methods=["PATCH"])
 def patch_user(user_id):
     user = User.query.get(user_id)
@@ -54,28 +92,31 @@ def patch_user(user_id):
         return jsonify({"error": "Không tìm thấy user."}), 404
 
     data = request.get_json() or {}
+    try:
+        payload = user_schema.load(data, partial=True)  # chỉ validate field có trong body
+    except ValidationError as err:
+        return jsonify({"error": err.messages}), 400
 
-    # chỉ update field nào có trong request
-    if "Name_user" in data:
-        if User.query.filter(User.Name_user == data["Name_user"], User.id != user_id).first():
-            return jsonify({"error": "Tên người dùng đã tồn tại."}), 400
-        user.Name_user = data["Name_user"]
-
-    if "Email" in data:
-        if User.query.filter(User.Email == data["Email"], User.id != user_id).first():
+    if "email" in payload:
+        email = (payload["email"] or "").strip().lower()
+        if User.query.filter(User.email == email, User.id != user_id).first():
             return jsonify({"error": "Email đã được sử dụng."}), 400
-        user.Email = data["Email"]
+        user.email = email
 
-    if "Password" in data:
-        user.Password = data["Password"]
+    if "name" in payload:
+        user.name = payload["name"]
 
-    if "Skills_set" in data:
-        user.Skills_set = data["Skills_set"]
+    if "password" in payload and payload["password"]:
+        user.set_password(payload["password"])
+
+    if "skillset" in payload:
+        user.skillset = payload["skillset"]
 
     db.session.commit()
     return jsonify(user_schema.dump(user)), 200
 
 
+# ----------------- DELETE -----------------
 @user_bp.route("/<int:user_id>", methods=["DELETE"])
 def delete_user(user_id):
     user = User.query.get(user_id)

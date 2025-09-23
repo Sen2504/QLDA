@@ -1,4 +1,4 @@
-from flask_api.extensions import db
+from .. import db
 
 class TaskStatus(db.Model):
     __tablename__ = 'task_status'
