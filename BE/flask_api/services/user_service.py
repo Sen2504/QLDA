@@ -1,0 +1,112 @@
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_api.extensions import db
+from flask_api.models.user_models import User
+
+class UserService:
+    @staticmethod
+    def set_password(user, password):
+        user.password_hash = generate_password_hash(password)
+
+    @staticmethod
+    def check_password(user, password):
+        return check_password_hash(user.password_hash, password)
+    
+    @staticmethod
+    def create(payload):
+        """
+        payload đã được validate bởi UserSchema ở route.
+        Yêu cầu tối thiểu: email (unique). password là tùy chọn.
+        """
+        email = (payload.get("email") or "").strip().lower()
+
+        if not email:
+            return None, "Email là bắt buộc."
+
+        if User.query.filter_by(email=email).first():
+            return None, "Email đã tồn tại."
+
+        user = User(
+            name=payload.get("name"),
+            email=email,
+            skillset=payload.get("skillset"),
+        )
+        if payload.get("password"):
+            user.set_password(payload["password"])
+
+        db.session.add(user)
+        db.session.commit()
+        return user, None
+
+    @staticmethod
+    def get_all():
+        return User.query.all()
+
+    @staticmethod
+    def get_by_id(user_id: int):
+        return User.query.get(user_id)
+
+    @staticmethod
+    def update(user_id: int, payload):
+        """
+        Update full (PUT): schema đã đảm bảo đủ field hợp lệ.
+        """
+        user = User.query.get(user_id)
+        if not user:
+            return None, "Không tìm thấy user."
+
+        email = (payload.get("email") or "").strip().lower()
+        if not email:
+            return None, "Email là bắt buộc."
+
+        # unique email (trừ chính nó)
+        if User.query.filter(User.email == email, User.id != user_id).first():
+            return None, "Email đã được sử dụng."
+
+        user.name = payload.get("name")
+        user.email = email
+        user.skillset = payload.get("skillset")
+
+        if payload.get("password"):
+            user.set_password(payload["password"])
+
+        db.session.commit()
+        return user, None
+
+    @staticmethod
+    def patch(user_id: int, data: dict):
+        """
+        Update partial (PATCH): chỉ đụng các field có trong body.
+        """
+        user = User.query.get(user_id)
+        if not user:
+            return None, "Không tìm thấy user."
+
+        if "email" in data:
+            email = (data.get("email") or "").strip().lower()
+            if not email:
+                return None, "Email là bắt buộc."
+            if User.query.filter(User.email == email, User.id != user_id).first():
+                return None, "Email đã được sử dụng."
+            user.email = email
+
+        if "name" in data:
+            user.name = data.get("name")
+
+        if "password" in data and data.get("password"):
+            user.set_password(data["password"])
+
+        if "skillset" in data:
+            user.skillset = data.get("skillset")
+
+        db.session.commit()
+        return user, None
+
+    @staticmethod
+    def delete(user_id: int):
+        user = User.query.get(user_id)
+        if not user:
+            return False, "Không tìm thấy user."
+        db.session.delete(user)
+        db.session.commit()
+        return True, None
+

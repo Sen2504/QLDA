@@ -1,7 +1,9 @@
 from .. import db
+from flask_api.extensions import db
 
 class TaskStatus(db.Model):
     __tablename__ = 'task_status'
+    
     id = db.Column(db.Integer, primary_key=True)
     name_status = db.Column(db.String(50), nullable=False)
 
