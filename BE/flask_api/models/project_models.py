@@ -9,7 +9,7 @@ class Project(db.Model):
     sprints = db.relationship("Sprint", back_populates="project")
     issues = db.relationship("Issue", back_populates="project")
     user_stories = db.relationship("UserStory", back_populates="project")
-    roles = db.relationship("ProjectRole", back_populates="project")
+    project_roles = db.relationship("ProjectRole", back_populates="project")
 
     def __repr__(self):
         return f"<Project id={self.id} name={self.name}>"

@@ -11,7 +11,7 @@ class Task(db.Model):
     user_story = db.relationship("UserStory", back_populates="tasks")
     status = db.relationship("TaskStatus", back_populates="tasks")
     hashtags = db.relationship("TaskHashtag", back_populates="task")
-    phancong = db.relationship("PhanCong", back_populates="task")
+    phan_cong = db.relationship("PhanCong", back_populates="task")
 
     def __repr__(self):
         return f"<Task id={self.id} name={self.name} status_id={self.status_id}>"

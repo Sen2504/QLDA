@@ -9,7 +9,6 @@ class ProjectRole(db.Model):
     role = db.relationship("Role", back_populates="project_roles")
     permissions = db.relationship("Permission", back_populates="projrole")
     teams = db.relationship("Team", back_populates="projrole")
-    projects = db.relationship("Project", back_populates="projrole")
-
+    project = db.relationship("Project", back_populates="project_roles") 
     def __repr__(self):
         return f"<ProjectRole id={self.id} role_id={self.role_id}>"

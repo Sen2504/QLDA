@@ -1,7 +1,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from .. import db
+from flask_api.extensions import db
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
 
@@ -15,7 +15,7 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     skillset = db.Column(db.String(255))  # ví dụ: "Python,Flask,SQLAlchemy"
 
-    team = db.relationship("Team", back_populates="user")
+    teams = db.relationship("Team", back_populates="user")
     
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)

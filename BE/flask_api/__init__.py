@@ -3,8 +3,9 @@ import os
 from pathlib import Path
 from flask import Flask
 from dotenv import load_dotenv
+from flask_api import models
 
-from .extensions import db, migrate, login_manager, mail  
+from flask_api.extensions import db, migrate, login_manager, mail  
 
 def create_app():
     app = Flask(__name__)
