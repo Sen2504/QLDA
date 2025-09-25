@@ -23,10 +23,12 @@ def create_app():
     from flask_api.routes.action_routes import action_bp
     from flask_api.routes.user_routes import user_bp
     from flask_api.routes.auth_routes import auth_bp
+    from flask_api.routes.role_routes import role_bp
     app.register_blueprint(task_status_bp)
     app.register_blueprint(action_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(role_bp)
 
     # Import models để Flask-Migrate nhận diện
     from flask_api.models.task_status_models import TaskStatus

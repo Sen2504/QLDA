@@ -13,6 +13,6 @@ class Config:
     MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
     MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
     MAIL_USE_TLS = True
-    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")  # tài khoản gmail
-    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")  # app password (không phải mật khẩu thường)
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", MAIL_USERNAME)
+    MAIL_USERNAME = ("minhsang5544@gmail.com")  # tài khoản gmail
+    MAIL_PASSWORD = ("voty sirp gzky qpky")  # app password (không phải mật khẩu thường)
+    MAIL_DEFAULT_SENDER = ("QLDA", "minhsang5544@gmail.com")

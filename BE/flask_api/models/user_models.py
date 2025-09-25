@@ -6,7 +6,7 @@ from flask_api.extensions import db
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column("ID_USER", db.Integer, primary_key=True)
     name = db.Column(db.String(255))
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
@@ -15,6 +15,8 @@ class User(db.Model, UserMixin):
     confirmed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     skillset = db.Column(db.String(255))  # ví dụ: "Python,Flask,SQLAlchemy"
+
+    team = db.relationship("Team", back_populates="user")
     
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
