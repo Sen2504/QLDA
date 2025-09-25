@@ -1,11 +1,11 @@
-# file: models/workflow_status_model.py
 from flask_api.extensions import db
 
 class WorkflowStatus(db.Model):
     __tablename__ = "workflow_status"
+    id = db.Column("ID_STATUS", db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column("NAME", db.String(100), nullable=False)
 
-    ID_status = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Name = db.Column(db.String(100), nullable=False)
+    user_stories = db.relationship("UserStory", back_populates="status")
 
     def __repr__(self):
-        return f"<WorkflowStatus ID={self.ID_status} Name={self.Name}>"
+        return f"<WorkflowStatus id={self.id} name={self.name}>"
