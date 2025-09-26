@@ -3,7 +3,7 @@ from flask_api.extensions import db
 class Team(db.Model):
     __tablename__ = "team"
     id = db.Column("ID_TEAM", db.Integer, primary_key=True, autoincrement=True)
-    projrole_id = db.Column("ID_PROJROLE", db.Integer, db.ForeignKey("projectrole.ID_PROJROLE"), nullable=False)
+    projrole_id = db.Column("ID_PROJROLE", db.Integer, db.ForeignKey("projectrole.ID_PROJROLE", ondelete="CASCADE"), nullable=False)
     user_id = db.Column("ID_USER", db.Integer, db.ForeignKey("users.ID_USER"), nullable=False)
 
     user = db.relationship("User", back_populates="teams")

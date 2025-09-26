@@ -5,8 +5,15 @@ from flask_api.models.role_models import Role
 from flask_api.models.project_role_models import ProjectRole
 from flask_api.models.team_models import Team
 
-
 class ProjectService:
+    @staticmethod
+    def get_all():
+        return Project.query.all()
+
+    @staticmethod
+    def get_by_id(project_id):
+        return Project.query.get(project_id)
+    
     @staticmethod
     def create(name_project, description, user_id):
         # Validate input
@@ -18,7 +25,6 @@ class ProjectService:
             name=name_project.strip(),
             description=(description or "").strip()
         )
-
         db.session.add(new_project)
         db.session.flush()  # để có ID project ngay
 
@@ -30,7 +36,6 @@ class ProjectService:
                 project_id=new_project.id,
                 role_id=role.id
             )
-
             db.session.add(proj_role)
             project_roles.append(proj_role)
 
@@ -39,6 +44,7 @@ class ProjectService:
         # 3. Thêm người tạo vào Team với role Owner
         owner_role = next((pr for pr in project_roles if pr.role_id == 1), None)  # giả sử id_role=1 là Owner
         if not owner_role:
+            db.session.rollback()
             return None, "Không tìm thấy role Project Owner."
 
         new_team_member = Team(
@@ -48,6 +54,53 @@ class ProjectService:
         db.session.add(new_team_member)
 
         # 4. Commit tất cả
-        db.session.commit()
+        try:
+            db.session.commit()
+            return new_project, None
+        except Exception as e:
+            db.session.rollback()
+            return None, f"Lỗi khi tạo project: {str(e)}"
+    
+    @staticmethod
+    def update(project_id, name, description):
+        project = Project.query.get(project_id)
+        if not project:
+            return None, "Không tìm thấy project."
 
-        return new_project, None
+        name = (name or "").strip()
+        description = (description or "").strip()
+
+        if not name:
+            return None, "Tên project là bắt buộc."
+        if not description:
+            return None, "Mô tả project là bắt buộc."
+
+        project.name = name
+        project.description = description
+        db.session.commit()
+        return project, None
+    
+    @staticmethod
+    def delete(project_id):
+        project = Project.query.get(project_id)
+        if not project:
+            return False, "Không tìm thấy project."
+
+        db.session.delete(project)
+        db.session.commit()
+        return True, None
+    
+    # lấy danh sách project mà user tham gia
+    @staticmethod
+    def get_by_user(user_id):
+        """
+        Lấy danh sách project mà user tham gia.
+        """
+        projects = (
+            db.session.query(Project)
+            .join(ProjectRole, ProjectRole.project_id == Project.id)
+            .join(Team, Team.projrole_id == ProjectRole.id)
+            .filter(Team.user_id == user_id)
+            .all()
+        )
+        return projects

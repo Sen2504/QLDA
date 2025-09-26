@@ -45,16 +45,6 @@ def update_task_status(status_id):
     return jsonify(task_status_schema.dump(status)), 200
 
 
-@task_status_bp.route("/<int:status_id>", methods=["PATCH"])
-def patch_task_status(status_id):
-    data = request.get_json() or {}
-
-    status, error = TaskStatusService.patch(status_id, data)
-    if error:
-        return jsonify({"error": error}), 400
-    return jsonify(task_status_schema.dump(status)), 200
-
-
 @task_status_bp.route("/<int:status_id>", methods=["DELETE"])
 def delete_task_status(status_id):
     success, error = TaskStatusService.delete(status_id)

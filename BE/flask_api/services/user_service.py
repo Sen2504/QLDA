@@ -73,35 +73,6 @@ class UserService:
         return user, None
 
     @staticmethod
-    def patch(user_id: int, data: dict):
-        """
-        Update partial (PATCH): chỉ đụng các field có trong body.
-        """
-        user = User.query.get(user_id)
-        if not user:
-            return None, "Không tìm thấy user."
-
-        if "email" in data:
-            email = (data.get("email") or "").strip().lower()
-            if not email:
-                return None, "Email là bắt buộc."
-            if User.query.filter(User.email == email, User.id != user_id).first():
-                return None, "Email đã được sử dụng."
-            user.email = email
-
-        if "name" in data:
-            user.name = data.get("name")
-
-        if "password" in data and data.get("password"):
-            user.set_password(data["password"])
-
-        if "skillset" in data:
-            user.skillset = data.get("skillset")
-
-        db.session.commit()
-        return user, None
-
-    @staticmethod
     def delete(user_id: int):
         user = User.query.get(user_id)
         if not user:

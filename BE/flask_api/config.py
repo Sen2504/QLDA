@@ -7,6 +7,7 @@ class Config:
     
     # Database
     SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:@localhost/qlda"
+    FRONTEND_URL= "http://localhost:5173"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Mail
@@ -19,6 +20,6 @@ class Config:
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER")
 
     SESSION_COOKIE_SAMESITE = "None"
-    SESSION_COOKIE_SECURE = False 
+    SESSION_COOKIE_SECURE = False
 
     FRONTEND_URL=os.getenv("FRONTEND_URL", "http://localhost:5173")

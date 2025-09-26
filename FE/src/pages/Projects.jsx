@@ -24,7 +24,7 @@ export default function Projects() {
         name_project: name,
         description,
       });
-      setProjects([...projects, res.data]); // thêm project mới vào list
+      setProjects([...projects, res.data]);
       setName("");
       setDescription("");
     } catch (err) {
@@ -32,25 +32,35 @@ export default function Projects() {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Bạn có chắc muốn xóa project này?")) return;
+    try {
+      await ProjectService.delete(id);
+      setProjects(projects.filter((p) => p.id !== id));
+    } catch (err) {
+      alert(err.response?.data?.error || "Error deleting project");
+    }
+  };
+
   return (
     <MainLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-8">
         {/* Form tạo project */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-xl font-bold text-green-700 mb-4">
-            Create New Project
+            Tạo Project mới
           </h2>
           <form onSubmit={handleCreate} className="space-y-4">
             <input
               type="text"
-              placeholder="Project name"
+              placeholder="Tên project"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"
               required
             />
             <textarea
-              placeholder="Description"
+              placeholder="Mô tả"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"
@@ -67,7 +77,7 @@ export default function Projects() {
         {/* Danh sách project */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4">
-            My Projects
+            Dự án của tôi
           </h2>
           {projects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -80,13 +90,21 @@ export default function Projects() {
                     {proj.name_project}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    {proj.description || "No description"}
+                    {proj.description || "Không có mô tả"}
                   </p>
+                  <div className="mt-4 flex space-x-2">
+                    <button
+                      onClick={() => handleDelete(proj.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                    >
+                      Xóa
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">Bạn chưa có project nào.</p>
+            <p className="text-gray-500">Bạn chưa tham gia project nào.</p>
           )}
         </div>
       </div>

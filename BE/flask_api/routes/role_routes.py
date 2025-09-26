@@ -46,17 +46,6 @@ def update_role(role_id):
     return jsonify(role_schema.dump(role)), 200
 
 
-@role_bp.route("/<int:role_id>", methods=["PATCH"])
-def patch_role(role_id):
-    data = request.get_json() or {}
-
-    role, error = RoleService.patch(role_id, data)
-    if error:
-        status_code = 404 if error == "Không tìm thấy role." else 400
-        return jsonify({"error": error}), status_code
-    return jsonify(role_schema.dump(role)), 200
-
-
 @role_bp.route("/<int:role_id>", methods=["DELETE"])
 def delete_role(role_id):
     success, error = RoleService.delete(role_id)
