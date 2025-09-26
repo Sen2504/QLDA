@@ -1,5 +1,6 @@
 # flask_api/__init__.py
-
+import os
+from pathlib import Path
 from flask import Flask
 from dotenv import load_dotenv
 from flask_api import models
@@ -49,26 +50,28 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
-    db.init_app(app)
-    migrate.init_app(app, db)
+    # Import models để SQLAlchemy biết bảng
+    from . import models  # noqa: F401
+    from .models import User  # noqa: F401
 
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
 
+    # Register blueprints
     from flask_api.routes.task_status_routes import task_status_bp
-    from flask_api.routes.action_routes import action_bp
     from flask_api.routes.user_routes import user_bp
     from flask_api.routes.auth_routes import auth_bp
-    from flask_api.routes.role_routes import role_bp
+    from flask_api.routes.action_routes import action_bp
+    from flask_api.routes.workflow_status_routes import workflow_status_bp
     from flask_api.routes.project_routes import project_bp
 
     app.register_blueprint(task_status_bp)
-    app.register_blueprint(action_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(action_bp)
     app.register_blueprint(workflow_status_bp)
+    app.register_blueprint(project_bp)
 
     CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
     app.config.from_object(Config)

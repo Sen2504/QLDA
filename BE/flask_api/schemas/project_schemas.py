@@ -4,7 +4,7 @@ from marshmallow import Schema, fields, validates, ValidationError
 
 class ProjectSchema(Schema):
     id = fields.Int(dump_only=True)
-    name_project = fields.Str(required=True)
+    name = fields.Str(required=True)
     description = fields.Str()
 
     @validates("name_project")
