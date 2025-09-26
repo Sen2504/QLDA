@@ -84,7 +84,8 @@ export default function Projects() {
               {projects.map((proj) => (
                 <div
                   key={proj.id}
-                  className="bg-white p-4 rounded-lg shadow hover:shadow-md transition"
+                  className="bg-white p-4 rounded-lg shadow hover:shadow-md transition cursor-pointer"
+                  onClick={() => navigate(`/projects/${proj.id}/team`)} // 👉 navigate đến Team
                 >
                   <h3 className="font-semibold text-green-600">
                     {proj.name_project}
@@ -94,7 +95,10 @@ export default function Projects() {
                   </p>
                   <div className="mt-4 flex space-x-2">
                     <button
-                      onClick={() => handleDelete(proj.id)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Ngăn click card
+                        handleDelete(proj.id);
+                      }}
                       className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
                     >
                       Xóa

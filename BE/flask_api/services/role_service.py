@@ -1,19 +1,19 @@
-# file: services/role_service.py
 from flask_api.extensions import db
 from flask_api.models.role_models import Role
 
 class RoleService:
+    
     @staticmethod
-    def create(name_role):
-        name_role = (name_role or "").strip()
+    def create(name):
+        name = (name or "").strip()
 
-        if not name_role:
+        if not name:
             return None, "Tên role là bắt buộc."
 
-        if Role.query.filter_by(name_role=name_role).first():
+        if Role.query.filter_by(name=name).first():
             return None, "Tên role đã tồn tại."
 
-        new_role = Role(name_role=name_role)
+        new_role = Role(name=name)
         db.session.add(new_role)
         db.session.commit()
         return new_role, None
@@ -27,19 +27,19 @@ class RoleService:
         return Role.query.get(role_id)
 
     @staticmethod
-    def update(role_id, name_role):
+    def update(role_id, name):
         role = Role.query.get(role_id)
         if not role:
             return None, "Không tìm thấy role."
 
-        name_role = (name_role or "").strip()
-        if not name_role:
+        name = (name or "").strip()
+        if not name:
             return None, "Tên role là bắt buộc."
 
-        if Role.query.filter(Role.name_role == name_role, Role.id_role != role_id).first():
+        if Role.query.filter(Role.name == name, Role.id != role_id).first():
             return None, "Tên role đã tồn tại."
 
-        role.name_role = name_role
+        role.name = name
         db.session.commit()
         return role, None
 
