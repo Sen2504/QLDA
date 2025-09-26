@@ -24,3 +24,5 @@ class Config:
 
     SESSION_COOKIE_SAMESITE = "None"
     SESSION_COOKIE_SECURE = False 
+
+    FRONTEND_URL=os.getenv("FRONTEND_URL", "http://localhost:5173")

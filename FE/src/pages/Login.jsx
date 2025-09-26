@@ -55,6 +55,12 @@ export default function Login() {
               placeholder="••••••••"
               required
             />
+            <p
+              className="text-sm text-indigo-600 cursor-pointer hover:underline mt-2"
+              onClick={() => navigate("/forgot-password")}
+            >
+              Forgot password?
+            </p>
           </div>
           <button
             type="submit"

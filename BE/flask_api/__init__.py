@@ -6,10 +6,11 @@ from dotenv import load_dotenv
 from flask_api import models
 from flask_cors import CORS
 from flask_api.extensions import db, migrate, login_manager, mail  
-
+from flask_api.config import Config
+load_dotenv()
 def create_app():
     app = Flask(__name__)
-
+    
     # Load .env
     here = Path(__file__).resolve()
     be_dir = here.parents[1]
@@ -70,5 +71,6 @@ def create_app():
     app.register_blueprint(action_bp)
     app.register_blueprint(workflow_status_bp)
 
-    CORS(app, supports_credentials=True, origins=["http://localhost:5173"]) 
+    CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+    app.config.from_object(Config)
     return app
