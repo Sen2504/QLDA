@@ -4,7 +4,7 @@ from pathlib import Path
 from flask import Flask
 from dotenv import load_dotenv
 from flask_api import models
-
+from flask_cors import CORS
 from flask_api.extensions import db, migrate, login_manager, mail  
 
 def create_app():
@@ -69,5 +69,6 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(action_bp)
     app.register_blueprint(workflow_status_bp)
-        
+
+    CORS(app, supports_credentials=True, origins=["http://localhost:5173"]) 
     return app
