@@ -44,25 +44,6 @@ class TaskStatusService:
         return status, None
 
     @staticmethod
-    def patch(status_id, data):
-        status = TaskStatus.query.get(status_id)
-        if not status:
-            return None, "Không tìm thấy trạng thái."
-
-        if "name_status" in data:
-            name_status = (data.get("name_status") or '').strip()
-            if not name_status:
-                return None, "Tên trạng thái là bắt buộc."
-
-            if TaskStatus.query.filter(TaskStatus.name_status == name_status, TaskStatus.id != status_id).first():
-                return None, "Tên trạng thái đã tồn tại."
-
-            status.name_status = name_status
-
-        db.session.commit()
-        return status, None
-
-    @staticmethod
     def delete(status_id):
         status = TaskStatus.query.get(status_id)
         if not status:

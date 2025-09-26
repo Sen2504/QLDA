@@ -114,3 +114,25 @@ migrations/versions/__pycache__/
 # System files
 Thumbs.db
 .DS_Store
+# Node modules
+FE/node_modules/
+FE/.vite/
+
+# Build output
+FE/dist/
+
+# Logs
+FE/npm-debug.log*
+FE/yarn-debug.log*
+FE/yarn-error.log*
+FE/pnpm-debug.log*
+FE/.pnpm-debug.log*
+
+# Environment files
+FE/.env
+FE/.env.local
+FE/.env.*.local
+
+# Editor configs
+.vscode/
+.idea/

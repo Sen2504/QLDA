@@ -1,4 +1,5 @@
 from flask_api.extensions import db
+from flask_api.schemas.project_schemas import ProjectSchema
 
 class Project(db.Model):
     __tablename__ = "project"

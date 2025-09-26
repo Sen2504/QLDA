@@ -46,17 +46,6 @@ def update_action(action_id):
     return jsonify(action_schema.dump(action)), 200
 
 
-@action_bp.route("/<int:action_id>", methods=["PATCH"])
-def patch_action(action_id):
-    data = request.get_json() or {}
-
-    action, error = ActionService.patch(action_id, data)
-    if error:
-        status_code = 404 if error == "Không tìm thấy hành động." else 400
-        return jsonify({"error": error}), status_code
-    return jsonify(action_schema.dump(action)), 200
-
-
 @action_bp.route("/<int:action_id>", methods=["DELETE"])
 def delete_action(action_id):
     success, error = ActionService.delete(action_id)

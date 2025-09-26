@@ -102,3 +102,30 @@ class AuthService:
             return None, "email not confirmed"
 
         return user, None
+    @staticmethod
+    def generate_reset_token(email: str) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Sinh token reset password từ email
+        """
+        if not email:
+            return None, "email is required"
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return None, "user not found"
+
+        token = generate_confirmation_token(user.email)
+        return token, None
+
+    @staticmethod
+    def reset_password(token: str, new_password: str):
+        email = confirm_token(token)
+        if not email:
+            return False, "invalid or expired token"
+
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return False, "user not found"
+
+        user.set_password(new_password)
+        db.session.commit()
+        return True, None

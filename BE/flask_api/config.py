@@ -19,5 +19,9 @@ class Config:
     MAIL_DEFAULT_SENDER = ("QLDA", "minhsang5544@gmail.com")
     SESSION_COOKIE_NAME = "session"
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Lax" 
+    #SESSION_COOKIE_SAMESITE = "Lax"
+
+    SESSION_COOKIE_SAMESITE = "None"
+    SESSION_COOKIE_SECURE = False
+
     FRONTEND_URL=os.getenv("FRONTEND_URL", "http://localhost:5173")

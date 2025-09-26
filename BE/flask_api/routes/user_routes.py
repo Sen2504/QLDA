@@ -62,23 +62,6 @@ def update_user(user_id):
     return jsonify(user_schema.dump(user)), 200
 
 
-# ----------------- UPDATE PARTIAL (PATCH) -----------------
-@user_bp.route("/<int:user_id>", methods=["PATCH"])
-def patch_user(user_id):
-    data = request.get_json() or {}
-    try:
-        payload = user_schema.load(data, partial=True)
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 400
-
-    user, error = UserService.patch(user_id, payload)
-    if error:
-        status = 404 if "Không tìm thấy" in error else 400
-        return jsonify({"error": error}), status
-
-    return jsonify(user_schema.dump(user)), 200
-
-
 # ----------------- DELETE -----------------
 @user_bp.route("/<int:user_id>", methods=["DELETE"])
 def delete_user(user_id):

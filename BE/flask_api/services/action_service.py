@@ -44,25 +44,6 @@ class ActionService:
         return action, None
 
     @staticmethod
-    def patch(action_id, data):
-        action = Action.query.get(action_id)
-        if not action:
-            return None, "Không tìm thấy hành động."
-
-        if "Name_act" in data:
-            name_act = (data.get("Name_act") or "").strip()
-            if not name_act:
-                return None, "Tên hành động là bắt buộc."
-
-            if Action.query.filter(Action.Name_act == name_act, Action.ID_act != action_id).first():
-                return None, "Tên hành động đã tồn tại."
-
-            action.Name_act = name_act
-
-        db.session.commit()
-        return action, None
-
-    @staticmethod
     def delete(action_id):
         action = Action.query.get(action_id)
         if not action:

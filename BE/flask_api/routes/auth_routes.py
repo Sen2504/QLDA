@@ -4,6 +4,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 
 from flask_api.services.auth_service import AuthService
 from flask_api.utils.mail import send_email
+from flask import current_app
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -101,3 +102,40 @@ def logout():
 def me():
     u = current_user
     return jsonify({"id": u.id, "email": u.email, "confirmed": u.confirmed}), 200
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    data = request.get_json(silent=True) or {}
+    email = data.get("email")
+
+    token, error = AuthService.generate_reset_token(email)
+    if error:
+        return jsonify({"error": error}), 400
+
+    # dùng config FRONTEND_URL thay vì hardcode
+    reset_url = f"{current_app.config['FRONTEND_URL']}/reset-password?token={token}"
+
+    html = f"""
+        <p>Xin chào,</p>
+        <p>Nhấn vào liên kết sau để đặt lại mật khẩu của bạn:</p>
+        <p><a href="{reset_url}">{reset_url}</a></p>
+        <p>Liên kết hết hạn sau 24 giờ.</p>
+    """
+    send_email("Đặt lại mật khẩu", [email], html)
+    return jsonify({"message": "Password reset link has been sent to your email."}), 200
+
+
+@auth_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+    data = request.get_json(silent=True) or {}
+    token = data.get("token")
+    new_password = data.get("new_password")
+
+    if not token or not new_password:
+        return jsonify({"error": "token and new_password are required"}), 400
+
+    ok, error = AuthService.reset_password(token, new_password)
+    if not ok:
+        return jsonify({"error": error}), 400
+
+    return jsonify({"message": "Password has been reset successfully."}), 200

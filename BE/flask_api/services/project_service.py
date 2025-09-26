@@ -5,8 +5,15 @@ from flask_api.models.role_models import Role
 from flask_api.models.project_role_models import ProjectRole
 from flask_api.models.team_models import Team
 
-
 class ProjectService:
+    @staticmethod
+    def get_all():
+        return Project.query.all()
+
+    @staticmethod
+    def get_by_id(project_id):
+        return Project.query.get(project_id)
+    
     @staticmethod
     def create(name_project, description, user_id):
         # Validate input
@@ -51,3 +58,32 @@ class ProjectService:
         db.session.commit()
 
         return new_project, None
+    
+    @staticmethod
+    def update(project_id, name, description):
+        project = Project.query.get(project_id)
+        if not project:
+            return None, "Không tìm thấy project."
+
+        name = (name or "").strip()
+        description = (description or "").strip()
+
+        if not name:
+            return None, "Tên project là bắt buộc."
+        if not description:
+            return None, "Mô tả project là bắt buộc."
+
+        project.name = name
+        project.description = description
+        db.session.commit()
+        return project, None
+    
+    @staticmethod
+    def delete(project_id):
+        project = Project.query.get(project_id)
+        if not project:
+            return False, "Không tìm thấy project."
+
+        db.session.delete(project)
+        db.session.commit()
+        return True, None

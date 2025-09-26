@@ -44,25 +44,6 @@ class RoleService:
         return role, None
 
     @staticmethod
-    def patch(role_id, data):
-        role = Role.query.get(role_id)
-        if not role:
-            return None, "Không tìm thấy role."
-
-        if "name_role" in data:
-            name_role = (data.get("name_role") or "").strip()
-            if not name_role:
-                return None, "Tên role là bắt buộc."
-
-            if Role.query.filter(Role.name_role == name_role, Role.id_role != role_id).first():
-                return None, "Tên role đã tồn tại."
-
-            role.name_role = name_role
-
-        db.session.commit()
-        return role, None
-
-    @staticmethod
     def delete(role_id):
         role = Role.query.get(role_id)
         if not role:
