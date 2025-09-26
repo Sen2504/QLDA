@@ -2,8 +2,6 @@
 from flask_mail import Message
 from flask import current_app
 from flask_api.extensions import mail
-from flask_api.extensions import mail
-
 
 def send_email(subject: str, recipients: list[str], html: str):
     msg = Message(

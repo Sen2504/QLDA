@@ -13,6 +13,9 @@ class Config:
     MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
     MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
     MAIL_USE_TLS = True
-    MAIL_USERNAME = ("minhsang5544@gmail.com")  # tài khoản gmail
-    MAIL_PASSWORD = ("voty sirp gzky qpky")  # app password (không phải mật khẩu thường)
+    MAIL_USERNAME = "minhsang5544@gmail.com"  # tài khoản gmail
+    MAIL_PASSWORD = "voty sirp gzky qpky"  # app password (không phải mật khẩu thường)
     MAIL_DEFAULT_SENDER = ("QLDA", "minhsang5544@gmail.com")
+    SESSION_COOKIE_NAME = "session"
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax" 
