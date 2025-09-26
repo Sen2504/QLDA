@@ -5,6 +5,7 @@ from flask_api.config import Config
 from flask_api.extensions import db, migrate
 from .extensions import db, migrate, login_manager, mail
 from flask_api.models.user_models import User
+from flask_api.config import Config 
 
 def create_app():
     app = Flask(__name__)
@@ -33,6 +34,8 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(role_bp)
     app.register_blueprint(project_bp)
+    app.config.from_object(Config)
+
 
     # Import models để Flask-Migrate nhận diện
     from flask_api.models.task_status_models import TaskStatus

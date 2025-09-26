@@ -7,6 +7,7 @@ class Config:
     
     # Database
     SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:@localhost/qlda"
+    FRONTEND_URL= "http://localhost:5173"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # (Tùy chọn) Mail server – dùng nếu bạn cần gửi email xác nhận
@@ -19,3 +20,4 @@ class Config:
     SESSION_COOKIE_NAME = "session"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax" 
+    FRONTEND_URL=os.getenv("FRONTEND_URL", "http://localhost:5173")
