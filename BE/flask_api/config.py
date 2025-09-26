@@ -1,23 +1,18 @@
+# flask_api/config.py
 import os
-from dotenv import load_dotenv
-
-# Load .env file ở thư mục gốc dự án
-load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
 
 class Config:
-    DB_USER = os.getenv('DB_USER', 'QLDA_Tran')
-    DB_PASSWORD = os.getenv('DB_PASSWORD', '123456')
-    DB_HOST = os.getenv('DB_HOST', '26.122.43.188')
-    DB_PORT = os.getenv('DB_PORT', '3306')
-    DB_NAME = os.getenv('DB_NAME', 'qlda')
-    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    # SECRET_KEY bắt buộc cho session, flask-login
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    
+    # Database
+    SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:@localhost/qlda"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-    # Mail
-    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
-    MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
-    MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() in ["true", "1", "yes"]
-    MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() in ["true", "1", "yes"]
-    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
-    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER")
+    
+    # (Tùy chọn) Mail server – dùng nếu bạn cần gửi email xác nhận
+    MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = ("minhsang5544@gmail.com")  # tài khoản gmail
+    MAIL_PASSWORD = ("voty sirp gzky qpky")  # app password (không phải mật khẩu thường)
+    MAIL_DEFAULT_SENDER = ("QLDA", "minhsang5544@gmail.com")
