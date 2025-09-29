@@ -1,15 +1,29 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
+import MainLayout from "../layouts/MainLayout";
 
 export default function Home() {
   const [user, setUser] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Lấy thông tin user
     api.get("/auth/me")
       .then((res) => setUser(res.data))
       .catch(() => navigate("/login"));
+
+    // Gọi API lấy project user tham gia
+    api.get("/projects/my-projects")
+      .then((res) => setProjects(res.data))
+      .catch((err) => console.error(err));
+
+    // Gọi API lấy task user tham gia
+    api.get("/tasks/my-tasks")
+      .then((res) => setTasks(res.data))
+      .catch((err) => console.error(err));
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -18,27 +32,66 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-purple-100 to-pink-200">
-      <div className="w-full max-w-lg bg-white p-8 rounded-2xl shadow-xl text-center">
-        {user ? (
-          <>
-            <h2 className="text-3xl font-bold text-purple-700 mb-4">
-              Hello, {user.email}
+    <MainLayout>
+      <div className="p-6 space-y-8">
+        {/* Chào user */}
+        {user && (
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-green-700">
+              Welcome, {user.email}
             </h2>
-            <p className="text-gray-600 mb-6">
-              Welcome to your dashboard ✨
-            </p>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition"
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <p className="text-gray-500">Loading...</p>
+          </div>
         )}
+
+        {/* Projects */}
+        <section>
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
+            Projects Dashboard
+          </h3>
+          {projects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {projects.map((proj) => (
+                <div
+                  key={proj.id}
+                  className="bg-white p-4 rounded-lg shadow hover:shadow-md transition"
+                >
+                  <h4 className="font-semibold text-green-600">{proj.name}</h4>
+                  <p className="text-gray-600 text-sm">{proj.description}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">Bạn chưa tham gia project nào.</p>
+          )}
+        </section>
+
+        {/* Tasks */}
+        <section>
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
+            My Tasks
+          </h3>
+          {tasks.length > 0 ? (
+            <div className="space-y-3">
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="bg-white p-4 rounded-lg shadow hover:shadow-md transition"
+                >
+                  <h4 className="font-medium text-gray-800">{task.title}</h4>
+                  <p className="text-sm text-gray-600">
+                    Status:{" "}
+                    <span className="font-semibold text-green-600">
+                      {task.status}
+                    </span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">Bạn chưa có task nào.</p>
+          )}
+        </section>      
       </div>
-    </div>
+    </MainLayout>
   );
 }

@@ -1,4 +1,3 @@
-# file: routes/role_routes.py
 from flask import Blueprint, request, jsonify
 from flask_api.schemas.role_schemas import RoleSchema
 from flask_api.services.role_service import RoleService
@@ -12,9 +11,9 @@ roles_schema = RoleSchema(many=True)
 @role_bp.route("/", methods=["POST"])
 def create_role():
     data = request.get_json() or {}
-    name_role = data.get("Name_role")
+    name = data.get("name")
 
-    new_role, error = RoleService.create(name_role)
+    new_role, error = RoleService.create(name)
     if error:
         return jsonify({"error": error}), 400
     return jsonify(role_schema.dump(new_role)), 201
@@ -37,9 +36,9 @@ def get_role(role_id):
 @role_bp.route("/<int:role_id>", methods=["PUT"])
 def update_role(role_id):
     data = request.get_json() or {}
-    name_role = data.get("Name_role")
+    name = data.get("name")
 
-    role, error = RoleService.update(role_id, name_role)
+    role, error = RoleService.update(role_id, name)
     if error:
         status_code = 404 if error == "Không tìm thấy role." else 400
         return jsonify({"error": error}), status_code

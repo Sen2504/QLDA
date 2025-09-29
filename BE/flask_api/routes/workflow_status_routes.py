@@ -24,7 +24,7 @@ def get_status_by_id(status_id):
 def create_status():
     data = request.get_json()
     new_status = workflow_status_service.create_workflow_status(data)
-    return jsonify({'ID_status': new_status.ID_status, 'Name': new_status.Name}), 201
+    return jsonify({'ID_status': new_status.id, 'Name': new_status.name}), 201
 
 @workflow_status_bp.route('/workflow_status/<int:status_id>', methods=['PUT'])
 def update_status(status_id):

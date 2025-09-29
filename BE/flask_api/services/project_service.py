@@ -25,7 +25,6 @@ class ProjectService:
             name=name_project.strip(),
             description=(description or "").strip()
         )
-
         db.session.add(new_project)
         db.session.flush()  # để có ID project ngay
 
@@ -37,7 +36,6 @@ class ProjectService:
                 project_id=new_project.id,
                 role_id=role.id
             )
-
             db.session.add(proj_role)
             project_roles.append(proj_role)
 
@@ -46,6 +44,7 @@ class ProjectService:
         # 3. Thêm người tạo vào Team với role Owner
         owner_role = next((pr for pr in project_roles if pr.role_id == 1), None)  # giả sử id_role=1 là Owner
         if not owner_role:
+            db.session.rollback()
             return None, "Không tìm thấy role Project Owner."
 
         new_team_member = Team(
@@ -55,9 +54,12 @@ class ProjectService:
         db.session.add(new_team_member)
 
         # 4. Commit tất cả
-        db.session.commit()
-
-        return new_project, None
+        try:
+            db.session.commit()
+            return new_project, None
+        except Exception as e:
+            db.session.rollback()
+            return None, f"Lỗi khi tạo project: {str(e)}"
     
     @staticmethod
     def update(project_id, name, description):
@@ -87,3 +89,18 @@ class ProjectService:
         db.session.delete(project)
         db.session.commit()
         return True, None
+    
+    # lấy danh sách project mà user tham gia
+    @staticmethod
+    def get_by_user(user_id):
+        """
+        Lấy danh sách project mà user tham gia.
+        """
+        projects = (
+            db.session.query(Project)
+            .join(ProjectRole, ProjectRole.project_id == Project.id)
+            .join(Team, Team.projrole_id == ProjectRole.id)
+            .filter(Team.user_id == user_id)
+            .all()
+        )
+        return projects

@@ -1,18 +1,31 @@
 import { useState } from "react";
 import api from "../services/api";
+import Popup_message from "../components/Popup_message";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [type, setType] = useState("success");
+  const [showPopup, setShowPopup] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await api.post("/auth/forgot-password", { email });
       setMessage(res.data.message);
+      setType("success");
+      setShowPopup(true);
     } catch (err) {
       setMessage(err.response?.data?.error || "Something went wrong");
+      setType("error");
+      setShowPopup(true);
     }
+  };
+
+  const handleConfirm = () => {
+    setShowPopup(false);
+    // Ở ForgotPassword chỉ cần đóng popup, chưa cần navigate
+    // Nếu muốn redirect thì có thể thêm navigate("/login") ở đây
   };
 
   return (
@@ -21,9 +34,6 @@ export default function ForgotPassword() {
         <h2 className="text-2xl font-bold text-center text-orange-700 mb-6">
           Forgot Password
         </h2>
-        {message && (
-          <p className="text-sm text-center mb-4 text-orange-600">{message}</p>
-        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
@@ -41,6 +51,14 @@ export default function ForgotPassword() {
           </button>
         </form>
       </div>
+
+      {showPopup && (
+        <Popup_message
+          message={message}
+          type={type}
+          onClose={handleConfirm}
+        />
+      )}
     </div>
   );
 }

@@ -61,3 +61,10 @@ def delete_project(project_id):
     if not success:
         return jsonify({"error": error}), 404
     return jsonify({"message": "Xóa project thành công."}), 200
+
+# ----------------- GET MY PROJECTS -----------------
+@project_bp.route("/my-projects", methods=["GET"])
+@login_required
+def get_my_projects():
+    projects = ProjectService.get_by_user(current_user.id)
+    return jsonify(projects_schema.dump(projects)), 200

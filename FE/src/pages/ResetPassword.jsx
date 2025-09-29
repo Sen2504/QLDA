@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
+import Popup_message from "../components/Popup_message";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token"); // lấy token từ URL
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -17,10 +19,16 @@ export default function ResetPassword() {
         new_password: newPassword,
       });
       setMessage(res.data.message);
-      setTimeout(() => navigate("/login"), 2000);
+      setShowPopup(true);
     } catch (err) {
       setMessage(err.response?.data?.error || "Something went wrong");
+      setShowPopup(true);
     }
+  };
+
+  const handleConfirm = () => {
+    setShowPopup(false);
+    navigate("/login"); // sau khi nhấn OK thì về login
   };
 
   return (
@@ -29,9 +37,6 @@ export default function ResetPassword() {
         <h2 className="text-2xl font-bold text-center text-rose-700 mb-6">
           Reset Password
         </h2>
-        {message && (
-          <p className="text-sm text-center mb-4 text-rose-600">{message}</p>
-        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="password"
@@ -49,6 +54,10 @@ export default function ResetPassword() {
           </button>
         </form>
       </div>
+
+      {showPopup && (
+        <Popup_message message={message} onConfirm={handleConfirm} />
+      )}
     </div>
   );
 }
