@@ -2,11 +2,11 @@ import re
 from marshmallow import Schema, fields, validates, ValidationError
 
 class WorkflowStatusSchema(Schema):
-    ID_status = fields.Int(dump_only=True)
-    Name = fields.Str(required=True, error_messages={"required": "Tên trạng thái là bắt buộc."})
+    id = fields.Int(dump_only=True)
+    name = fields.Str(required=True, error_messages={"required": "Tên trạng thái là bắt buộc."})
 
-    @validates("Name")
-    def validate_name(self, value):
+    @validates("name")
+    def validate_name(self, value, **kwargs):
         if not value or not value.strip():
             raise ValidationError("Tên trạng thái là bắt buộc.")
         
