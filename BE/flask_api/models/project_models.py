@@ -12,6 +12,7 @@ class Project(db.Model):
     issues = db.relationship("Issue", back_populates="project", cascade="all, delete-orphan")
     user_stories = db.relationship("UserStory", back_populates="project", cascade="all, delete-orphan")
     project_roles = db.relationship("ProjectRole", back_populates="project", cascade="all, delete-orphan")
-
+    invites = db.relationship("TeamInvite", back_populates="project", cascade="all, delete-orphan")
+    
     def __repr__(self):
         return f"<Project id={self.id} name={self.name}>"
