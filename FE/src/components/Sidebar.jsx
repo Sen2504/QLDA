@@ -7,6 +7,7 @@ import {
   LogOut,
   Users,
   BookMarked,
+  FolderKanban,
 } from "lucide-react";
 import { useProject } from "../store/ProjectContext";
 
@@ -31,10 +32,18 @@ export default function Sidebar() {
             <span className="text-gray-700">Dashboard</span>
           </Link>
         </li>
-
-        
+                
         {/* Team chỉ hiển thị khi có project được chọn */}
-        
+        <li>
+          <Link
+            to="/projects"
+            className="flex items-center gap-3 p-2 rounded-md hover:bg-green-100 cursor-pointer transition"
+          >
+            <FolderKanban className="w-5 h-5 text-green-600" />
+            <span className="text-gray-700">Projects</span>
+          </Link>
+        </li>
+
         <li>
           <Link
             to="/user-stories"
@@ -74,7 +83,7 @@ export default function Sidebar() {
             <span className="text-gray-700">Settings</span>
           </Link>
         </li>
-        
+
         {currentProject && (
           <li>
             <Link
