@@ -79,17 +79,7 @@ class ProjectService:
         project.description = description
         db.session.commit()
         return project, None
-    
-    @staticmethod
-    def delete(project_id):
-        project = Project.query.get(project_id)
-        if not project:
-            return False, "Không tìm thấy project."
-
-        db.session.delete(project)
-        db.session.commit()
-        return True, None
-    
+           
     # lấy danh sách project mà user tham gia
     @staticmethod
     def get_by_user(user_id):
@@ -100,7 +90,43 @@ class ProjectService:
             db.session.query(Project)
             .join(ProjectRole, ProjectRole.project_id == Project.id)
             .join(Team, Team.projrole_id == ProjectRole.id)
-            .filter(Team.user_id == user_id)
+            .filter(
+                Team.user_id == user_id,
+                Project.status != "deleted"  # loại bỏ project đã xóa
+                )
             .all()
         )
         return projects
+    
+    @staticmethod
+    def change_status(project_id, user_id, new_status):
+        """
+        Chỉ Owner có quyền thay đổi trạng thái project.
+        new_status: active | archived | deleted
+        """
+        project = Project.query.get(project_id)
+        if not project:
+            return None, "Không tìm thấy project."
+
+        # Kiểm tra user có phải Owner không
+        owner_projrole = (
+            db.session.query(ProjectRole)
+            .join(Role, ProjectRole.role_id == Role.id)
+            .join(Team, Team.projrole_id == ProjectRole.id)
+            .filter(
+                ProjectRole.project_id == project_id,
+                Role.name == "Project Owner",
+                Team.user_id == user_id
+            )
+            .first()
+        )
+        if not owner_projrole:
+            return None, "Bạn không có quyền thay đổi trạng thái project."
+
+        # Cập nhật trạng thái
+        if new_status not in ["active", "archived", "deleted"]:
+            return None, "Trạng thái không hợp lệ."
+
+        project.status = new_status
+        db.session.commit()
+        return project, None

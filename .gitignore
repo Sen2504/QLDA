@@ -108,9 +108,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# Alembic
-migrations/versions/__pycache__/
-
 # System files
 Thumbs.db
 .DS_Store

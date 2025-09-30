@@ -5,7 +5,7 @@ class UserStory(db.Model):
     id = db.Column("ID_USER_STORIES", db.Integer, primary_key=True, autoincrement=True)
     status_id = db.Column("ID_STATUS", db.Integer, db.ForeignKey("workflow_status.ID_STATUS"), nullable=False)
     project_id = db.Column("ID_PROJECT", db.Integer, db.ForeignKey("project.ID_PROJECT"), nullable=False)
-    sprint_id = db.Column("ID_SPRINT", db.Integer, db.ForeignKey("sprints.ID_SPRINT"), nullable=False)
+    sprint_id = db.Column("ID_SPRINT", db.Integer, db.ForeignKey("sprints.ID_SPRINT"), nullable=True)
     name = db.Column("NAME_STORIES", db.String(200), nullable=False)
     description = db.Column("DESCRIPTION", db.Text, nullable=False)
     expire_date = db.Column("EXPIRE_DATE", db.Date, nullable=False)

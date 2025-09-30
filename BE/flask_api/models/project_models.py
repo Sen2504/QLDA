@@ -6,6 +6,7 @@ class Project(db.Model):
     id = db.Column("ID_PROJECT", db.Integer, primary_key=True, autoincrement=True)
     name = db.Column("NAME_PROJECT", db.String(200), nullable=False)
     description = db.Column("DESCRIPTION", db.Text, nullable=False)
+    status = db.Column("STATUS", db.String(50), default="active", nullable=False)
 
     sprints = db.relationship("Sprint", back_populates="project", cascade="all, delete-orphan")
     issues = db.relationship("Issue", back_populates="project", cascade="all, delete-orphan")

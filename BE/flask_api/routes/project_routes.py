@@ -54,13 +54,25 @@ def update_project(project_id):
     return jsonify(project_schema.dump(project)), 200
 
 
-# ----------------- DELETE -----------------
-@project_bp.route("/<int:project_id>", methods=["DELETE"])
-def delete_project(project_id):
-    success, error = ProjectService.delete(project_id)
-    if not success:
-        return jsonify({"error": error}), 404
-    return jsonify({"message": "Xóa project thành công."}), 200
+# ----------------- CHANGE STATUS -----------------
+@project_bp.route("/<int:project_id>/status", methods=["PATCH"])
+def change_project_status(project_id):
+    data = request.get_json() or {}
+    new_status = data.get("status")
+    user_id = data.get("user_id")  # hoặc lấy từ current_user.id nếu có login
+
+    project, error = ProjectService.change_status(project_id, user_id, new_status)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify({
+        "message": f"Trạng thái project đổi thành '{new_status}' thành công.",
+        "project": {
+            "id": project.id,
+            "name": project.name,
+            "status": project.status
+        }
+    }), 200
+
 
 # ----------------- GET MY PROJECTS -----------------
 @project_bp.route("/my-projects", methods=["GET"])

@@ -1,42 +1,72 @@
-# routes/workflow_status_route.py
-
 from flask import Blueprint, request, jsonify
-from flask_api.services import workflow_status_service
+from flask_api.extensions import db
+from flask_api.models.workflow_status_models import WorkflowStatus
 from flask_api.schemas.workflow_status_schema import WorkflowStatusSchema
 
-workflow_status_schema = WorkflowStatusSchema()
-workflow_status_list_schema = WorkflowStatusSchema(many=True)
-workflow_status_bp = Blueprint('workflow_status_bp', __name__, url_prefix='/api')
+workflow_status_bp = Blueprint("workflow_status_bp", __name__, url_prefix="/api/workflow_status")
 
-@workflow_status_bp.route('/workflow_status', methods=['GET'])
-def get_all_statuses():
-    statuses = workflow_status_service.get_all_workflow_statuses()
-    return jsonify([{'ID_status': s.ID_status, 'Name': s.Name} for s in statuses])
+status_schema = WorkflowStatusSchema()
+statuses_schema = WorkflowStatusSchema(many=True)
 
-@workflow_status_bp.route('/workflow_status/<int:status_id>', methods=['GET'])
-def get_status_by_id(status_id):
-    status = workflow_status_service.get_workflow_status_by_id(status_id)
-    if status:
-        return jsonify({'ID_status': status.ID_status, 'Name': status.Name})
-    return jsonify({'error': 'Status not found'}), 404
-
-@workflow_status_bp.route('/workflow_status', methods=['POST'])
+# ----------------- CREATE -----------------
+@workflow_status_bp.route("/", methods=["POST"])
 def create_status():
-    data = request.get_json()
-    new_status = workflow_status_service.create_workflow_status(data)
-    return jsonify({'ID_status': new_status.id, 'Name': new_status.name}), 201
+    data = request.get_json() or {}
+    try:
+        validated = status_schema.load(data)  # validate với schema
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
-@workflow_status_bp.route('/workflow_status/<int:status_id>', methods=['PUT'])
+    new_status = WorkflowStatus(name=validated["name"])
+    db.session.add(new_status)
+    db.session.commit()
+
+    return jsonify(status_schema.dump(new_status)), 201
+
+
+# ----------------- GET ALL -----------------
+@workflow_status_bp.route("/", methods=["GET"])
+def get_all_statuses():
+    statuses = WorkflowStatus.query.all()
+    return jsonify(statuses_schema.dump(statuses)), 200
+
+
+# ----------------- GET BY ID -----------------
+@workflow_status_bp.route("/<int:status_id>", methods=["GET"])
+def get_status(status_id):
+    status = WorkflowStatus.query.get(status_id)
+    if not status:
+        return jsonify({"error": "Không tìm thấy trạng thái."}), 404
+    return jsonify(status_schema.dump(status)), 200
+
+
+# ----------------- UPDATE -----------------
+@workflow_status_bp.route("/<int:status_id>", methods=["PUT"])
 def update_status(status_id):
-    data = request.get_json()
-    updated_status = workflow_status_service.update_workflow_status(status_id, data)
-    if updated_status:
-        return jsonify({'ID_status': updated_status.ID_status, 'Name': updated_status.Name})
-    return jsonify({'error': 'Status not found'}), 404
+    status = WorkflowStatus.query.get(status_id)
+    if not status:
+        return jsonify({"error": "Không tìm thấy trạng thái."}), 404
 
-@workflow_status_bp.route('/workflow_status/<int:status_id>', methods=['DELETE'])
+    data = request.get_json() or {}
+    try:
+        validated = status_schema.load(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    status.name = validated["name"]
+    db.session.commit()
+
+    return jsonify(status_schema.dump(status)), 200
+
+
+# ----------------- DELETE -----------------
+@workflow_status_bp.route("/<int:status_id>", methods=["DELETE"])
 def delete_status(status_id):
-    deleted_status = workflow_status_service.delete_workflow_status(status_id)
-    if deleted_status:
-        return jsonify({'message': 'Deleted successfully'})
-    return jsonify({'error': 'Status not found'}), 404
+    status = WorkflowStatus.query.get(status_id)
+    if not status:
+        return jsonify({"error": "Không tìm thấy trạng thái."}), 404
+
+    db.session.delete(status)
+    db.session.commit()
+
+    return jsonify({"message": "Xóa trạng thái thành công."}), 200
