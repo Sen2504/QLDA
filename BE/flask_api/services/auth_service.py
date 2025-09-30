@@ -1,6 +1,7 @@
 # file: flask_api/services/auth_service.py
 from datetime import datetime
 from typing import Tuple, Optional
+import re
 
 from email_validator import validate_email, EmailNotValidError
 
@@ -24,6 +25,14 @@ class AuthService:
         email = (email or "").strip().lower()
         if not email or not password:
             return None, "email and password are required", None
+        
+        # Validate password: tối thiểu 8 ký tự, phải có chữ và số, có thể có ký tự đặc biệt
+        if len(password) < 8:
+            return None, "password must be at least 8 characters", None
+        if not re.search(r"[A-Za-z]", password):
+            return None, "password must contain at least one letter", None
+        if not re.search(r"\d", password):
+            return None, "password must contain at least one digit", None
 
         try:
             validate_email(email)  # raise EmailNotValidError nếu sai

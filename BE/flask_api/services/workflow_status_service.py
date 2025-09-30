@@ -10,7 +10,7 @@ def get_workflow_status_by_id(status_id):
     return WorkflowStatus.query.get(status_id)
 
 def create_workflow_status(data):
-    new_status = WorkflowStatus(Name=data['Name'])
+    new_status = WorkflowStatus(name=data['name'])
     db.session.add(new_status)
     db.session.commit()
     return new_status

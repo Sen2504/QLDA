@@ -1,11 +1,14 @@
 import { useState } from "react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
+import Popup_message from "../components/Popup_message";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [type, setType] = useState("success");
+  const [showPopup, setShowPopup] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
@@ -13,23 +16,28 @@ export default function Register() {
     try {
       const res = await api.post("/auth/register", { email, password });
       setMessage(res.data.message);
-      setTimeout(() => navigate("/login"), 2000);
+      setType("success");
+      setShowPopup(true);
     } catch (err) {
       setMessage(err.response?.data?.error || "Register failed");
+      setType("error");
+      setShowPopup(true);
+    }
+  };
+
+  const handleConfirm = () => {
+    setShowPopup(false);
+    if (type === "success") {
+      navigate("/login");
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-green-100 to-emerald-200">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-indigo-100 to-indigo-200">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
         <h2 className="text-3xl font-bold text-center text-emerald-700 mb-6">
           Create Account
         </h2>
-        {message && (
-          <p className="bg-emerald-100 text-emerald-700 text-sm p-2 mb-4 rounded">
-            {message}
-          </p>
-        )}
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -74,6 +82,14 @@ export default function Register() {
           </span>
         </p>
       </div>
+
+      {showPopup && (
+        <Popup_message
+          message={message}
+          type={type}
+          onConfirm={handleConfirm}
+        />
+      )}
     </div>
   );
 }

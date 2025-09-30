@@ -68,6 +68,7 @@ def create_app():
     from flask_api.routes.role_routes import role_bp
     from flask_api.routes.team_routes import team_bp
     from flask_api.routes.project_role_routes import project_role_bp
+    from flask_api.routes.user_story_routes import user_story_bp
 
     app.register_blueprint(task_status_bp)
     app.register_blueprint(user_bp)
@@ -78,6 +79,7 @@ def create_app():
     app.register_blueprint(role_bp)
     app.register_blueprint(team_bp)
     app.register_blueprint(project_role_bp)
+    app.register_blueprint(user_story_bp)
 
     CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
     app.config.from_object(Config)
