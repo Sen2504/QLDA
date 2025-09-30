@@ -1,11 +1,44 @@
+// file: services/teamService.js
 import api from "./api";
 
 const TeamService = {
-  getTeam: (projectId) => api.get(`/teams/${projectId}`),
-  inviteUser: (projectId, data) =>
-    api.post(`/teams/invite/${projectId}`, data),
-  removeUser: (projectId, userId) =>
-    api.delete(`/teams/remove/${projectId}/${userId}`),
+  // --- TEAM ---
+  getTeamSummary(projectId) {
+    // lấy cả members + pending_invites
+    return api.get(`/team_invites/project/${projectId}/summary`);
+  },
+
+  removeUser(projectId, userId) {
+    // xóa member chính thức
+    return api.delete(`/teams/${projectId}/remove/${userId}`);
+  },
+
+  // --- TEAM_INVITE ---
+  inviteUser(data) {
+    // { project_id, role_id, email }
+    return api.post("/team_invites/invite", data);
+  },
+
+  revokeInvite(inviteId) {
+    return api.delete(`/team_invites/revoke/${inviteId}`);
+  },
+
+  getMyInvites() {
+    return api.get("/team_invites/my-invites");
+  },
+
+  acceptInvite(inviteId) {
+    return api.post(`/team_invites/accept/${inviteId}`);
+  },
+
+  rejectInvite(inviteId) {
+    return api.post(`/team_invites/reject/${inviteId}`);
+  },
+
+  // --- ROLES ---
+  getRoles() {
+    return api.get("/roles/");
+  },
 };
 
 export default TeamService;

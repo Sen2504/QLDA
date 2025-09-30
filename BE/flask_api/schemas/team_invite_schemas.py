@@ -11,3 +11,11 @@ class TeamInviteSchema(Schema):
         validate=validate.OneOf(["pending", "accepted", "rejected"])
     )
     created_at = fields.DateTime(dump_only=True)
+    role_name = fields.Method("get_role_name")
+    project_name = fields.Method("get_project_name")
+
+    def get_role_name(self, obj):
+        return obj.role.name if obj.role else None
+
+    def get_project_name(self, obj):
+        return obj.project.name if obj.project else None

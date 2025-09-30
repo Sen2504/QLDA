@@ -9,7 +9,7 @@ class TeamInviteService:
 
     @staticmethod
     def create_invite(project_id, role_id, email):
-        email = email.strip().lower()
+        email = (email or "").strip().lower()
 
         invite = TeamInvite(
             project_id=project_id,
@@ -31,12 +31,13 @@ class TeamInviteService:
         if not invite or invite.status != "pending":
             return None, "Lời mời không hợp lệ."
 
-        # Kiểm tra ProjectRole có tồn tại
-        proj_role = ProjectRole.query.filter_by(project_id=invite.project_id, role_id=invite.role_id).first()
+        proj_role = ProjectRole.query.filter_by(
+            project_id=invite.project_id, role_id=invite.role_id
+        ).first()
         if not proj_role:
             return None, "Vai trò chưa tồn tại trong project."
 
-        # Tạo Team
+        # Tạo Team record
         new_team = Team(user_id=user_id, projrole_id=proj_role.id)
         db.session.add(new_team)
 
@@ -54,3 +55,24 @@ class TeamInviteService:
         invite.status = "rejected"
         db.session.commit()
         return True, None
+
+    @staticmethod
+    def revoke_invite(invite_id):
+        invite = TeamInvite.query.get(invite_id)
+        if not invite:
+            return False, "Không tìm thấy lời mời."
+        if invite.status != "pending":
+            return False, "Chỉ có thể thu hồi lời mời đang ở trạng thái pending."
+
+        db.session.delete(invite)
+        db.session.commit()
+        return True, None
+    @staticmethod
+    def get_invites_for_user(email):
+        """
+        Lấy tất cả lời mời pending gửi tới email của user.
+        """
+        email = (email or "").strip().lower()
+        return TeamInvite.query.filter_by(email=email, status="pending").all()
+        print("DEBUG db url:", db.engine.url)
+

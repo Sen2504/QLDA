@@ -8,6 +8,7 @@ import Projects from "./pages/Projects";
 import Tasks from "./pages/Tasks"; // <-- placeholder
 import Team from "./pages/Team";
 import ProjectDashboard from "./pages/ProjectDashboard";
+import MyInvites from "./pages/MyInvites";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/tasks" element={<Tasks />} /> {/* <-- placeholder */}
         <Route path="/projects/:projectId/team" element={<Team />} />
         <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />
+        <Route path="/my-invites" element={<MyInvites />} />
 
       </Routes>
     </BrowserRouter>
