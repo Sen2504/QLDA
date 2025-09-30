@@ -2,29 +2,33 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
+import { useProject } from "../store/ProjectContext";
 
 export default function Home() {
   const [user, setUser] = useState(null);
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const { setCurrentProject } = useProject();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Lấy thông tin user
     api.get("/auth/me")
       .then((res) => setUser(res.data))
       .catch(() => navigate("/login"));
 
-    // Gọi API lấy project user tham gia
     api.get("/projects/my-projects")
       .then((res) => setProjects(res.data))
       .catch((err) => console.error(err));
 
-    // Gọi API lấy task user tham gia
     api.get("/tasks/my-tasks")
       .then((res) => setTasks(res.data))
       .catch((err) => console.error(err));
   }, [navigate]);
+
+  const handleSelectProject = (proj) => {
+    setCurrentProject(proj);
+    navigate(`/projects/${proj.id}/dashboard`); 
+  };
 
   const handleLogout = async () => {
     await api.post("/auth/logout");
@@ -34,7 +38,6 @@ export default function Home() {
   return (
     <MainLayout>
       <div className="p-6 space-y-8">
-        {/* Chào user */}
         {user && (
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-green-700">
@@ -53,9 +56,12 @@ export default function Home() {
               {projects.map((proj) => (
                 <div
                   key={proj.id}
-                  className="bg-white p-4 rounded-lg shadow hover:shadow-md transition"
+                  onClick={() => handleSelectProject(proj)}
+                  className="bg-white p-4 rounded-lg shadow hover:shadow-md transition cursor-pointer"
                 >
-                  <h4 className="font-semibold text-green-600">{proj.name}</h4>
+                  <h4 className="font-semibold text-green-600">
+                    {proj.name}
+                  </h4>
                   <p className="text-gray-600 text-sm">{proj.description}</p>
                 </div>
               ))}
@@ -90,7 +96,7 @@ export default function Home() {
           ) : (
             <p className="text-gray-500">Bạn chưa có task nào.</p>
           )}
-        </section>      
+        </section>
       </div>
     </MainLayout>
   );

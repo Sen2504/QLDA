@@ -7,6 +7,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Projects from "./pages/Projects";
 import Tasks from "./pages/Tasks"; // <-- placeholder
 import Team from "./pages/Team";
+import ProjectDashboard from "./pages/ProjectDashboard";
 
 export default function App() {
   return (
@@ -20,6 +21,8 @@ export default function App() {
         <Route path="/projects" element={<Projects />} />
         <Route path="/tasks" element={<Tasks />} /> {/* <-- placeholder */}
         <Route path="/projects/:projectId/team" element={<Team />} />
+        <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />
+
       </Routes>
     </BrowserRouter>
   );

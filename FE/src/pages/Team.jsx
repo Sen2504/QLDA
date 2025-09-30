@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TeamService from "../services/teamService";
 import MainLayout from "../layouts/MainLayout";
+import { useProject } from "../store/ProjectContext";
+
 
 export default function Team() {
   const { projectId } = useParams();
@@ -9,16 +11,20 @@ export default function Team() {
   const [email, setEmail] = useState("");
   const [roleId, setRoleId] = useState("");
   const navigate = useNavigate();
+  const { currentProject } = useProject();
 
   useEffect(() => {
-    if (projectId) {
-      TeamService.getTeam(projectId)
+    if (currentProject) {
+      TeamService.getTeam(currentProject.id)
         .then((res) => setMembers(res.data))
         .catch((err) => {
-          if (err.response?.status === 401) navigate("/login");
+          console.error("Lỗi load team:", err);
+          if (err.response?.status === 401) {
+            navigate("/login");
+          }
         });
     }
-  }, [projectId, navigate]);
+  }, [currentProject, navigate]);
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -49,9 +55,8 @@ export default function Team() {
     <MainLayout>
       <div className="p-6 space-y-8">
         <h2 className="text-2xl font-bold text-green-700">
-          Team của Project #{projectId}
+          Team của Project {currentProject ? currentProject.name : `#${projectId}`}        
         </h2>
-
         {/* Invite form */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Mời thành viên</h3>
