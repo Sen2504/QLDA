@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 from datetime import date
 from werkzeug.utils import secure_filename
 from flask_api.extensions import db
@@ -14,14 +15,19 @@ MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB
 
 
 class UserStoryService:
+    # ====================== INTERNAL HELPERS ======================
     @staticmethod
-    def _save_file(file, story_id):
+    def _story_folder(story_id: int) -> str:
+        return os.path.join(UPLOAD_FOLDER, str(story_id))
+
+    @staticmethod
+    def _save_file(file, story_id: int):
         """Lưu file vào thư mục uploads/user_story/<story_id>/"""
         if not file:
             return None, None
 
         filename = secure_filename(file.filename)
-        story_folder = os.path.join(UPLOAD_FOLDER, str(story_id))
+        story_folder = UserStoryService._story_folder(story_id)
         os.makedirs(story_folder, exist_ok=True)
 
         file_path = os.path.join(story_folder, filename)
@@ -37,6 +43,14 @@ class UserStoryService:
         return file_path, None
 
     @staticmethod
+    def _list_files(story_id: int):
+        """Trả về danh sách file trong thư mục user_story/<story_id>"""
+        story_folder = UserStoryService._story_folder(story_id)
+        if not os.path.exists(story_folder):
+            return []
+        return os.listdir(story_folder)
+
+    @staticmethod
     def _parse_json_field(field_value, default):
         """Parse string JSON thành object Python"""
         if not field_value:
@@ -48,20 +62,20 @@ class UserStoryService:
                 return default
         return field_value
 
+    # ====================== PUBLIC METHODS ======================
     @staticmethod
-    def create(data, file=None):
+    def create(data, files=None):
         name = (data.get("Name_story") or "").strip()
         description = data.get("Description")
         expire_date = data.get("Expire_date")
         status_id = data.get("Status_id")
         project_id = data.get("Project_id")
-        sprint_id = data.get("Sprint_id") or None  # Nếu rỗng -> None
+        sprint_id = data.get("Sprint_id") or None
 
-        # Parse complexities & hashtags từ JSON string
         complexities = UserStoryService._parse_json_field(data.get("complexities"), [])
         hashtags = UserStoryService._parse_json_field(data.get("hashtags"), [])
 
-        # Validate cơ bản
+        # Validate
         if not name:
             return None, "Tên User Story là bắt buộc."
         if not project_id:
@@ -84,30 +98,34 @@ class UserStoryService:
             status_id=status_id,
             project_id=project_id,
             sprint_id=sprint_id,
-            evidence_file=None  # ban đầu chưa có file
+            evidence_file=None
         )
         db.session.add(new_story)
-        db.session.flush()  # có ID ngay
+        db.session.flush()  # để có ID
+
+        # Tạo sẵn folder (dù chưa có file)
+        story_folder = UserStoryService._story_folder(new_story.id)
+        os.makedirs(story_folder, exist_ok=True)
+        new_story.evidence_file = story_folder
 
         # Lưu file nếu có
-        if file:
-            file_path, error = UserStoryService._save_file(file, new_story.id)
-            if error:
-                db.session.rollback()
-                return None, error
-            new_story.evidence_file = file_path
+        if files:
+            for file in files:
+                _, error = UserStoryService._save_file(file, new_story.id)
+                if error:
+                    db.session.rollback()
+                    return None, error
 
         # Thêm complexity points
         for comp in complexities:
             comp_name = (comp.get("name") or "").strip()
             comp_point = comp.get("point")
             if comp_name and comp_point is not None:
-                new_comp = ComplexityPoint(
+                db.session.add(ComplexityPoint(
                     name=comp_name,
                     point=comp_point,
                     user_story_id=new_story.id
-                )
-                db.session.add(new_comp)
+                ))
 
         # Thêm hashtags
         for tag in hashtags:
@@ -119,22 +137,66 @@ class UserStoryService:
                 hashtag = Hashtag(name=tag_name)
                 db.session.add(hashtag)
                 db.session.flush()
-            link = UserStoryHashtag(user_story_id=new_story.id, hashtag_id=hashtag.id)
-            db.session.add(link)
+            db.session.add(UserStoryHashtag(user_story_id=new_story.id, hashtag_id=hashtag.id))
 
         db.session.commit()
         return new_story, None
 
     @staticmethod
     def get_all():
-        return UserStory.query.all()
+        stories = UserStory.query.all()
+        result = []
+        for story in stories:
+            story_data = {
+                "id": story.id,
+                "name": story.name,
+                "description": story.description,
+                "expire_date": story.expire_date,
+                "status_id": story.status_id,
+                "project_id": story.project_id,
+                "sprint_id": story.sprint_id,
+                # thay vì lưu path, trả ra list file
+                "evidence_file": UserStoryService._list_files(story.id),
+                # join relationship
+                "complexity_points": [
+                    {"id": c.id, "name": c.name, "point": c.point, "user_story_id": c.user_story_id}
+                    for c in story.complexity_points
+                ],
+                "hashtags": [
+                    {"hashtag": {"id": h.hashtag.id, "name": h.hashtag.name}}
+                    for h in story.hashtags
+                ],
+            }
+            result.append(story_data)
+        return result
 
     @staticmethod
     def get_by_id(story_id):
-        return UserStory.query.get(story_id)
+        story = UserStory.query.get(story_id)
+        if not story:
+            return None
+        story_data = {
+            "id": story.id,
+            "name": story.name,
+            "description": story.description,
+            "expire_date": story.expire_date,
+            "status_id": story.status_id,
+            "project_id": story.project_id,
+            "sprint_id": story.sprint_id,
+            "evidence_file": UserStoryService._list_files(story.id),  # list file
+            "complexity_points": [
+                {"id": c.id, "name": c.name, "point": c.point, "user_story_id": c.user_story_id}
+                for c in story.complexity_points
+            ],
+            "hashtags": [
+                {"hashtag": {"id": h.hashtag.id, "name": h.hashtag.name}}
+                for h in story.hashtags
+            ],
+        }
+        return story_data
 
     @staticmethod
-    def update(story_id, data, file=None):
+    def update(story_id, data, new_files=None, keep_files=None):
         story = UserStory.query.get(story_id)
         if not story:
             return None, "Không tìm thấy User Story."
@@ -154,13 +216,25 @@ class UserStoryService:
             if "Sprint_id" in data:
                 story.sprint_id = data.get("Sprint_id") or None
 
-            # Cập nhật file nếu có
-            if file:
-                file_path, error = UserStoryService._save_file(file, story.id)
-                if error:
-                    db.session.rollback()
-                    return None, error
-                story.evidence_file = file_path
+            # Quản lý files
+            story_folder = UserStoryService._story_folder(story.id)
+            os.makedirs(story_folder, exist_ok=True)
+            story.evidence_file = story_folder
+
+            existing_files = set(os.listdir(story_folder)) if os.path.exists(story_folder) else set()
+            keep_files = set(keep_files or [])
+
+            # Xóa file không nằm trong keep_files
+            for f in existing_files - keep_files:
+                os.remove(os.path.join(story_folder, f))
+
+            # Thêm file mới
+            if new_files:
+                for file in new_files:
+                    _, error = UserStoryService._save_file(file, story.id)
+                    if error:
+                        db.session.rollback()
+                        return None, error
 
             db.session.commit()
             return story, None
