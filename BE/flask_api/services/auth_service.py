@@ -38,6 +38,20 @@ class AuthService:
             validate_email(email)  # raise EmailNotValidError nếu sai
         except EmailNotValidError as e:
             return None, str(e), None
+        
+        # email quá dài
+        if len(email) > 254:
+            return None, "email too long", None
+
+        # bắt đầu bằng số
+        if re.match(r"^\d", email):
+            return None, "email cannot start with a digit", None
+
+        # cấm disposable email
+        disposable_domains = {"tempmail.com", "10minutemail.com", "yopmail.com"}
+        domain = email.split("@")[-1]
+        if domain in disposable_domains:
+            return None, "disposable emails are not allowed", None
 
         if User.query.filter_by(email=email).first():
             return None, "email already registered", None

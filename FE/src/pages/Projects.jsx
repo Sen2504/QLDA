@@ -85,7 +85,7 @@ export default function Projects() {
                 <div
                   key={proj.id}
                   className="bg-white p-4 rounded-lg shadow hover:shadow-md transition cursor-pointer"
-                  onClick={() => navigate(`/projects/${proj.id}/team`)} // 👉 navigate đến Team
+                  onClick={() => navigate(`/projects/${proj.id}/team`)} // navigate đến Team
                 >
                   <h3 className="font-semibold text-green-600">
                     {proj.name_project}
