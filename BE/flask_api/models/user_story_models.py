@@ -9,7 +9,7 @@ class UserStory(db.Model):
     name = db.Column("NAME_STORIES", db.String(200), nullable=False)
     description = db.Column("DESCRIPTION", db.Text, nullable=False)
     expire_date = db.Column("EXPIRE_DATE", db.Date, nullable=False)
-    evidence_file = db.Column("EVIDENCE_FILE", db.String(200), nullable=False)
+    evidence_file = db.Column("EVIDENCE_FILE", db.String(200), nullable=True)
 
     status = db.relationship("WorkflowStatus", back_populates="user_stories")
     project = db.relationship("Project", back_populates="user_stories")

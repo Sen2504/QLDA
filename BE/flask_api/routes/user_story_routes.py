@@ -1,5 +1,5 @@
 # file: routes/user_story_routes.py
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_api.schemas.user_story_schemas import UserStorySchema
 from flask_api.services.user_story_service import UserStoryService
 
@@ -11,9 +11,10 @@ user_stories_schema = UserStorySchema(many=True)
 
 @user_story_bp.route("/", methods=["POST"])
 def create_user_story():
-    data = request.get_json() or {}
+    data = request.form.to_dict()   # dữ liệu text
+    file = request.files.get("Evidence_file")  # file upload
 
-    new_user_story, error = UserStoryService.create(data)
+    new_user_story, error = UserStoryService.create(data, file=file)
     if error:
         return jsonify({"error": error}), 400
     return jsonify(user_story_schema.dump(new_user_story)), 201
@@ -35,8 +36,10 @@ def get_user_story(story_id):
 
 @user_story_bp.route("/<int:story_id>", methods=["PUT"])
 def update_user_story(story_id):
-    data = request.get_json() or {}
-    updated_story, error = UserStoryService.update(story_id, data)
+    data = request.form.to_dict()
+    file = request.files.get("Evidence_file")
+
+    updated_story, error = UserStoryService.update(story_id, data, file=file)
     if error:
         status_code = 404 if error == "Không tìm thấy User Story." else 400
         return jsonify({"error": error}), status_code
@@ -49,3 +52,12 @@ def delete_user_story(story_id):
     if not success:
         return jsonify({"error": error}), 404
     return jsonify({"message": "Xóa User Story thành công."}), 200
+
+
+# Thêm route download file
+@user_story_bp.route("/<int:story_id>/download", methods=["GET"])
+def download_user_story_file(story_id):
+    story = UserStoryService.get_by_id(story_id)
+    if not story or not story.evidence_file:
+        return jsonify({"error": "Không có file để tải."}), 404
+    return send_file(story.evidence_file, as_attachment=True)
