@@ -5,7 +5,7 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Projects from "./pages/Projects";
-import Tasks from "./pages/Tasks"; // <-- placeholder
+import Tasks from "./pages/Tasks"; 
 import Team from "./pages/Team";
 import ProjectDashboard from "./pages/ProjectDashboard";
 import MyInvites from "./pages/MyInvites";

@@ -24,13 +24,13 @@ export default function PendingInvites({ pending, onRevoked }) {
             >
               <div>
                 <p className="font-medium">{i.email}</p>
-                <p className="text-sm text-gray-500">Role: {i.role_name}</p>
+                <p className="text-sm text-gray-500">Vai trò: {i.role_name}</p>
               </div>
               <button
                 onClick={() => handleRevoke(i.id)}
                 className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
               >
-                Revoke
+                Xóa
               </button>
             </li>
           ))}

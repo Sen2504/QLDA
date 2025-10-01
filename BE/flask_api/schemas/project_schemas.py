@@ -7,7 +7,7 @@ class ProjectSchema(Schema):
     name = fields.Str(required=True)
     description = fields.Str()
 
-    @validates("name_project")
+    @validates("name")
     def validate_name_project(self, value):
         if not value or not value.strip():
             raise ValidationError("Tên project là bắt buộc.")

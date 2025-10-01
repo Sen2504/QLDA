@@ -87,7 +87,7 @@ def login():
         return jsonify({"error": error}), status
 
     login_user(user, remember=remember)
-    return jsonify({"message": "logged in", "user": {"id": user.id, "email": user.email}}), 200
+    return jsonify({"message": "logged in", "user": {"id": user.id, "name": user.name, "email": user.email}}), 200
 
 
 @auth_bp.route("/logout", methods=["POST"])
@@ -101,7 +101,7 @@ def logout():
 @login_required
 def me():
     u = current_user
-    return jsonify({"id": u.id, "email": u.email, "confirmed": u.confirmed}), 200
+    return jsonify({"id": u.id, "email": u.email, "name": u.name, "confirmed": u.confirmed}), 200
 
 @auth_bp.route("/forgot-password", methods=["POST"])
 def forgot_password():

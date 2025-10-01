@@ -88,7 +88,7 @@ export default function Projects() {
                   onClick={() => navigate(`/projects/${proj.id}/team`)} // navigate đến Team
                 >
                   <h3 className="font-semibold text-green-600">
-                    {proj.name_project}
+                    {proj.name}
                   </h3>
                   <p className="text-gray-600 text-sm">
                     {proj.description || "Không có mô tả"}
