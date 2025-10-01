@@ -9,9 +9,9 @@ const TeamService = {
   },
 
   removeUser(projectId, userId) {
-    // xóa member chính thức
-    return api.delete(`/teams/${projectId}/remove/${userId}`);
+    return api.delete(`/teams/remove/${projectId}/${userId}`);
   },
+
 
   // --- TEAM_INVITE ---
   inviteUser(data) {

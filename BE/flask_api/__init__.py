@@ -82,6 +82,7 @@ def create_app():
     app.register_blueprint(project_role_bp)
     app.register_blueprint(user_story_bp)
     app.register_blueprint(team_invite_bp)
-    CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+    
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
     app.config.from_object(Config)
     return app
