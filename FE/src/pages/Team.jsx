@@ -67,9 +67,11 @@ export default function Team() {
       <MainLayout>
         <div className="p-6 space-y-8">
           <h2 className="text-2xl font-bold text-green-700">
-            Team của Project {currentProject ? currentProject.name : `#${projectId}`}
+            Team của Project{" "}
+            {currentProject ? currentProject.name : `#${projectId}`}
           </h2>
 
+          {/* Form mời thành viên */}
           <InviteForm
             projectId={projectId}
             roles={roles}
@@ -79,28 +81,49 @@ export default function Team() {
             }}
           />
 
-          {/* Team members list */}
+          {/* Danh sách thành viên */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Danh sách thành viên</h3>
             {members.length > 0 ? (
-              <ul className="space-y-3">
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {members.map((m) => (
                   <li
                     key={m.id}
-                    className="flex justify-between items-center bg-white p-4 rounded shadow"
+                    className={`flex justify-between items-center p-4 rounded shadow transition 
+                      ${
+                        m.role_name === "Project Owner"
+                          ? "bg-yellow-100 border border-yellow-400"
+                          : "bg-white"
+                      }`}
                   >
                     <div>
-                      <p className="font-medium">{m.user_email}</p>
+                      <p
+                        className={`font-bold ${
+                          m.role_name === "Project Owner"
+                            ? "text-yellow-800"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        Họ tên: {m.user_name}{" "}
+                        {m.role_name === "Project Owner"}
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        Email: {m.user_email}
+                      </p>
                       <p className="text-sm text-gray-500">
-                        Role: {m.role_name}
+                        Vai trò: {m.role_name}
                       </p>
                     </div>
-                    <button
-                      onClick={() => handleRemove(m.user_id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                    >
-                      Remove
-                    </button>
+
+                    {/* Ẩn nút Remove với Project Owner */}
+                    {m.role_name !== "Project Owner" && (
+                      <button
+                        onClick={() => handleRemove(m.user_id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                      >
+                        Xóa
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -109,6 +132,7 @@ export default function Team() {
             )}
           </div>
 
+          {/* Danh sách lời mời đang chờ */}
           <PendingInvites
             pending={pending}
             onRevoked={(inviteId) => {

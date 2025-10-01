@@ -53,6 +53,7 @@ class TeamService:
             db.session.query(
                 Team.id,
                 Team.user_id,
+                User.name.label("user_name"),
                 User.email.label("user_email"),
                 Role.name.label("role_name"),
                 Team.projrole_id
@@ -69,6 +70,7 @@ class TeamService:
             results.append({
                 "id": row.id,
                 "user_id": row.user_id,
+                "user_name": row.user_name,
                 "user_email": row.user_email,
                 "role_name": row.role_name,
                 "projrole_id": row.projrole_id,

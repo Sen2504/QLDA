@@ -41,7 +41,7 @@ export default function InviteForm({ projectId, roles, onInvited }) {
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"
           required
         >
-          <option value="">-- Chọn role --</option>
+          <option value="">-- Chọn vai trò --</option>
           {roles.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name}
@@ -53,7 +53,7 @@ export default function InviteForm({ projectId, roles, onInvited }) {
           type="submit"
           className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
         >
-          Invite
+          Mời
         </button>
       </form>
     </div>

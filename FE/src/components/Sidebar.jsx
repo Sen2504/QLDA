@@ -10,16 +10,44 @@ import {
   FolderKanban,
 } from "lucide-react";
 import { useProject } from "../store/ProjectContext";
+import { useEffect, useState } from "react";
+import ProjectService from "../services/projectService";
 
 export default function Sidebar() {
-  const { currentProject } = useProject();
+  const { currentProject, setCurrentProject } = useProject();
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    ProjectService.getMyProjects()
+      .then((res) => setProjects(res.data))
+      .catch((err) => console.error("Error loading projects", err));
+  }, []);
 
   return (
     <aside className="bg-white border-r border-gray-200 w-64 min-h-screen p-6">
       {/* Sidebar Header */}
-      <h2 className="text-lg font-semibold text-green-600 mb-6">
-        {currentProject ? currentProject.name : "Menu"}
-      </h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold text-green-600">
+          Menu
+        </h2>
+
+        {/* Dropdown chọn project */}
+        <select
+          value={currentProject ? currentProject.id : ""}
+          onChange={(e) => {
+            const proj = projects.find((p) => p.id === Number(e.target.value));
+            setCurrentProject(proj || null);
+          }}
+          className="text-sm border rounded px-2 py-1 bg-white"
+        >
+          <option value="">Chọn project</option>
+          {projects.map((proj) => (
+            <option key={proj.id} value={proj.id}>
+              {proj.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Navigation */}
       <ul className="space-y-3">
@@ -32,8 +60,7 @@ export default function Sidebar() {
             <span className="text-gray-700">Dashboard</span>
           </Link>
         </li>
-                
-        {/* Team chỉ hiển thị khi có project được chọn */}
+
         <li>
           <Link
             to="/projects"
@@ -105,7 +132,6 @@ export default function Sidebar() {
             <span className="text-gray-700">Logout</span>
           </Link>
         </li>
-        
       </ul>
     </aside>
   );

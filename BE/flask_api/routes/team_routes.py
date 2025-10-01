@@ -34,7 +34,7 @@ def invite_user(project_id):
     return jsonify(team_schema.dump(new_member)), 201
 
 # ----------------- REMOVE member from project -----------------
-@team_bp.route("/remove/<int:project_id>/<int:user_id>", methods=["DELETE"])
+@team_bp.route("/<int:project_id>/remove/<int:user_id>", methods=["DELETE"])
 @login_required
 def remove_member(project_id, user_id):
     success, error = TeamService.remove_member(project_id, user_id)

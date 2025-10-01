@@ -42,7 +42,7 @@ export default function MyInvites() {
             >
               <div>
                 <p className="font-medium">
-                  Project #{i.project_id} - Role: {i.role_name}
+                  Project #{i.project_id} - Vai trò: {i.role_name}
                 </p>
                 <p className="text-sm text-gray-500">Email: {i.email}</p>
               </div>
@@ -51,13 +51,13 @@ export default function MyInvites() {
                   onClick={() => handleAccept(i.id)}
                   className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
                 >
-                  Accept
+                  Đồng ý
                 </button>
                 <button
                   onClick={() => handleReject(i.id)}
                   className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
                 >
-                  Reject
+                  Xóa
                 </button>
               </div>
             </li>
