@@ -9,7 +9,7 @@ const TeamService = {
   },
 
   removeUser(projectId, userId) {
-    return api.delete(`/teams/remove/${projectId}/${userId}`);
+    return api.delete(`/teams/${projectId}/remove/${userId}`);
   },
 
 

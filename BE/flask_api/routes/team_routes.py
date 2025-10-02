@@ -41,3 +41,10 @@ def remove_member(project_id, user_id):
     if not success:
         return jsonify({"error": error}), 404
     return jsonify({"message": "Đã xóa thành viên khỏi project."}), 200
+
+# ----------------- GET team summary -----------------
+@team_bp.route("/<int:project_id>/summary", methods=["GET"])
+@login_required
+def team_summary(project_id):
+    data = TeamService.get_team_summary(project_id)
+    return jsonify(data), 200

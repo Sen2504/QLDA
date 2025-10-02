@@ -28,28 +28,25 @@ export default function Team() {
   };
 
   useEffect(() => {
-  const id = currentProject ? currentProject.id : projectId;
+    if (currentProject) {
+      TeamService.getTeamSummary(currentProject.id)
+        .then((res) => {
+          setMembers(res.data.members);
+          setPending(res.data.pending_invites);
+        })
+        .catch((err) => {
+          console.error("Lỗi load team:", err);
+          showPopup("Không thể tải team. Vui lòng thử lại!", "warning");
+          if (err.response?.status === 401) {
+            navigate("/login");
+          }
+        });
 
-  if (id) {
-    TeamService.getTeamSummary(id)
-      .then((res) => {
-        setMembers(res.data.members);
-        setPending(res.data.pending_invites);
-      })
-      .catch((err) => {
-        console.error("Lỗi load team:", err);
-        showPopup("Không thể tải team. Vui lòng thử lại!", "warning");
-        if (err.response?.status === 401) {
-          navigate("/login");
-        }
-      });
-
-    TeamService.getRoles()
-      .then((res) => setRoles(res.data))
-      .catch(() => showPopup("Không thể tải danh sách roles!", "warning"));
-  }
-}, [currentProject, projectId, navigate]);
-
+      TeamService.getRoles()
+        .then((res) => setRoles(res.data))
+        .catch(() => showPopup("Không thể tải danh sách roles!", "warning"));
+    }
+  }, [currentProject, navigate]);
 
   const handleRemove = async (userId) => {
     if (!window.confirm("Bạn có chắc muốn xóa thành viên này?")) return;
@@ -67,7 +64,7 @@ export default function Team() {
       <MainLayout>
         <div className="p-6 space-y-8">
           <h2 className="text-2xl font-bold text-green-700">
-            Team của Project{" "}
+            Team của project{" "}
             {currentProject ? currentProject.name : `#${projectId}`}
           </h2>
 
