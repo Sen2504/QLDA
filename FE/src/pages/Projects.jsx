@@ -32,13 +32,26 @@ export default function Projects() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa project này?")) return;
+  const handleArchive = async (id) => {
+    if (!window.confirm("Lưu trữ project này?")) return;
     try {
-      await ProjectService.delete(id);
-      setProjects(projects.filter((p) => p.id !== id));
+      await ProjectService.archive(id);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, status: "archived" } : p))
+      );
     } catch (err) {
-      alert(err.response?.data?.error || "Error deleting project");
+      alert(err.response?.data?.error || "Error archiving project");
+    }
+  };
+
+  const handleRestore = async (id) => {
+    try {
+      await ProjectService.restore(id);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, status: "active" } : p))
+      );
+    } catch (err) {
+      alert(err.response?.data?.error || "Error restoring project");
     }
   };
 
@@ -85,24 +98,53 @@ export default function Projects() {
                 <div
                   key={proj.id}
                   className="bg-white p-4 rounded-lg shadow hover:shadow-md transition cursor-pointer"
-                  onClick={() => navigate(`/projects/${proj.id}/team`)} // navigate đến Team
+                  onClick={() => navigate(`/projects/${proj.id}/team`)}
                 >
-                  <h3 className="font-semibold text-green-600">
-                    {proj.name}
-                  </h3>
+                  <h3 className="font-semibold text-green-600">{proj.name}</h3>
                   <p className="text-gray-600 text-sm">
                     {proj.description || "Không có mô tả"}
                   </p>
-                  <div className="mt-4 flex space-x-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation(); // Ngăn click card
-                        handleDelete(proj.id);
-                      }}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                  <p className="text-xs text-gray-500 mt-1">
+                    Trạng thái:{" "}
+                    <span
+                      className={`${
+                        proj.status === "archived"
+                          ? "text-yellow-600"
+                          : "text-green-600"
+                      } font-semibold`}
                     >
-                      Xóa
-                    </button>
+                      {proj.status}
+                    </span>
+                  </p>
+
+                  {/* Actions */}
+                  <div className="mt-4 flex space-x-2">
+                    {proj.role_name === "Project Owner" && (
+                      <>
+                        {proj.status === "active" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleArchive(proj.id);
+                            }}
+                            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
+                          >
+                            Lưu trữ
+                          </button>
+                        )}
+                        {proj.status === "archived" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRestore(proj.id);
+                            }}
+                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                          >
+                            Khôi phục
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

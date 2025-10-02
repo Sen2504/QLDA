@@ -37,7 +37,7 @@ def invite_user(project_id):
 @team_bp.route("/<int:project_id>/remove/<int:user_id>", methods=["DELETE"])
 @login_required
 def remove_member(project_id, user_id):
-    success, error = TeamService.remove_member(project_id, user_id)
+    success, error = TeamService.remove_member(project_id, user_id,current_user.id)
     if not success:
         return jsonify({"error": error}), 404
     return jsonify({"message": "Đã xóa thành viên khỏi project."}), 200

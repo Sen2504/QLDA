@@ -11,8 +11,7 @@ const TeamService = {
   removeUser(projectId, userId) {
     return api.delete(`/teams/${projectId}/remove/${userId}`);
   },
-
-
+  
   // --- TEAM_INVITE ---
   inviteUser(data) {
     // { project_id, role_id, email }
@@ -39,6 +38,7 @@ const TeamService = {
   getRoles() {
     return api.get("/roles/");
   },
+  
 };
 
 export default TeamService;

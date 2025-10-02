@@ -7,6 +7,7 @@ import { useProject } from "../store/ProjectContext";
 import InviteForm from "../components/InviteForm";
 import PendingInvites from "../components/PendingInvites";
 import PopupMessage from "../components/Popup_message";
+import api from "../services/api";
 
 export default function Team() {
   const { projectId } = useParams();
@@ -15,8 +16,15 @@ export default function Team() {
   const [roles, setRoles] = useState([]);
   const navigate = useNavigate();
   const { currentProject } = useProject();
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [popup, setPopup] = useState({ message: "", type: "", visible: false });
+
+  useEffect(() => {
+    api.get("/auth/me")
+      .then(res => setCurrentUser(res.data))
+      .catch(() => navigate("/login"));
+  }, [navigate]);
 
   const showPopup = (message, type = "success") => {
     setPopup({ message, type, visible: true });
@@ -101,8 +109,7 @@ export default function Team() {
                             : "text-gray-900"
                         }`}
                       >
-                        Họ tên: {m.user_name}{" "}
-                        {m.role_name === "Project Owner"}
+                        
                       </p>
                       <p className="text-sm text-gray-700">
                         Email: {m.user_email}
@@ -113,7 +120,9 @@ export default function Team() {
                     </div>
 
                     {/* Ẩn nút Remove với Project Owner */}
-                    {m.role_name !== "Project Owner" && (
+                    {currentProject?.role_name === "Project Owner" &&
+                    m.role_name !== "Project Owner" &&
+                    m.user_id !== currentUser?.id && (
                       <button
                         onClick={() => handleRemove(m.user_id)}
                         className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
