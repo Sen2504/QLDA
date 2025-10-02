@@ -5,6 +5,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from flask_api.services.auth_service import AuthService
 from flask_api.utils.mail import send_email
 from flask import current_app
+from flask import redirect
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -23,13 +24,21 @@ def register():
 
     # route chịu trách nhiệm build URL ngoài và gửi email
     confirm_url = url_for("auth.confirm_email", token=token, _external=True)
-    html = f"""
-        <p>Xin chào,</p>
-        <p>Nhấn vào liên kết sau để xác nhận email của bạn:</p>
-        <p><a href="{confirm_url}">{confirm_url}</a></p>
-        <p>Liên kết hết hạn sau 24 giờ.</p>
+
+    html_body = f"""
+    <p>Xin chào,</p>
+    <p>Nhấn vào nút sau để xác nhận email của bạn:</p>
+    <p>
+    <a href="{confirm_url}" 
+        style="display:inline-block;padding:10px 20px;font-size:16px;
+                color:#fff;background-color:#28a745;text-decoration:none;
+                border-radius:5px;">
+        Xác nhận Email
+    </a>
+    </p>
+    <p>Liên kết hết hạn sau 5 phút.</p>
     """
-    send_email("Xác nhận email", [user.email], html)
+    send_email(subject="Xác nhận email", recipients=[email], html=html_body)
     return jsonify({"message": "Registered successfully. Please check your email to confirm."}), 201
 
 
@@ -50,9 +59,9 @@ def confirm_email():
     # Nếu user đã confirmed trước đó, trả message phù hợp
     if error is None and token:
         # không có error => hoặc vừa xác nhận thành công, hoặc đã xác nhận trước đó (service coi là ok)
-        return jsonify({"message": "email confirmed successfully"}), 200
+        return redirect("http://localhost:5173/login?status=success&message=email_confirmed")
 
-    return jsonify({"message": "email confirmed successfully"}), 200
+    return redirect("http://localhost:5173/login?status=success&message=email_confirmed")
 
 
 @auth_bp.route("/resend-confirm", methods=["POST"])

@@ -1,8 +1,10 @@
+// pages/Home.jsx
 import { useEffect, useState } from "react";
-import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
+import api from "../services/api";
+import ProjectService from "../services/projectService";
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -12,22 +14,46 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get("/auth/me")
+    api
+      .get("/auth/me")
       .then((res) => setUser(res.data))
       .catch(() => navigate("/login"));
 
-    api.get("/projects/my-projects")
+    ProjectService.getMyProjects()
       .then((res) => setProjects(res.data))
-      .catch((err) => console.error(err));
+      .catch((err) => console.error("Lỗi load projects:", err));
 
-    api.get("/tasks/my-tasks")
+    api
+      .get("/tasks/my-tasks")
       .then((res) => setTasks(res.data))
-      .catch((err) => console.error(err));
+      .catch((err) => console.error("Lỗi load tasks:", err));
   }, [navigate]);
 
   const handleSelectProject = (proj) => {
     setCurrentProject(proj);
-    navigate(`/projects/${proj.id}/dashboard`); 
+    navigate(`/projects/${proj.id}/dashboard`);
+  };
+
+  const handleArchive = async (projId) => {
+    try {
+      await ProjectService.archive(projId);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projId ? { ...p, status: "archived" } : p))
+      );
+    } catch (err) {
+      console.error("Archive lỗi:", err);
+    }
+  };
+
+  const handleRestore = async (projId) => {
+    try {
+      await ProjectService.restore(projId);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projId ? { ...p, status: "active" } : p))
+      );
+    } catch (err) {
+      console.error("Restore lỗi:", err);
+    }
   };
 
   const handleLogout = async () => {
@@ -39,10 +65,16 @@ export default function Home() {
     <MainLayout>
       <div className="p-6 space-y-8">
         {user && (
-          <div className="mb-6">
+          <div className="mb-6 flex justify-between items-center">
             <h2 className="text-2xl font-bold text-green-700">
               Welcome, {user.email}
             </h2>
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+            >
+              Logout
+            </button>
           </div>
         )}
 
@@ -56,13 +88,53 @@ export default function Home() {
               {projects.map((proj) => (
                 <div
                   key={proj.id}
-                  onClick={() => handleSelectProject(proj)}
-                  className="bg-white p-4 rounded-lg shadow hover:shadow-md transition cursor-pointer"
+                  className={`bg-white p-4 rounded-lg shadow transition`}
                 >
-                  <h4 className="font-semibold text-green-600">
-                    {proj.name}
-                  </h4>
+                  <h4 className="font-semibold text-green-600">{proj.name}</h4>
                   <p className="text-gray-600 text-sm">{proj.description}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Status:{" "}
+                    <span
+                      className={`${
+                        proj.status === "archived"
+                          ? "text-yellow-600"
+                          : "text-green-600"
+                      } font-semibold`}
+                    >
+                      {proj.status}
+                    </span>
+                  </p>
+
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => handleSelectProject(proj)}
+                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                    >
+                      Vào Project
+                    </button>
+
+                    {/* Chỉ Project Owner mới thấy các nút này */}
+                    {proj.role_name === "Project Owner" && (
+                      <>
+                        {proj.status === "active" && (
+                          <button
+                            onClick={() => handleArchive(proj.id)}
+                            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
+                          >
+                            Lưu trữ
+                          </button>
+                        )}
+                        {proj.status === "archived" && (
+                          <button
+                            onClick={() => handleRestore(proj.id)}
+                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                          >
+                            Khôi phục
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -73,9 +145,7 @@ export default function Home() {
 
         {/* Tasks */}
         <section>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">
-            My Tasks
-          </h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">My Tasks</h3>
           {tasks.length > 0 ? (
             <div className="space-y-3">
               {tasks.map((task) => (

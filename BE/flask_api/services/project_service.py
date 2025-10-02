@@ -85,18 +85,25 @@ class ProjectService:
     def get_by_user(user_id):
         """
         Lấy danh sách project mà user tham gia.
+        - Owner: thấy cả active + archived.
+        - Member: chỉ thấy active.
         """
-        projects = (
-            db.session.query(Project)
+        query = (
+            db.session.query(Project, Role.name.label("role_name"))
             .join(ProjectRole, ProjectRole.project_id == Project.id)
             .join(Team, Team.projrole_id == ProjectRole.id)
-            .filter(
-                Team.user_id == user_id,
-                Project.status != "deleted"  # loại bỏ project đã xóa
-                )
-            .all()
+            .join(Role, Role.id == ProjectRole.role_id)
+            .filter(Team.user_id == user_id, Project.status != "deleted")
         )
-        return projects
+
+        results = []
+        for project, role_name in query.all():
+            # Nếu không phải Owner thì ẩn archived
+            if project.status == "archived" and role_name != "Project Owner":
+                continue
+            results.append(project)
+
+        return results
     
     @staticmethod
     def change_status(project_id, user_id, new_status):
@@ -130,3 +137,4 @@ class ProjectService:
         project.status = new_status
         db.session.commit()
         return project, None
+    

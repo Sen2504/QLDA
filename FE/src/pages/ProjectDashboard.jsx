@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
+import ProjectService from "../services/projectService";
 
 export default function ProjectDashboard() {
   const { projectId } = useParams();
@@ -36,12 +37,63 @@ export default function ProjectDashboard() {
       .catch((err) => console.error("Sprints error:", err));
   }, [projectId, currentProject, navigate, setCurrentProject]);
 
+  const handleArchive = async () => {
+    try {
+      await ProjectService.archive(projectId);
+      setCurrentProject({ ...currentProject, status: "archived" });
+    } catch (err) {
+      console.error("Archive error:", err);
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      await ProjectService.restore(projectId);
+      setCurrentProject({ ...currentProject, status: "active" });
+    } catch (err) {
+      console.error("Restore error:", err);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="p-6 space-y-8">
-        <h2 className="text-2xl font-bold text-green-700 mb-6">
-          {currentProject ? currentProject.name : "Project Dashboard"}
-        </h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-green-700">
+            {currentProject ? currentProject.name : "Project Dashboard"}
+          </h2>
+
+          {/* Nếu là Owner thì show nút */}
+          {currentProject?.role_name === "Project Owner" && (
+            <div className="flex gap-2">
+              {currentProject.status === "active" && (
+                <button
+                  onClick={handleArchive}
+                  className="bg-yellow-500 text-white px-4 py-1 rounded hover:bg-yellow-600"
+                >
+                  Lưu trữ
+                </button>
+              )}
+              {currentProject.status === "archived" && (
+                <button
+                  onClick={handleRestore}
+                  className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
+                >
+                  Khôi phục
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {currentProject && (
+          <p className="text-gray-600">
+            {currentProject.description}{" "}
+            <span className="ml-2 text-sm text-gray-500">
+              (Status: {currentProject.status})
+            </span>
+          </p>
+        )}
 
         {/* User Stories */}
         <section>

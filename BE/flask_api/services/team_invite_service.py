@@ -11,18 +11,16 @@ class TeamInviteService:
     @staticmethod
     def create_invite(project_id, role_id, email):
         """
-        Rule:
-        - Chỉ mời user đã có trong hệ thống.
-        - Không mời nếu user đã ở team (đúng role) hoặc đã có invite pending.
-        - Chỉ cho phép mời lại khi invite trước đó là 'rejected'.
-        - Nếu email chưa đăng ký: không tạo invite, chỉ gửi email mời đăng ký.
+        Rule cập nhật:
+        - Chỉ chặn khi đã có invite 'pending'.
+        - 'accepted' mà user không còn trong Team -> chuyển 'removed' rồi mời lại.
+        - 'rejected'/'removed' -> được mời lại (tạo invite mới).
         """
         email = (email or "").strip().lower()
 
         # 1) Kiểm tra user đã đăng ký chưa
         user = User.query.filter_by(email=email).first()
         if not user:
-            # Lấy tên project/role để đưa vào mail
             proj_role = ProjectRole.query.filter_by(project_id=project_id, role_id=role_id).first()
             if not proj_role:
                 return None, "Vai trò này chưa được khởi tạo trong project."
@@ -30,7 +28,6 @@ class TeamInviteService:
             project_name = proj_role.project.name
             role_name = proj_role.role.name
 
-            # Gửi email mời đăng ký
             register_url = f"{current_app.config.get('FRONTEND_URL')}/register?invite_project={project_id}&role={role_id}"
             html = f"""
                 <p>Bạn được mời tham gia dự án <b>{project_name}</b>.</p>
@@ -48,7 +45,7 @@ class TeamInviteService:
         project_name = proj_role.project.name
         role_name = proj_role.role.name
 
-        # 3) User đã là member chưa?
+        # 3) Nếu user đã ở team với đúng role -> không mời
         already_in_team = Team.query.filter_by(user_id=user.id, projrole_id=proj_role.id).first()
         if already_in_team:
             return None, "User đã là thành viên của project."
@@ -56,16 +53,27 @@ class TeamInviteService:
         # 4) Kiểm tra các invite trước đó
         existing_invites = TeamInvite.query.filter_by(
             project_id=project_id,
-            role_id=role_id,
             email=email
         ).all()
 
+        # 4a) Chặn nếu đang có pending
         if any(inv.status == "pending" for inv in existing_invites):
             return None, "Đã tồn tại một lời mời đang chờ xử lý."
-        if any(inv.status == "accepted" for inv in existing_invites):
-            return None, "User đã chấp nhận lời mời trước đó."
 
-        # 5) Tạo invite mới
+        # 4b) Nếu có accepted nhưng user KHÔNG còn trong team -> đổi về removed (phòng case dữ liệu cũ)
+        if any(inv.status == "accepted" for inv in existing_invites):
+            in_team = Team.query.filter_by(user_id=user.id).first()
+            if not in_team:
+                for inv in existing_invites:
+                    if inv.status == "accepted":
+                        inv.status = "removed"
+                db.session.flush()  # chưa commit ngay, commit sau khi tạo invite mới
+            else:
+                return None, "User đã chấp nhận lời mời trước đó."
+
+        # 4c) 'rejected'/'removed' thì cho phép mời lại (không chặn)
+
+        # 5) Tạo invite mới (pending)
         invite = TeamInvite(
             project_id=project_id,
             role_id=role_id,
@@ -89,6 +97,7 @@ class TeamInviteService:
         send_email("Lời mời tham gia dự án", [email], html)
 
         return invite, None
+
 
     @staticmethod
     def get_invites_by_project(project_id):

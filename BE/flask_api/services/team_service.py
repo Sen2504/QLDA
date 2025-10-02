@@ -53,7 +53,6 @@ class TeamService:
             db.session.query(
                 Team.id,
                 Team.user_id,
-                User.name.label("user_name"),
                 User.email.label("user_email"),
                 Role.name.label("role_name"),
                 Team.projrole_id
@@ -70,7 +69,6 @@ class TeamService:
             results.append({
                 "id": row.id,
                 "user_id": row.user_id,
-                "user_name": row.user_name,
                 "user_email": row.user_email,
                 "role_name": row.role_name,
                 "projrole_id": row.projrole_id,
@@ -107,19 +105,57 @@ class TeamService:
         return results
 
     @staticmethod
-    def remove_member(project_id, user_id):
+    def remove_member(project_id, user_id, current_user_id):
         """
-        Xóa thành viên chính thức khỏi project.
+        Chỉ Project Owner mới được xóa member khác.
+        Owner không thể tự xóa mình hoặc xóa Owner khác.
+        Khi xóa thành viên thì đồng thời cập nhật TeamInvite status -> 'removed'
         """
+        # Kiểm tra current_user có phải Owner không
+        owner_projrole = (
+            db.session.query(ProjectRole)
+            .join(Role, ProjectRole.role_id == Role.id)
+            .join(Team, Team.projrole_id == ProjectRole.id)
+            .filter(
+                ProjectRole.project_id == project_id,
+                Role.name == "Project Owner",
+                Team.user_id == current_user_id
+            )
+            .first()
+        )
+        if not owner_projrole:
+            return False, "Bạn không có quyền xóa thành viên."
+
+        # Nếu user muốn xóa chính mình
+        if user_id == current_user_id:
+            return False, "Owner không thể tự xóa mình. Hãy dùng chức năng lưu trữ project."
+
+        # Kiểm tra role của user bị xóa
         team_member = (
-            db.session.query(Team)
+            db.session.query(Team, Role, User)
             .join(ProjectRole, Team.projrole_id == ProjectRole.id)
+            .join(Role, ProjectRole.role_id == Role.id)
+            .join(User, Team.user_id == User.id)
             .filter(ProjectRole.project_id == project_id, Team.user_id == user_id)
             .first()
         )
         if not team_member:
             return False, "Không tìm thấy thành viên trong project."
-        
-        db.session.delete(team_member)
+
+        team, role, user = team_member
+        if role.name == "Project Owner":
+            return False, "Không thể xóa một Owner khác."
+
+        # Xóa team member
+        db.session.delete(team)
+
+        # Cập nhật invite -> removed
+        invites = (
+            TeamInvite.query.filter_by(project_id=project_id, email=user.email).all()
+        )
+        for inv in invites:
+            if inv.status == "accepted":
+                inv.status = "removed"
+
         db.session.commit()
         return True, None

@@ -80,3 +80,22 @@ def change_project_status(project_id):
 def get_my_projects():
     projects = ProjectService.get_by_user(current_user.id)
     return jsonify(projects_schema.dump(projects)), 200
+
+# ----------------- ARCHIVE PROJECT -----------------
+@project_bp.route("/<int:project_id>/archive", methods=["PUT"])
+@login_required
+def archive_project(project_id):
+    project, error = ProjectService.change_status(project_id, current_user.id, "archived")
+    if error:
+        return jsonify({"error": error}), 403
+    return jsonify({"message": "Project đã được lưu trữ.", "project": ProjectSchema().dump(project)})
+
+# ----------------- RESTORE PROJECT -----------------
+@project_bp.route("/<int:project_id>/restore", methods=["PUT"])
+@login_required
+def restore_project(project_id):
+    project, error = ProjectService.change_status(project_id, current_user.id, "active")
+    if error:
+        return jsonify({"error": error}), 403
+    return jsonify({"message": "Project đã được khôi phục.", "project": ProjectSchema().dump(project)})
+
