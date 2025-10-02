@@ -9,6 +9,7 @@ from flask_api.models.complexity_point_models import ComplexityPoint
 from flask_api.models.hashtag_models import Hashtag
 from flask_api.models.user_story_hashtag_models import UserStoryHashtag
 from flask_api.models.workflow_status_models import WorkflowStatus
+from flask_api.services.hashtag_service import HashtagService
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "..", "uploads", "user_story")
 MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB
@@ -52,15 +53,15 @@ class UserStoryService:
 
     @staticmethod
     def _parse_json_field(field_value, default):
-        """Parse string JSON thành object Python"""
         if not field_value:
             return default
         if isinstance(field_value, str):
             try:
                 return json.loads(field_value)
             except json.JSONDecodeError:
-                return default
+                return [x.strip() for x in field_value.split(",") if x.strip()]
         return field_value
+
 
     # ====================== PUBLIC METHODS ======================
     @staticmethod
@@ -82,6 +83,14 @@ class UserStoryService:
             return None, "User Story phải thuộc một project."
         if not expire_date or expire_date < str(date.today()):
             return None, "Ngày hết hạn không hợp lệ."
+        
+        # Kiểm tra trùng tên trong cùng project
+        existing_story = UserStory.query.filter(
+            db.func.lower(UserStory.name) == name.lower(),
+            UserStory.project_id == project_id
+        ).first()
+        if existing_story:
+            return None, "Tên User Story đã tồn tại trong project này."
 
         # Nếu không truyền trạng thái -> mặc định "New"
         if not status_id:
@@ -128,19 +137,28 @@ class UserStoryService:
                 ))
 
         # Thêm hashtags
+        print("DEBUG raw hashtags:", data.get("hashtags"))
+        print("DEBUG parsed hashtags:", hashtags)
+
         for tag in hashtags:
             tag_name = tag.strip() if isinstance(tag, str) else (tag.get("name") or "").strip()
             if not tag_name:
                 continue
-            hashtag = Hashtag.query.filter_by(name=tag_name).first()
-            if not hashtag:
-                hashtag = Hashtag(name=tag_name)
-                db.session.add(hashtag)
-                db.session.flush()
+
+            hashtag, error = HashtagService.get_or_create(tag_name)
+            if error:
+                db.session.rollback()
+                return None, error
+
             db.session.add(UserStoryHashtag(user_story_id=new_story.id, hashtag_id=hashtag.id))
 
-        db.session.commit()
-        return new_story, None
+        try:
+            db.session.commit()
+            return new_story, None
+        except Exception as e:
+            db.session.rollback()
+            print("DEBUG create() exception:", str(e))
+            return None, str(e)
 
     @staticmethod
     def get_all():
@@ -202,21 +220,43 @@ class UserStoryService:
             return None, "Không tìm thấy User Story."
 
         try:
+            # ==== Validate & update name ====
             if "Name_story" in data:
-                story.name = data["Name_story"].strip()
+                new_name = (data["Name_story"] or "").strip()
+                if not new_name:
+                    return None, "Tên User Story là bắt buộc."
+
+                # Kiểm tra trùng tên trong cùng project (ngoại trừ chính nó)
+                existing_story = UserStory.query.filter(
+                    db.func.lower(UserStory.name) == new_name.lower(),
+                    UserStory.project_id == story.project_id,
+                    UserStory.id != story.id
+                ).first()
+                if existing_story:
+                    return None, "Tên User Story đã tồn tại trong project này."
+
+                story.name = new_name
+
+            # ==== Update description ====
             if "Description" in data:
                 story.description = data["Description"]
+
+            # ==== Update expire_date ====
             if "Expire_date" in data:
                 expire_date = data["Expire_date"]
                 if expire_date < str(date.today()):
                     return None, "Ngày hết hạn không hợp lệ."
                 story.expire_date = expire_date
+
+            # ==== Update status ====
             if "Status_id" in data:
                 story.status_id = data["Status_id"]
+
+            # ==== Update sprint ====
             if "Sprint_id" in data:
                 story.sprint_id = data.get("Sprint_id") or None
 
-            # Quản lý files
+            # ==== Quản lý files ====
             story_folder = UserStoryService._story_folder(story.id)
             os.makedirs(story_folder, exist_ok=True)
             story.evidence_file = story_folder
@@ -238,6 +278,7 @@ class UserStoryService:
 
             db.session.commit()
             return story, None
+
         except Exception as e:
             db.session.rollback()
             return None, str(e)

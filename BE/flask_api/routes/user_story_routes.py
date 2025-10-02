@@ -12,19 +12,33 @@ user_stories_schema = UserStorySchema(many=True)
 @login_required
 @user_story_bp.route("/", methods=["POST"])
 def create_user_story():
-    data = request.form.to_dict()
-    files = request.files.getlist("files")  # lấy list file
+    # ép tất cả field text ra dict
+    data = request.form.to_dict(flat=True)
 
-    # nếu chỉ có 1 file và getlist trả rỗng, thử lấy trực tiếp
+    # ép riêng hashtags (để chắc chắn có lấy được chuỗi JSON từ FE)
+    if "hashtags" in request.form:
+        data["hashtags"] = request.form.get("hashtags")
+
+    if "complexities" in request.form:
+        data["complexities"] = request.form.get("complexities")
+
+    # lấy file
+    files = request.files.getlist("files")
     if not files:
         single_file = request.files.get("files")
         if single_file:
             files = [single_file]
-    
+
     new_user_story, error = UserStoryService.create(data, files=files)
+
     if error:
         return jsonify({"error": error}), 400
+
+    if not new_user_story:   # tránh trường hợp (None, None)
+        return jsonify({"error": "Unknown error khi tạo user story"}), 500
+
     return jsonify({"message": "Tạo thành công", "id": new_user_story.id}), 201
+
 
 
 @user_story_bp.route("/", methods=["GET"])

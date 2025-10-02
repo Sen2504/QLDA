@@ -9,6 +9,8 @@ import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
 import ProjectDashboard from "./pages/ProjectDashboard";
 import MyInvites from "./pages/MyInvites";
+import UserStoryList from "./pages/UserStoryList";
+import UserStory from "./pages/UserStory";
 
 export default function App() {
   return (
@@ -24,7 +26,8 @@ export default function App() {
         <Route path="/projects/:projectId/team" element={<Team />} />
         <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />
         <Route path="/my-invites" element={<MyInvites />} />
-
+        <Route path="/user-stories" element={<UserStoryList />} />
+        <Route path="/user-stories/new" element={<UserStory />} />
       </Routes>
     </BrowserRouter>
   );

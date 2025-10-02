@@ -84,10 +84,6 @@ def revoke_invite(invite_id):
 def my_invites():
     email = (current_user.email or "").strip().lower()
 
-    print("DEBUG current_user.email raw:", repr(current_user.email))
-    print("DEBUG current_user.email hex:", current_user.email.encode().hex())
-
     invites = TeamInviteService.get_invites_for_user(email)
-    print("DEBUG invites:", invites)
 
     return jsonify(TeamInviteSchema(many=True).dump(invites)), 200

@@ -7,7 +7,7 @@ class UserStory(db.Model):
     project_id = db.Column("ID_PROJECT", db.Integer, db.ForeignKey("project.ID_PROJECT"), nullable=False)
     sprint_id = db.Column("ID_SPRINT", db.Integer, db.ForeignKey("sprints.ID_SPRINT"), nullable=True)
     name = db.Column("NAME_STORIES", db.String(200), nullable=False)
-    description = db.Column("DESCRIPTION", db.Text, nullable=False)
+    description = db.Column("DESCRIPTION", db.Text, nullable=True)
     expire_date = db.Column("EXPIRE_DATE", db.Date, nullable=False)
     evidence_file = db.Column("EVIDENCE_FILE", db.String(200), nullable=True)
 
