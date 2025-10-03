@@ -14,7 +14,7 @@ const TeamService = {
   
   // --- TEAM_INVITE ---
   inviteUser(data) {
-    // { project_id, role_id, email }
+ 
     return api.post("/team_invites/invite", data);
   },
 
@@ -34,10 +34,13 @@ const TeamService = {
     return api.post(`/team_invites/reject/${inviteId}`);
   },
 
-  // --- ROLES ---
-  getRoles() {
-    return api.get("/roles/");
+  // --- PROJECT ROLES ---
+  getProjectRoles(projectId) {
+    return api.get(`/project_roles/project/${projectId}`);
   },
+  createCustomRole(projectId, name_role) {
+  return api.post("/project_roles/custom", {project_id: projectId,name_role,});
+},
   
 };
 

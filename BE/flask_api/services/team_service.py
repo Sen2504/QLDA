@@ -7,41 +7,41 @@ from flask_api.models.role_models import Role
 from flask_api.models.team_invite_models import TeamInvite
 
 class TeamService:
-    @staticmethod
-    def invite_user(project_id, email, role_id):
-        """
-        Gửi lời mời user vào project bằng email + role.
-        """
-        email = email.strip().lower()
+    # @staticmethod
+    # def invite_user(project_id, email, role_id):
+    #     """
+    #     Gửi lời mời user vào project bằng email + role.
+    #     """
+    #     email = email.strip().lower()
 
-        proj_role = ProjectRole.query.filter_by(project_id=project_id, role_id=role_id).first()
-        if not proj_role:
-            return None, "Vai trò này chưa được khởi tạo trong project."
+    #     proj_role = ProjectRole.query.filter_by(project_id=project_id, role_id=role_id).first()
+    #     if not proj_role:
+    #         return None, "Vai trò này chưa được khởi tạo trong project."
 
-        # Chặn mọi invite trừ khi status = rejected
-        existing_invite = TeamInvite.query.filter_by(
-            project_id=project_id, role_id=role_id, email=email
-        ).first()
-        if existing_invite and existing_invite.status != "rejected":
-            return None, "Người dùng này đã được mời hoặc đã tham gia project."
+    #     # Chặn mọi invite trừ khi status = rejected
+    #     existing_invite = TeamInvite.query.filter_by(
+    #         project_id=project_id, role_id=role_id, email=email
+    #     ).first()
+    #     if existing_invite and existing_invite.status != "rejected":
+    #         return None, "Người dùng này đã được mời hoặc đã tham gia project."
 
-        # Check nếu user đã join project với role này
-        user = User.query.filter_by(email=email).first()
-        if user:
-            exists = Team.query.filter_by(user_id=user.id, projrole_id=proj_role.id).first()
-            if exists:
-                return None, "User đã tham gia project với vai trò này."
+    #     # Check nếu user đã join project với role này
+    #     user = User.query.filter_by(email=email).first()
+    #     if user:
+    #         exists = Team.query.filter_by(user_id=user.id, projrole_id=proj_role.id).first()
+    #         if exists:
+    #             return None, "User đã tham gia project với vai trò này."
 
-        # Tạo invite mới
-        invite = TeamInvite(
-            project_id=project_id,
-            role_id=role_id,
-            email=email,
-            status="pending"
-        )
-        db.session.add(invite)
-        db.session.commit()
-        return invite, None
+    #     # Tạo invite mới
+    #     invite = TeamInvite(
+    #         project_id=project_id,
+    #         role_id=role_id,
+    #         email=email,
+    #         status="pending"
+    #     )
+    #     db.session.add(invite)
+    #     db.session.commit()
+    #     return invite, None
 
 
     @staticmethod
@@ -54,7 +54,7 @@ class TeamService:
                 Team.id,
                 Team.user_id,
                 User.email.label("user_email"),
-                Role.name.label("role_name"),
+                ProjectRole.name.label("role_name"),
                 Team.projrole_id
             )
             .join(ProjectRole, Team.projrole_id == ProjectRole.id)
@@ -84,7 +84,7 @@ class TeamService:
             db.session.query(
                 TeamInvite.id,
                 TeamInvite.email,
-                Role.name.label("role_name"),
+                ProjectRole.name.label("role_name"),
                 TeamInvite.status,
                 TeamInvite.created_at
             )

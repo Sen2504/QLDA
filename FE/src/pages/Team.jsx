@@ -50,7 +50,7 @@ export default function Team() {
           }
         });
 
-      TeamService.getRoles()
+      TeamService.getProjectRoles(currentProject.id)   // 👈 đổi chỗ này
         .then((res) => setRoles(res.data))
         .catch(() => showPopup("Không thể tải danh sách roles!", "warning"));
     }

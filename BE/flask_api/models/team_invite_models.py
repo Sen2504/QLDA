@@ -7,14 +7,14 @@ class TeamInvite(db.Model):
 
     id = db.Column("ID_INVITE", db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column("ID_PROJECT", db.Integer, db.ForeignKey("project.ID_PROJECT"), nullable=False)
-    role_id = db.Column("ID_ROLE", db.Integer, db.ForeignKey("role.ID_ROLE"), nullable=False)
+    projrole_id = db.Column("ID_PROJROLE", db.Integer, db.ForeignKey("projectrole.ID_PROJROLE"), nullable=False)  # 👈 đổi ở đây
     email = db.Column("EMAIL", db.String(150), nullable=False)
     status = db.Column("STATUS", db.String(20), default="pending")  # pending, accepted, rejected
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Quan hệ
     project = db.relationship("Project", back_populates="invites")
-    role = db.relationship("Role")
+    projrole = db.relationship("ProjectRole")  # thay vì role
 
     def __repr__(self):
         return f"<TeamInvite id={self.id} email={self.email} status={self.status}>"

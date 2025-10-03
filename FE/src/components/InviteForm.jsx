@@ -12,7 +12,7 @@ export default function InviteForm({ projectId, roles, onInvited }) {
       const res = await TeamService.inviteUser({
         project_id: projectId,
         email,
-        role_id: roleId,
+        projrole_id: roleId,
       });
       onInvited(res.data); // báo về parent
       setEmail("");

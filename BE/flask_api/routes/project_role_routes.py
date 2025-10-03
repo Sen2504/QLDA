@@ -57,3 +57,17 @@ def delete_project_role(projrole_id):
     if not success:
         return jsonify({"error": error}), 404
     return jsonify({"message": "Đã xóa ProjectRole."}), 200
+
+# ----------------- CREATE CUSTOM ROLE -----------------
+@project_role_bp.route("/custom", methods=["POST"])
+@login_required
+def create_custom_role():
+    data = request.get_json() or {}
+    project_id = data.get("project_id")
+    name_role = data.get("name_role")
+
+    proj_role, error = ProjectRoleService.create_custom(project_id, name_role)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify(ProjectRoleSchema().dump(proj_role)), 201
+

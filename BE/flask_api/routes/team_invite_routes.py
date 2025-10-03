@@ -12,10 +12,10 @@ team_invite_bp = Blueprint("team_invite", __name__, url_prefix="/api/team_invite
 def invite_user():
     data = request.get_json()
     project_id = data.get("project_id")
-    role_id = data.get("role_id")
-    email = data.get("email")
+    projrole_id = data.get("projrole_id")    
+    email = data.get("email")   
 
-    invite, error = TeamInviteService.create_invite(project_id, role_id, email)
+    invite, error = TeamInviteService.create_invite(project_id, projrole_id, email)
     if error:
         return jsonify({"error": error}), 400
 
