@@ -2,8 +2,8 @@ import re
 from datetime import date
 from marshmallow import Schema, fields, validates, ValidationError
 from flask_api.schemas.complexity_point_schemas import ComplexityPointSchema
-from flask_api.schemas.hashtag_schemas import HashtagSchema
 from flask_api.schemas.userstory_hashtag_schemas import UserStoryHashtagSchema
+
 
 class UserStorySchema(Schema):
     id = fields.Int(dump_only=True)
@@ -18,6 +18,20 @@ class UserStorySchema(Schema):
     # Nested quan hệ
     complexity_points = fields.Nested(ComplexityPointSchema, many=True, dump_only=True)
     hashtags = fields.Nested(UserStoryHashtagSchema, many=True, dump_only=True)
+
+    # Thêm field suy diễn
+    total_points = fields.Method("get_total_points", dump_only=True)
+
+    def get_total_points(self, obj):
+        """
+        Nếu obj là dict (service trả về dict) thì lấy từ key 'total_points'
+        Nếu obj là model thì tính từ complexity_points
+        """
+        if isinstance(obj, dict):
+            return obj.get("total_points", 0)
+        if hasattr(obj, "complexity_points"):
+            return sum([(c.point or 0) for c in obj.complexity_points])
+        return 0
 
     @validates("name")
     def validate_name(self, value):

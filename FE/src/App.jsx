@@ -11,6 +11,7 @@ import ProjectDashboard from "./pages/ProjectDashboard";
 import MyInvites from "./pages/MyInvites";
 import UserStoryList from "./pages/UserStoryList";
 import UserStory from "./pages/UserStory";
+import UserStoryEdit from "./pages/UserStoryEdit";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/my-invites" element={<MyInvites />} />
         <Route path="/user-stories" element={<UserStoryList />} />
         <Route path="/user-stories/new" element={<UserStory />} />
+        <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
       </Routes>
     </BrowserRouter>
   );

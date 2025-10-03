@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, send_file
 from flask_api.schemas.user_story_schemas import UserStorySchema
 from flask_api.services.user_story_service import UserStoryService
 from flask_login import login_required
+from flask_api.models.complexity_point_models import ComplexityPoint
 
 user_story_bp = Blueprint("user_story_bp", __name__, url_prefix="/api/user_stories")
 
@@ -47,12 +48,22 @@ def get_user_stories():
     return jsonify(user_stories_schema.dump(stories)), 200
 
 
-@user_story_bp.route("/<int:story_id>", methods=["GET"])
-def get_user_story(story_id):
-    story = UserStoryService.get_by_id(story_id)
+@user_story_bp.route("/<int:id>", methods=["GET"])
+@login_required
+def get_user_story(id):
+    story = UserStoryService.get_by_id(id)
     if not story:
-        return jsonify({"error": "Không tìm thấy User Story."}), 404
-    return jsonify(user_story_schema.dump(story)), 200
+        return jsonify({"error": "Not found"}), 404
+
+    data = UserStorySchema().dump(story)
+
+    # comps = ComplexityPoint.query.filter_by(user_story_id=id).all()
+    # data["complexities"] = [
+    #     {"id": c.id, "role_name": c.name, "point": c.point} for c in comps
+    # ]
+
+    return jsonify(data), 200
+
 
 
 @user_story_bp.route("/<int:story_id>", methods=["PUT"])
