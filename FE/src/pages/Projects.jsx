@@ -82,7 +82,7 @@ export default function Projects() {
               type="submit"
               className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
             >
-              Create
+              Tạo
             </button>
           </form>
         </div>
