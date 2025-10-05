@@ -2,6 +2,9 @@ import { useState } from "react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import Popup_message from "../components/Popup_message";
+import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
+
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -10,11 +13,23 @@ export default function Register() {
   const [type, setType] = useState("success");
   const [showPopup, setShowPopup] = useState(false);
   const navigate = useNavigate();
-
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
+  const [skillset, setSkillset] = useState("");
+  const skillOptions = [
+  { value: "Python", label: "Python" },
+  { value: "JavaScript", label: "JavaScript" },
+  { value: "React", label: "React" },
+  { value: "Node.js", label: "Node.js" },
+  { value: "Flask", label: "Flask" },
+  { value: "Django", label: "Django" },
+  { value: "SQL", label: "SQL" },
+  { value: "Java", label: "Java" },
+];
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/auth/register", { email, password });
+      const res = await api.post("/auth/register", { email, password, name, skillset});
       setMessage(res.data.message);
       setType("success");
       setShowPopup(true);
@@ -40,6 +55,33 @@ export default function Register() {
         </h2>
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1"
+            >Name
+            </label>
+            <input type="text" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+              required 
+            />
+          </div>
+          {/* Skillset */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Skillset
+            </label>
+            <CreatableSelect
+              isMulti
+              options={skillOptions}
+              onChange={(selected) =>
+                setSkillset(selected.map((s) => s.value).join(","))
+              }
+              className="basic-multi-select"
+              classNamePrefix="select"
+              placeholder="Chọn hoặc gõ skill mới..."
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email
             </label>
@@ -60,6 +102,19 @@ export default function Register() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
               placeholder="••••••••"
               required

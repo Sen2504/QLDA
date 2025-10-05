@@ -24,3 +24,12 @@ class UserSchema(Schema):
     def validate_password(self, value, **kwargs):  
         if len(value or "") < 6:
             raise ValidationError("Mật khẩu phải có ít nhất 6 ký tự.")
+        
+class UpdateProfileSchema(Schema):
+    name = fields.Str(required=True)
+    skillset = fields.Str(required=True)
+
+class ChangePasswordSchema(Schema):
+    oldPassword = fields.Str(required=True, load_only=True)
+    newPassword = fields.Str(required=True, load_only=True)
+    confirmPassword = fields.Str(required=True, load_only=True)

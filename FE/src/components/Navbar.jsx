@@ -115,7 +115,11 @@ export default function Navbar() {
             <span className="font-medium">
               {user ? `Xin chào, ${user.name}` : "Loading..."}
             </span>
-            <UserCircle className="w-8 h-8" />
+            <UserCircle
+              className="w-8 h-8 cursor-pointer hover:text-green-300"
+              onClick={() => navigate("/profile")}
+              title="Xem & chỉnh sửa Profile"
+            />
           </div>
         </div>
       </header>

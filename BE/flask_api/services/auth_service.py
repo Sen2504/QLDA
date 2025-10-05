@@ -12,7 +12,7 @@ from flask_api.utils.tokens import generate_confirmation_token, confirm_token
 
 class AuthService:
     @staticmethod
-    def register(email: str, password: str) -> Tuple[Optional[User], Optional[str], Optional[str]]:
+    def register(email: str, password: str, name: str, skillset: str) -> Tuple[Optional[User], Optional[str], Optional[str]]:
         """
         Tạo tài khoản mới:
         - Validate email format
@@ -57,6 +57,9 @@ class AuthService:
             return None, "email already registered", None
 
         user = User(email=email)
+        user.name = name
+        user.skillset = skillset
+        
         user.set_password(password)
         db.session.add(user)
         db.session.commit()

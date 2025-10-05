@@ -67,14 +67,9 @@ export default function Home() {
         {user && (
           <div className="mb-6 flex justify-between items-center">
             <h2 className="text-2xl font-bold text-green-700">
-              Welcome, {user.email}
+              Xin chào, {user.name}
             </h2>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-            >
-              Logout
-            </button>
+            
           </div>
         )}
 
@@ -89,11 +84,12 @@ export default function Home() {
                 <div
                   key={proj.id}
                   className={`bg-white p-4 rounded-lg shadow transition`}
+                  onClick = {() => handleSelectProject(proj)}
                 >
                   <h4 className="font-semibold text-green-600">{proj.name}</h4>
                   <p className="text-gray-600 text-sm">{proj.description}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Status:{" "}
+                    Trạng thái:{" "}
                     <span
                       className={`${
                         proj.status === "archived"
@@ -106,12 +102,7 @@ export default function Home() {
                   </p>
 
                   <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => handleSelectProject(proj)}
-                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
-                    >
-                      Vào Project
-                    </button>
+                    
 
                     {/* Chỉ Project Owner mới thấy các nút này */}
                     {proj.role_name === "Project Owner" && (
@@ -127,7 +118,7 @@ export default function Home() {
                         {proj.status === "archived" && (
                           <button
                             onClick={() => handleRestore(proj.id)}
-                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                            className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
                           >
                             Khôi phục
                           </button>
@@ -145,7 +136,7 @@ export default function Home() {
 
         {/* Tasks */}
         <section>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">My Tasks</h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Tasks</h3>
           {tasks.length > 0 ? (
             <div className="space-y-3">
               {tasks.map((task) => (
@@ -155,7 +146,7 @@ export default function Home() {
                 >
                   <h4 className="font-medium text-gray-800">{task.title}</h4>
                   <p className="text-sm text-gray-600">
-                    Status:{" "}
+                    Trạng thái:{" "}
                     <span className="font-semibold text-green-600">
                       {task.status}
                     </span>

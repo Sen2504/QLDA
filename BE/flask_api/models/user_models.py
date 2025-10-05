@@ -13,7 +13,8 @@ class User(db.Model, UserMixin):
     confirmed = db.Column(db.Boolean, default=False)
     confirmed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    skillset = db.Column(db.String(255))  # ví dụ: "Python,Flask,SQLAlchemy"
+    skillset = db.Column(db.String(255), nullable=False)
+    avatar = db.Column(db.String(500), nullable=True)  # URL ảnh đại diện
 
     teams = db.relationship("Team", back_populates="user")
     

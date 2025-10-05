@@ -12,6 +12,7 @@ import MyInvites from "./pages/MyInvites";
 import UserStoryList from "./pages/UserStoryList";
 import UserStory from "./pages/UserStory";
 import UserStoryEdit from "./pages/UserStoryEdit";
+import Profile from "./pages/Profile";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/user-stories" element={<UserStoryList />} />
         <Route path="/user-stories/new" element={<UserStory />} />
         <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );

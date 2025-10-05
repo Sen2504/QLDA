@@ -15,8 +15,10 @@ def register():
     data = request.get_json(silent=True) or {}
     email = data.get("email")
     password = data.get("password")
+    name = data.get("name")
+    skillset = data.get("skillset") 
 
-    user, error, token = AuthService.register(email, password)
+    user, error, token = AuthService.register(email, password, name, skillset)
     if error:
         # 409 khi email trùng, còn lại 400
         status = 409 if "already registered" in error else 400
