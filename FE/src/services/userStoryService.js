@@ -24,26 +24,26 @@ const UserStoryService = {
     return api.get(`/user_stories/${id}/download`, { responseType: "blob" });
   },
 
-  // load dropdown trạng thái (gợi ý route: /workflow_statuses/)
+  // load dropdown trạng thái
   async getStatuses() {
     try {
-      const res = await api.get("/workflow_statuses/");
+      const res = await api.get("/workflow_status/");
       return res.data; // [{id, name}]
     } catch {
       return [{ id: 0, name: "New" }]; // fallback
     }
   },
 
-
+  // load danh sách Role để chọn điểm
   async getComplexityOptions() {
-    // code cứng danh sách vị trí + điểm
-    return [
-      { name: "UX", points: [0, 1, 2, 3, 5, 8] },
-      { name: "Design", points: [0, 1, 2, 3, 5, 8] },
-      { name: "FE", points: [0, 1, 2, 3, 5, 8] },
-      { name: "BE", points: [0, 1, 2, 3, 5, 8] }
-    ];
-  },
-};
+    try {
+      const res = await api.get("/complexity_points/options");
+      return res.data; // [{ name: "Front End", points: [0,1,2,3,5,8] }, ...]
+    } catch (err) {
+      console.error("Error loading complexity options:", err);
+      return [];
+    }
+  }
+}
 
 export default UserStoryService;

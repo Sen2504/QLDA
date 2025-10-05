@@ -62,7 +62,6 @@ class UserStoryService:
                 return [x.strip() for x in field_value.split(",") if x.strip()]
         return field_value
 
-
     # ====================== PUBLIC METHODS ======================
     @staticmethod
     def create(data, files=None):
@@ -137,9 +136,6 @@ class UserStoryService:
                 ))
 
         # Thêm hashtags
-        print("DEBUG raw hashtags:", data.get("hashtags"))
-        print("DEBUG parsed hashtags:", hashtags)
-
         for tag in hashtags:
             tag_name = tag.strip() if isinstance(tag, str) else (tag.get("name") or "").strip()
             if not tag_name:
@@ -165,6 +161,14 @@ class UserStoryService:
         stories = UserStory.query.all()
         result = []
         for story in stories:
+            complexities = [
+                {"id": c.id, "name": c.name, "point": c.point, "user_story_id": c.user_story_id}
+                for c in story.complexity_points
+            ]
+
+            # Tính tổng
+            total_points = sum(c.point or 0 for c in story.complexity_points)
+
             story_data = {
                 "id": story.id,
                 "name": story.name,
@@ -173,13 +177,9 @@ class UserStoryService:
                 "status_id": story.status_id,
                 "project_id": story.project_id,
                 "sprint_id": story.sprint_id,
-                # thay vì lưu path, trả ra list file
                 "evidence_file": UserStoryService._list_files(story.id),
-                # join relationship
-                "complexity_points": [
-                    {"id": c.id, "name": c.name, "point": c.point, "user_story_id": c.user_story_id}
-                    for c in story.complexity_points
-                ],
+                "complexity_points": complexities,
+                "total_points": total_points,  # đưa ra FE
                 "hashtags": [
                     {"hashtag": {"id": h.hashtag.id, "name": h.hashtag.name}}
                     for h in story.hashtags
@@ -193,6 +193,13 @@ class UserStoryService:
         story = UserStory.query.get(story_id)
         if not story:
             return None
+
+        complexities = [
+            {"id": c.id, "name": c.name, "point": c.point, "user_story_id": c.user_story_id}
+            for c in story.complexity_points
+        ]
+        total_points = sum(c["point"] or 0 for c in complexities)
+
         story_data = {
             "id": story.id,
             "name": story.name,
@@ -201,11 +208,9 @@ class UserStoryService:
             "status_id": story.status_id,
             "project_id": story.project_id,
             "sprint_id": story.sprint_id,
-            "evidence_file": UserStoryService._list_files(story.id),  # list file
-            "complexity_points": [
-                {"id": c.id, "name": c.name, "point": c.point, "user_story_id": c.user_story_id}
-                for c in story.complexity_points
-            ],
+            "evidence_file": UserStoryService._list_files(story.id),
+            "complexity_points": complexities,
+            "total_points": total_points,   # thêm tổng điểm
             "hashtags": [
                 {"hashtag": {"id": h.hashtag.id, "name": h.hashtag.name}}
                 for h in story.hashtags
@@ -255,6 +260,41 @@ class UserStoryService:
             # ==== Update sprint ====
             if "Sprint_id" in data:
                 story.sprint_id = data.get("Sprint_id") or None
+
+            # ==== Update complexities ====
+            if "complexities" in data:
+                complexities = UserStoryService._parse_json_field(data["complexities"], [])
+                for comp in complexities:
+                    comp_name = (comp.get("name") or "").strip()
+                    comp_point = comp.get("point")
+                    if not comp_name:
+                        continue
+                    existing = ComplexityPoint.query.filter_by(
+                        user_story_id=story.id, name=comp_name
+                    ).first()
+                    if existing:
+                        existing.point = comp_point
+                    else:
+                        db.session.add(ComplexityPoint(
+                            name=comp_name,
+                            point=comp_point,
+                            user_story_id=story.id
+                        ))
+
+            # ==== Update hashtags ====
+            if "hashtags" in data:
+                hashtags = UserStoryService._parse_json_field(data["hashtags"], [])
+                # clear old hashtags
+                UserStoryHashtag.query.filter_by(user_story_id=story.id).delete()
+                for tag in hashtags:
+                    tag_name = tag.strip() if isinstance(tag, str) else (tag.get("name") or "").strip()
+                    if not tag_name:
+                        continue
+                    hashtag, error = HashtagService.get_or_create(tag_name)
+                    if error:
+                        db.session.rollback()
+                        return None, error
+                    db.session.add(UserStoryHashtag(user_story_id=story.id, hashtag_id=hashtag.id))
 
             # ==== Quản lý files ====
             story_folder = UserStoryService._story_folder(story.id)
