@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.1.0",
     "axios": "^1.12.2",
     "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
+    "mdb-react-ui-kit": "^9.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.2",

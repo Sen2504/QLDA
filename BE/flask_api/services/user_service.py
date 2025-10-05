@@ -109,14 +109,35 @@ class UserService:
         if not allowed_file(file.filename):
             return None, "File không hợp lệ"
 
+        # kiểm tra dung lượng file (<= 1GB)
+        file.seek(0, os.SEEK_END)         # nhảy con trỏ tới cuối file
+        file_size = file.tell()           # lấy vị trí con trỏ (bytes)
+        file.seek(0)                      # reset lại con trỏ về đầu file
+        max_size = 1 * 1024 * 1024 * 1024 # 1GB
+        if file_size > max_size:
+            return None, "File vượt quá giới hạn 1GB"
+
         filename = secure_filename(file.filename)
-        save_path = os.path.join(current_app.config["UPLOAD_FOLDER"], "avatars", filename)
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+        # tạo tên folder từ email (an toàn)
+        folder_name = current_user.email.replace("@", "_at_").replace(".", "_")
+
+        # đường dẫn tuyệt đối: flask_api/uploads/avatars/<email_user>/
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # tới flask_api/
+        save_dir = os.path.join(base_dir, "uploads", "avatars", folder_name)
+
+        os.makedirs(save_dir, exist_ok=True)  # tạo thư mục nếu chưa có
+
+        save_path = os.path.join(save_dir, filename)
+        print("Saving avatar to:", save_path)  # debug
         file.save(save_path)
 
-        current_user.avatar = f"/static/avatars/{filename}"
+        # đường dẫn public để FE load
+        current_user.avatar = f"/uploads/avatars/{folder_name}/{filename}"
         db.session.commit()
+
         return current_user, None
+
 
     @staticmethod
     def change_password(old_password, new_password, confirm_password):

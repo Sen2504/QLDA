@@ -11,7 +11,10 @@ import ProjectDashboard from "./pages/ProjectDashboard";
 import MyInvites from "./pages/MyInvites";
 import UserStoryList from "./pages/UserStoryList";
 import UserStory from "./pages/UserStory";
+import UserStoryEdit from "./pages/UserStoryEdit";
 import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
+
 
 export default function App() {
   return (
@@ -29,8 +32,8 @@ export default function App() {
         <Route path="/my-invites" element={<MyInvites />} />
         <Route path="/user-stories" element={<UserStoryList />} />
         <Route path="/user-stories/new" element={<UserStory />} />
+        <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
         <Route path="/settings" element={<Settings />} />
-
       </Routes>
     </BrowserRouter>
   );
