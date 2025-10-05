@@ -4,14 +4,14 @@ from marshmallow import Schema, fields, validate
 class TeamInviteSchema(Schema):
     id = fields.Int(dump_only=True)
     project_id = fields.Int(required=True)
-    role_id = fields.Int(required=True)
+    projrole_id = fields.Int()
     email = fields.Email(required=True)
     status = fields.Str(
         dump_only=True,
         validate=validate.OneOf(["pending", "accepted", "rejected"])
     )
     created_at = fields.DateTime(dump_only=True)
-    role_name = fields.Method("get_role_name")
+    role_name = fields.Function(lambda obj: obj.projrole.name if obj.projrole else None)
     project_name = fields.Method("get_project_name")
 
     def get_role_name(self, obj):

@@ -24,9 +24,10 @@ class ProjectService:
         new_project = Project(
             name=name_project.strip(),
             description=(description or "").strip()
+            
         )
         db.session.add(new_project)
-        db.session.flush()  # để có ID project ngay
+        db.session.flush()  # để có ID project liền
 
         # 2. Sinh các ProjectRole cho project
         roles = Role.query.all()  # giả sử Role table đã có Owner, UX, Design, FE, BE
@@ -34,7 +35,8 @@ class ProjectService:
         for role in roles:
             proj_role = ProjectRole(
                 project_id=new_project.id,
-                role_id=role.id
+                role_id=role.id,
+                name=role.name
             )
             db.session.add(proj_role)
             project_roles.append(proj_role)
