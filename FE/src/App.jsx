@@ -11,6 +11,7 @@ import ProjectDashboard from "./pages/ProjectDashboard";
 import MyInvites from "./pages/MyInvites";
 import UserStoryList from "./pages/UserStoryList";
 import UserStory from "./pages/UserStory";
+import Settings from "./pages/Settings";
 
 export default function App() {
   return (
