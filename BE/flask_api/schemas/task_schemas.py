@@ -12,7 +12,8 @@ class TaskSchema(Schema):
     title = fields.Method("get_title", dump_only=True)
     status = fields.Method("get_status", dump_only=True)
     project_id = fields.Method("get_project_id", dump_only=True)
-    assignee = fields.Method("get_assignee", dump_only=True)
+    assignee = fields.Method("get_assignee", dump_only=True)  # Giữ tương thích cũ (lấy người đầu tiên)
+    assignees = fields.Method("get_assignees", dump_only=True)
 
     user_story = fields.Nested("UserStorySchema", only=("id", "name"), dump_only=True)
 
@@ -46,6 +47,23 @@ class TaskSchema(Schema):
             "role_name": getattr(getattr(team, "projrole", None), "name", None),
         }
 
+    def get_assignees(self, obj):
+        assignments = getattr(obj, "phan_cong", None) or []
+        results = []
+        for a in assignments:
+            team = getattr(a, "team", None)
+            if not team:
+                results.append({"team_id": a.team_id})
+                continue
+            results.append({
+                "team_id": a.team_id,
+                "user_id": team.user_id,
+                "projrole_id": team.projrole_id,
+                "user_email": getattr(getattr(team, "user", None), "email", None),
+                "role_name": getattr(getattr(team, "projrole", None), "name", None),
+            })
+        return results
+
     # ------------------ VALIDATION ------------------
     @validates("name")
     def validate_name(self, value, **kwargs):
@@ -70,7 +88,25 @@ class TaskCreateSchema(TaskSchema):
     description = fields.Str(required=True, error_messages={"required": "Vui lòng nhập mô tả task."})
     user_story_id = fields.Int(required=True, error_messages={"required": "Vui lòng chọn user story."})
     status_id = fields.Int(required=True, error_messages={"required": "Vui lòng chọn trạng thái task."})
-    team_id = fields.Int(required=True, load_only=True, error_messages={"required": "Vui lòng chọn người thực hiện."})
+    # Giữ team_id để tương thích cũ (1 người)
+    team_id = fields.Int(load_only=True)
+    # Mới: danh sách nhiều team id
+    team_ids = fields.List(fields.Int(), load_only=True)
+
+    @validates("team_ids")
+    def validate_team_ids(self, value, **kwargs):
+        # Cho phép rỗng nếu dùng team_id đơn lẻ
+        if value is None:
+            return
+        if isinstance(value, list) and len(value) == 0:
+            # nếu list rỗng & không có team_id fallback => raise
+            pass
+
+    @validates("team_id")
+    def validate_team_id_or_ids(self, value, **kwargs):
+        # Ít nhất 1 trong 2: team_id hoặc team_ids gửi lên
+        # Marshmallow không dễ kiểm tra cả 2 ở đây, phần logic chính xử lý ở service.
+        return
 
 
 # ------------------ UPDATE ------------------

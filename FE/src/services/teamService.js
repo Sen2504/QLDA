@@ -38,10 +38,11 @@ const TeamService = {
   getProjectRoles(projectId) {
     return api.get(`/project_roles/project/${projectId}`);
   },
-  createCustomRole(projectId, name_role) {
+createCustomRole(projectId, name_role) {
   return api.post("/project_roles/custom", {project_id: projectId,name_role,});
 },
   
+
 };
 
 export default TeamService;

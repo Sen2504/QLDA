@@ -43,6 +43,7 @@ class TaskService:
         user_story_id = data.get("user_story_id")
         status_id = data.get("status_id")
         team_id = data.get("team_id")
+        team_ids = data.get("team_ids") or []
 
         if not name:
             return None, "Ten task la bat buoc."
@@ -57,11 +58,21 @@ class TaskService:
         if not status:
             return None, "Khong tim thay trang thai Task."
 
-        team = Team.query.get(team_id)
-        if not team:
-            return None, "Khong tim thay thanh vien team."
-        if not team.projrole or team.projrole.project_id != user_story.project_id:
-            return None, "Thanh vien khong thuoc project cua User Story."
+        # Nếu có truyền nhiều team_ids thì validate tất cả
+        candidate_team_ids = team_ids if team_ids else ([team_id] if team_id else [])
+        if not candidate_team_ids:
+            return None, "Can chon it nhat 1 thanh vien team."
+
+        teams = Team.query.filter(Team.id.in_(candidate_team_ids)).all()
+        found_ids = {t.id for t in teams}
+        missing = [tid for tid in candidate_team_ids if tid not in found_ids]
+        if missing:
+            return None, f"Khong tim thay thanh vien team: {missing}"
+
+        # Validate cùng project
+        for t in teams:
+            if not t.projrole or t.projrole.project_id != user_story.project_id:
+                return None, "Co thanh vien khong thuoc project cua User Story."
 
         try:
             new_task = Task(
@@ -73,8 +84,9 @@ class TaskService:
             db.session.add(new_task)
             db.session.flush()
 
-            assignment = PhanCong(team_id=team.id, task_id=new_task.id)
-            db.session.add(assignment)
+            for t in teams:
+                assignment = PhanCong(team_id=t.id, task_id=new_task.id)
+                db.session.add(assignment)
             db.session.commit()
             return new_task, None
         except Exception:
@@ -92,6 +104,7 @@ class TaskService:
         status_id = data.get("status_id")
         user_story_id = data.get("user_story_id")
         team_id = data.get("team_id")
+        team_ids = data.get("team_ids") or []
 
         try:
             if name is not None:
@@ -120,21 +133,32 @@ class TaskService:
                     return None, "Khong tim thay trang thai Task."
                 task.status_id = status.id
 
-            if team_id is not None:
+            # Cập nhật 1 người cũ (team_id) hoặc nhiều người (team_ids)
+            if team_ids:
+                teams = Team.query.filter(Team.id.in_(team_ids)).all()
+                found = {t.id for t in teams}
+                missing = [tid for tid in team_ids if tid not in found]
+                if missing:
+                    return None, f"Khong tim thay thanh vien team: {missing}"
+                for t in teams:
+                    if not t.projrole or t.projrole.project_id != target_story.project_id:
+                        return None, "Co thanh vien khong thuoc project cua User Story."
+                # Xóa assignments cũ rồi tạo lại
+                for a in list(task.phan_cong or []):
+                    db.session.delete(a)
+                for t in teams:
+                    db.session.add(PhanCong(team_id=t.id, task_id=task.id))
+            elif team_id is not None:
                 team = Team.query.get(team_id)
                 if not team:
                     return None, "Khong tim thay thanh vien team."
                 if not team.projrole or team.projrole.project_id != target_story.project_id:
                     return None, "Thanh vien khong thuoc project cua User Story."
-
-                assignment = (
-                    PhanCong.query.filter_by(task_id=task.id).first()
-                )
+                assignment = PhanCong.query.filter_by(task_id=task.id).first()
                 if assignment:
                     assignment.team_id = team.id
                 else:
-                    assignment = PhanCong(team_id=team.id, task_id=task.id)
-                    db.session.add(assignment)
+                    db.session.add(PhanCong(team_id=team.id, task_id=task.id))
 
             db.session.commit()
             return task, None

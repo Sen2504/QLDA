@@ -14,7 +14,7 @@ import UserStory from "./pages/UserStory";
 import UserStoryEdit from "./pages/UserStoryEdit";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
-
+import UserStoryDetail from "./pages/UserStoryDetail";
 
 export default function App() {
   return (
@@ -34,6 +34,9 @@ export default function App() {
         <Route path="/user-stories/new" element={<UserStory />} />
         <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
+        
       </Routes>
     </BrowserRouter>
   );

@@ -9,6 +9,9 @@ const UserStoryService = {
   getAll() {
     return api.get("/user_stories/");
   },
+  getByProject(projectId) {
+    return api.get(`/user_stories/project/${projectId}`);
+  },
   getById(id) {
     return api.get(`/user_stories/${id}`);
   },

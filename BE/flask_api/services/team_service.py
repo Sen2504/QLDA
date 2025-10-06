@@ -159,3 +159,12 @@ class TeamService:
 
         db.session.commit()
         return True, None
+    
+    @staticmethod
+    def get_team_summary(project_id):
+        members = TeamService.get_team_by_project(project_id)
+        pending = TeamService.get_pending_invites_by_project(project_id)
+        return {
+            "members": members,
+            "pending_invites": pending
+        }

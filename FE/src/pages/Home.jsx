@@ -1,163 +1,362 @@
-// pages/Home.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import api from "../services/api";
-import ProjectService from "../services/projectService";
+import UserStoryService from "../services/userStoryService";
+import TaskService from "../services/taskService";
+
+import ScrumBoardColumn from "../components/ScrumBoardColumn";
 
 export default function Home() {
-  const [user, setUser] = useState(null);
-  const [projects, setProjects] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const { setCurrentProject } = useProject();
   const navigate = useNavigate();
+  const { currentProject } = useProject();
+
+  const [userStories, setUserStories] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [sprints, setSprints] = useState([]);
+  const [issues, setIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .get("/auth/me")
-      .then((res) => setUser(res.data))
-      .catch(() => navigate("/login"));
-
-    ProjectService.getMyProjects()
-      .then((res) => setProjects(res.data))
-      .catch((err) => console.error("Lỗi load projects:", err));
-
-    api
-      .get("/tasks/my-tasks")
-      .then((res) => setTasks(res.data))
-      .catch((err) => console.error("Lỗi load tasks:", err));
-  }, [navigate]);
-
-  const handleSelectProject = (proj) => {
-    setCurrentProject(proj);
-    navigate(`/projects/${proj.id}/dashboard`);
-  };
-
-  const handleArchive = async (projId) => {
-    try {
-      await ProjectService.archive(projId);
-      setProjects((prev) =>
-        prev.map((p) => (p.id === projId ? { ...p, status: "archived" } : p))
-      );
-    } catch (err) {
-      console.error("Archive lỗi:", err);
+    if (!currentProject) {
+      setLoading(false);
+      return;
     }
-  };
+    let cancelled = false;
+    const pid = currentProject.id;
 
-  const handleRestore = async (projId) => {
-    try {
-      await ProjectService.restore(projId);
-      setProjects((prev) =>
-        prev.map((p) => (p.id === projId ? { ...p, status: "active" } : p))
-      );
-    } catch (err) {
-      console.error("Restore lỗi:", err);
-    }
-  };
+    const load = async () => {
+      setLoading(true);
+      const jobs = [
+        // User stories
+        (async () => {
+          try {
+            const [byProjectRes, allRes] = await Promise.allSettled([
+              UserStoryService.getByProject(pid),
+              UserStoryService.getAll(),
+            ]);
+            const extract = (raw) => {
+              if (!raw) return [];
+              const data = raw.data ?? raw;
+              if (Array.isArray(data)) return data;
+              if (Array.isArray(data.user_stories)) return data.user_stories;
+              return [];
+            };
+            let picked = [];
+            if (byProjectRes.status === "fulfilled")
+              picked = extract(byProjectRes.value);
+            if (!picked.length && allRes.status === "fulfilled") {
+              const allList = extract(allRes.value);
+              picked = allList.filter(
+                (u) => String(u.project_id) === String(pid)
+              );
+            }
+            if (!cancelled) setUserStories(picked);
+          } catch {
+            !cancelled && setUserStories([]);
+          }
+        })(),
+        // Tasks
+        api
+          .get(`/tasks/project/${pid}`)
+          .then((r) => !cancelled && setTasks(r.data))
+          .catch(() => !cancelled && setTasks([])),
+        // Sprints
+        api
+          .get(`/sprints/project/${pid}`)
+          .then((r) => !cancelled && setSprints(r.data))
+          .catch(() => !cancelled && setSprints([])),
+        // Issues
+        api
+          .get(`/issues/project/${pid}`)
+          .then((r) => !cancelled && setIssues(r.data))
+          .catch(() => !cancelled && setIssues([])),
+      ];
+      await Promise.allSettled(jobs);
+      !cancelled && setLoading(false);
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentProject]);
 
-  const handleLogout = async () => {
-    await api.post("/auth/logout");
-    navigate("/login");
-  };
+  // Phân nhóm task theo status
+  const taskGroups = useMemo(() => {
+    const g = { todo: [], progress: [], review: [], done: [] };
+    tasks.forEach((t) => {
+      const name = (t.status || "").toLowerCase();
+      if (name.includes("progress")) g.progress.push(t);
+      else if (name.includes("review")) g.review.push(t);
+      else if (name.includes("done")) g.done.push(t);
+      else g.todo.push(t);
+    });
+    return g;
+  }, [tasks]);
+
+  // Sprint đang active
+  const activeSprint = useMemo(
+    () => sprints.find((s) => s.status === "active") || null,
+    [sprints]
+  );
+
+  // Metrics đơn giản
+  const metrics = useMemo(() => {
+    const total = tasks.length || 1;
+    const done = taskGroups.done.length;
+    return [
+      {
+        label: "Tasks Done",
+        value: `${done}/${total}`,
+        pct: Math.round((done / total) * 100),
+      },
+      {
+        label: "User Stories",
+        value: userStories.length,
+        pct: 100,
+      },
+      {
+        label: "Issues",
+        value: issues.length,
+        pct: 100,
+      },
+      {
+        label: "Active Sprint",
+        value: activeSprint ? activeSprint.name : "None",
+        pct: activeSprint ? 100 : 0,
+      },
+    ];
+  }, [tasks, taskGroups.done.length, userStories.length, issues.length, activeSprint]);
+
+  if (!currentProject) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-[70vh] text-gray-500 text-lg">
+          Chọn một project để bắt đầu.
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-8">
-        {user && (
-          <div className="mb-6 flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-green-700">
-              Xin chào, {user.name}
-            </h2>
-            
-          </div>
-        )}
+      <div className="p-6 space-y-8 bg-gradient-to-b from-emerald-50 to-white min-h-screen">
+        {/* Header */}
+        <div className="flex flex-wrap gap-4 justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-emerald-700 tracking-tight">
+                {currentProject.name}
+              </h1>
+              <p className="text-gray-600 max-w-xl mt-1">
+                {currentProject.description || "Không có mô tả."}
+              </p>
+            </div>
+            <span
+              className={`px-4 py-1.5 h-fit rounded-full text-sm font-medium border
+            ${
+              currentProject.status === "archived"
+                ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                : "bg-emerald-100 text-emerald-700 border-emerald-300"
+            }`}
+            >
+              {currentProject.status}
+            </span>
+        </div>
 
-        {/* Projects */}
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">
-            Projects Dashboard
-          </h3>
-          {projects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {projects.map((proj) => (
-                <div
-                  key={proj.id}
-                  className={`bg-white p-4 rounded-lg shadow transition`}
-                  onClick = {() => handleSelectProject(proj)}
-                >
-                  <h4 className="font-semibold text-green-600">{proj.name}</h4>
-                  <p className="text-gray-600 text-sm">{proj.description}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Trạng thái:{" "}
-                    <span
-                      className={`${
-                        proj.status === "archived"
-                          ? "text-yellow-600"
-                          : "text-green-600"
-                      } font-semibold`}
-                    >
-                      {proj.status}
-                    </span>
-                  </p>
-
-                  <div className="flex gap-2 mt-3">
-                    
-
-                    {/* Chỉ Project Owner mới thấy các nút này */}
-                    {proj.role_name === "Project Owner" && (
-                      <>
-                        {proj.status === "active" && (
-                          <button
-                            onClick={() => handleArchive(proj.id)}
-                            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
-                          >
-                            Lưu trữ
-                          </button>
-                        )}
-                        {proj.status === "archived" && (
-                          <button
-                            onClick={() => handleRestore(proj.id)}
-                            className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
-                          >
-                            Khôi phục
-                          </button>
-                        )}
-                      </>
-                    )}
+        {/* Metrics */}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {metrics.map((m) => (
+            <div
+              key={m.label}
+              className="bg-white rounded-2xl shadow-sm border border-emerald-100 p-4 flex flex-col justify-between"
+            >
+              <span className="text-sm font-medium text-emerald-600">
+                {m.label}
+              </span>
+              <div className="mt-2 flex items-end justify-between">
+                <span className="text-2xl font-semibold text-emerald-800">
+                  {m.value}
+                </span>
+                {m.pct <= 100 && (
+                  <div className="w-20 h-2 rounded bg-emerald-100 overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 transition-all"
+                      style={{ width: `${Math.min(m.pct, 100)}%` }}
+                    />
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
-          ) : (
-            <p className="text-gray-500">Bạn chưa tham gia project nào.</p>
-          )}
-        </section>
+          ))}
+        </div>
 
-        {/* Tasks */}
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Tasks</h3>
-          {tasks.length > 0 ? (
-            <div className="space-y-3">
-              {tasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="bg-white p-4 rounded-lg shadow hover:shadow-md transition"
-                >
-                  <h4 className="font-medium text-gray-800">{task.title}</h4>
-                  <p className="text-sm text-gray-600">
-                    Trạng thái:{" "}
-                    <span className="font-semibold text-green-600">
-                      {task.status}
-                    </span>
-                  </p>
-                </div>
-              ))}
-            </div>
+        {/* Board */}
+        <div>
+          <h2 className="text-xl font-semibold text-emerald-800 mb-3 flex items-center gap-2">
+            <span className="h-2 w-2 bg-emerald-500 rounded-full" />
+            Scrum Board
+          </h2>
+          {loading ? (
+            <div className="text-gray-500 animate-pulse">Đang tải...</div>
           ) : (
-            <p className="text-gray-500">Bạn chưa có task nào.</p>
+            <div className="grid gap-5 xl:grid-cols-5 md:grid-cols-3">
+              {/* Product Backlog */}
+              <ScrumBoardColumn
+                title="Product Backlog"
+                accent="emerald"
+                items={userStories}
+                emptyText="Chưa có User Story."
+                renderItem={(us) => (
+                  <button
+                    key={us.id}
+                    onClick={() => navigate(`/user-stories/${us.id}`)}
+                    className="block w-full text-left bg-white rounded-xl border border-emerald-100 hover:border-emerald-300 hover:shadow-sm p-3 transition"
+                  >
+                    <p className="font-medium text-emerald-700 truncate">
+                      {us.name}
+                    </p>
+                    <p className="text-xs text-gray-600 line-clamp-2 mt-1">
+                      {us.description || "—"}
+                    </p>
+                  </button>
+                )}
+              />
+
+              {/* Sprint Backlog (Tasks grouped) */}
+              <ScrumBoardColumn
+                title="Todo"
+                accent="emerald"
+                items={taskGroups.todo}
+                emptyText="Trống."
+                renderItem={(t) => (
+                  <div
+                    key={t.id}
+                    className="bg-white rounded-lg border p-3 hover:border-emerald-300 transition"
+                  >
+                    <p className="font-medium text-gray-800 truncate">
+                      {t.name}
+                    </p>
+                    <p className="text-xs text-gray-500 line-clamp-2 mt-1">
+                      {t.description || "—"}
+                    </p>
+                  </div>
+                )}
+              />
+              <ScrumBoardColumn
+                title="In Progress"
+                accent="amber"
+                items={taskGroups.progress}
+                emptyText="—"
+                renderItem={(t) => (
+                  <div
+                    key={t.id}
+                    className="bg-white rounded-lg border p-3 hover:border-amber-300 transition"
+                  >
+                    <p className="font-medium text-gray-800 truncate">
+                      {t.name}
+                    </p>
+                    <p className="text-xs text-gray-500 line-clamp-2 mt-1">
+                      {t.description || "—"}
+                    </p>
+                  </div>
+                )}
+              />
+              <ScrumBoardColumn
+                title="Review"
+                accent="violet"
+                items={taskGroups.review}
+                emptyText="—"
+                renderItem={(t) => (
+                  <div
+                    key={t.id}
+                    className="bg-white rounded-lg border p-3 hover:border-violet-300 transition"
+                  >
+                    <p className="font-medium text-gray-800 truncate">
+                      {t.name}
+                    </p>
+                  </div>
+                )}
+              />
+              <ScrumBoardColumn
+                title="Done"
+                accent="emerald"
+                items={taskGroups.done}
+                emptyText="—"
+                renderItem={(t) => (
+                  <div
+                    key={t.id}
+                    className="bg-white rounded-lg border p-3 opacity-80 hover:opacity-100 transition"
+                  >
+                    <p className="font-medium text-gray-700 line-through truncate">
+                      {t.name}
+                    </p>
+                  </div>
+                )}
+              />
+            </div>
           )}
-        </section>
+        </div>
+
+        {/* Issues & Sprint panel */}
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 bg-white rounded-2xl p-5 border border-emerald-100">
+            <h3 className="font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+              Issues
+            </h3>
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              {issues.length ? (
+                issues.map((i) => (
+                  <div
+                    key={i.id}
+                    className="border rounded-lg p-3 hover:border-emerald-300 bg-emerald-50/30"
+                  >
+                    <p className="font-medium text-gray-800 truncate">
+                      {i.title}
+                    </p>
+                    <p className="text-xs text-gray-600 line-clamp-2 mt-1">
+                      {i.description || "—"}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm">Không có issue.</p>
+              )}
+            </div>
+          </div>
+
+            <div className="bg-white rounded-2xl p-5 border border-emerald-100 flex flex-col">
+              <h3 className="font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                Sprints
+              </h3>
+              <div className="space-y-3 overflow-y-auto max-h-[300px] pr-1">
+                {sprints.length ? (
+                  sprints.map((s) => (
+                    <div
+                      key={s.id}
+                      className={`rounded-lg border p-3 text-sm ${
+                        s.status === "active"
+                          ? "border-emerald-400 bg-emerald-50"
+                          : "border-gray-200 bg-gray-50"
+                      }`}
+                    >
+                      <p className="font-medium text-gray-800">{s.name}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {s.start_date} → {s.end_date}
+                      </p>
+                      <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                        {s.status}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm">Chưa có sprint.</p>
+                )}
+              </div>
+            </div>
+        </div>
       </div>
     </MainLayout>
   );
