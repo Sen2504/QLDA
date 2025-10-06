@@ -5,6 +5,7 @@ from flask_api.extensions import db
 from flask_api.models.user_models import User
 from flask_login import current_user
 from werkzeug.utils import secure_filename
+import re
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 def allowed_file(filename):
@@ -106,33 +107,43 @@ class UserService:
     def upload_avatar(file):
         if not file or file.filename == "":
             return None, "Không có file"
+
         if not allowed_file(file.filename):
             return None, "File không hợp lệ"
 
         # kiểm tra dung lượng file (<= 1GB)
-        file.seek(0, os.SEEK_END)         # nhảy con trỏ tới cuối file
-        file_size = file.tell()           # lấy vị trí con trỏ (bytes)
-        file.seek(0)                      # reset lại con trỏ về đầu file
-        max_size = 1 * 1024 * 1024 * 1024 # 1GB
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        max_size = 1 * 1024 * 1024 * 1024  # 1GB
         if file_size > max_size:
             return None, "File vượt quá giới hạn 1GB"
 
+        # tạo tên file và thư mục
         filename = secure_filename(file.filename)
-
-        # tạo tên folder từ email (an toàn)
         folder_name = current_user.email.replace("@", "_at_").replace(".", "_")
 
         # đường dẫn tuyệt đối: flask_api/uploads/avatars/<email_user>/
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # tới flask_api/
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         save_dir = os.path.join(base_dir, "uploads", "avatars", folder_name)
+        os.makedirs(save_dir, exist_ok=True)
 
-        os.makedirs(save_dir, exist_ok=True)  # tạo thư mục nếu chưa có
+        # Xóa toàn bộ ảnh cũ trước khi lưu mới
+        for old_file in os.listdir(save_dir):
+            old_path = os.path.join(save_dir, old_file)
+            try:
+                if os.path.isfile(old_path):
+                    os.remove(old_path)
+                    print(f"Đã xóa avatar cũ: {old_path}")
+            except Exception as e:
+                print(f"Lỗi khi xóa file cũ {old_path}: {e}")
 
+        # lưu file mới
         save_path = os.path.join(save_dir, filename)
-        print("Saving avatar to:", save_path)  # debug
+        print("Saving avatar to:", save_path)
         file.save(save_path)
 
-        # đường dẫn public để FE load
+        # cập nhật DB
         current_user.avatar = f"/uploads/avatars/{folder_name}/{filename}"
         db.session.commit()
 
@@ -147,6 +158,8 @@ class UserService:
             return None, "Mật khẩu xác nhận không khớp"
         if len(new_password) < 6:
             return None, "Mật khẩu phải có ít nhất 6 ký tự"
+        if not re.search(r"[A-Za-z]", new_password):
+            return None, "Mật khẩu phải có ít nhất 1 chữ cái"
         current_user.set_password(new_password)
         db.session.commit()
         return current_user, None

@@ -36,10 +36,12 @@ class Issue(db.Model):
     severity = db.Column("SERVERITY", db.Enum(Severity), nullable=False)
     priority = db.Column("PRIORITY", db.Enum(Priority), nullable=False)
     expire_date = db.Column("EXPIRE_DATE", db.Date, nullable=False)
-    evidence_file = db.Column("EVIDENCE_FILE", db.String(200), nullable=False)
+    evidence_file = db.Column("EVIDENCE_FILE", db.String(200), nullable=True)
 
     project = db.relationship("Project", back_populates="issues")
     type = db.relationship("IssueType", back_populates="issues")
+
+    issues_resolved = db.relationship("IssueResolve", back_populates="issue", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Issue id={self.id} name={self.name} status={self.status.value}>"

@@ -7,6 +7,8 @@ from flask_api import models
 from flask_cors import CORS
 from flask_api.extensions import db, migrate, login_manager, mail  
 from flask_api.config import Config
+from flask import send_from_directory, abort
+
 load_dotenv()
 def create_app():
     app = Flask(__name__)
@@ -57,6 +59,30 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+    
+    @app.route("/uploads/<path:filepath>")
+    def serve_uploads(filepath):
+        uploads_root = os.path.join(app.root_path, "uploads")
+        full_path = os.path.join(uploads_root, filepath)
+
+        # Nếu request trỏ tới 1 folder, tự tìm ảnh duy nhất trong đó
+        if os.path.isdir(full_path):
+            image_files = [
+                f for f in os.listdir(full_path)
+                if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif"))
+            ]
+            if not image_files:
+                return abort(404, description="Không tìm thấy ảnh trong thư mục.")
+            # ✅ lấy ảnh đầu tiên trong thư mục (vì mỗi thư mục user chỉ có 1 ảnh)
+            first_image = image_files[0]
+            return send_from_directory(full_path, first_image)
+
+        # Nếu là file cụ thể (đường dẫn đến file)
+        directory = os.path.dirname(full_path)
+        filename = os.path.basename(full_path)
+        if not os.path.exists(full_path):
+            return abort(404, description="File không tồn tại.")
+        return send_from_directory(directory, filename)
 
     # Register blueprints
     from flask_api.routes.task_status_routes import task_status_bp
@@ -72,6 +98,9 @@ def create_app():
     from flask_api.routes.team_invite_routes import team_invite_bp
     from flask_api.routes.hashtag_routes import hashtag_bp
     from flask_api.routes.complexity_point_routes import complexity_point_bp
+    from flask_api.routes.issue_type_routes import issue_type_bp
+    from flask_api.routes.issue_routes import issue_bp
+    from flask_api.routes.issue_resolve_routes import issue_resolve_bp
 
     app.register_blueprint(task_status_bp)
     app.register_blueprint(user_bp)
@@ -86,6 +115,9 @@ def create_app():
     app.register_blueprint(team_invite_bp)
     app.register_blueprint(hashtag_bp)
     app.register_blueprint(complexity_point_bp)
+    app.register_blueprint(issue_type_bp)
+    app.register_blueprint(issue_bp)
+    app.register_blueprint(issue_resolve_bp)
     CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
     app.config.from_object(Config)
     return app
