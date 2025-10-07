@@ -1,6 +1,10 @@
 import api from "./api";
 
 const TaskService = {
+  getByProject(projectId) {
+    return api.get(`/tasks/project/${projectId}`);
+  },
+
   getByUserStory(userStoryId) {
     return api.get(`/tasks/user-story/${userStoryId}`);
   },
