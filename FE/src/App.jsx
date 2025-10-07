@@ -14,6 +14,7 @@ import UserStory from "./pages/UserStory";
 import UserStoryEdit from "./pages/UserStoryEdit";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Issue from "./pages/Issue";
 export default function App() {
   return (
     <BrowserRouter>
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/issues" element={<Issue />} />
       </Routes>
     </BrowserRouter>
   );

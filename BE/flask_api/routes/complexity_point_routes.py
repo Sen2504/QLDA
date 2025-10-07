@@ -19,8 +19,10 @@ def get_all_points():
 @complexity_point_bp.route("/options", methods=["GET"])
 @login_required
 def get_options():
-    data = ComplexityPointService.get_options()
+    project_id = request.args.get("project_id", type=int)
+    data = ComplexityPointService.get_options(project_id)
     return jsonify(data), 200
+
 
 # CREATE (nếu cho admin thêm điểm mới)
 @complexity_point_bp.route("/", methods=["POST"])

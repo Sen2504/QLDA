@@ -5,6 +5,7 @@ import { useProject } from "../store/ProjectContext";
 import UserStoryService from "../services/userStoryService";
 import HashtagService from "../services/hashtagService";
 import WorkflowStatusService from "../services/workflowStatusService";
+import ComponentUpload from "../components/ComponentUpload"; // ✅ dùng component upload chung
 
 // util nhỏ: debounce
 function useDebounce(value, delay = 250) {
@@ -33,25 +34,16 @@ export default function UserStory() {
   const [showSuggest, setShowSuggest] = useState(false);
   const tagBoxRef = useRef(null);
 
-  // uploader
+  // uploader (dùng component)
   const [files, setFiles] = useState([]);
-  const inputFileRef = useRef(null);
-  const onDropZone = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const dropped = Array.from(e.dataTransfer.files || []);
-    if (dropped.length) setFiles((prev) => [...prev, ...dropped]);
-  };
 
   // ---- right column
   const [statuses, setStatuses] = useState([{ id: 0, name: "New" }]);
   const [statusId, setStatusId] = useState(null);
 
   const [complexityOptions, setComplexityOptions] = useState([]);
-  // state điểm chọn: { UX: 3, FE: 5, ... }
   const [complexities, setComplexities] = useState({});
 
-  // tổng điểm (nếu muốn)
   const totalPoints = useMemo(
     () => Object.values(complexities).reduce((a, b) => a + (Number(b) || 0), 0),
     [complexities]
@@ -59,31 +51,29 @@ export default function UserStory() {
 
   // ---- effects: load dropdown & options
   useEffect(() => {
+    // Load status workflow
     WorkflowStatusService.getAll().then((data) => {
       setStatuses(data);
       const def = data.find((s) => s.name?.toLowerCase() === "new") || data[0];
       setStatusId(def?.id ?? null);
     });
+  }, []);
 
-    UserStoryService.getComplexityOptions().then((opts) => {
+  // ✅ Load complexity options chỉ khi currentProject có giá trị
+  useEffect(() => {
+    if (!currentProject) return;
+    UserStoryService.getComplexityOptions(currentProject.id).then((opts) => {
       setComplexityOptions(opts);
-
-      // Khi add mới tất cả role mặc định 0
       const init = {};
       opts.forEach((o) => (init[o.name] = 0));
       setComplexities(init);
     });
-  }, []);
-
-
+  }, [currentProject]);
 
   // gợi ý hashtag
   useEffect(() => {
     const q = debouncedTagInput.trim();
-    if (!q) {
-      setTagSuggestions([]);
-      return;
-    }
+    if (!q) return setTagSuggestions([]);
     HashtagService.search(q)
       .then((res) => setTagSuggestions(res.data || []))
       .catch(() => setTagSuggestions([]));
@@ -112,45 +102,25 @@ export default function UserStory() {
   const removeTag = (name) =>
     setSelectedTags((prev) => prev.filter((t) => t !== name));
 
-  const handleFileInput = (e) => {
-    const chosen = Array.from(e.target.files || []);
-    if (chosen.length) setFiles((prev) => [...prev, ...chosen]);
-  };
-  const removeFile = (idx) =>
-    setFiles((prev) => prev.filter((_, i) => i !== idx));
-
   const setPoint = (roleName, point) =>
     setComplexities((prev) => ({ ...prev, [roleName]: Number(point) }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentProject) {
-      alert("Chưa chọn Project.");
-      return;
-    }
-    if (!name.trim()) {
-      alert("Vui lòng nhập tên User Story.");
-      return;
-    }
-    if (!expireDate) {
-      alert("Vui lòng chọn ngày hết hạn.");
-      return;
-    }
+    if (!currentProject) return alert("Chưa chọn Project.");
+    if (!name.trim()) return alert("Vui lòng nhập tên User Story.");
+    if (!expireDate) return alert("Vui lòng chọn ngày hết hạn.");
 
-    // build payload
     const formData = new FormData();
     formData.append("Name_story", name.trim());
     formData.append("Description", description);
     formData.append("Expire_date", expireDate);
     formData.append("Project_id", currentProject.id);
     if (statusId) formData.append("Status_id", statusId);
-
-    // hashtags (mảng string)
     formData.append("hashtags", JSON.stringify(selectedTags));
 
-    // complexities (mảng object {name, point} — đúng BE của bạn)
     const compArray = Object.entries(complexities)
-      .filter(([, p]) => p !== null && p !== undefined) // có thể = 0
+      .filter(([, p]) => p !== null && p !== undefined)
       .map(([name, point]) => ({ name, point }));
     formData.append("complexities", JSON.stringify(compArray));
 
@@ -163,76 +133,72 @@ export default function UserStory() {
   // ---- UI
   return (
     <MainLayout>
-      <form onSubmit={handleSubmit} className="p-6">
-        <h1 className="text-2xl font-bold text-green-700 mb-6">New user story</h1>
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-200 my-8"
+      >
+        <h1 className="text-3xl font-bold text-emerald-700 mb-8 text-center">
+          Create New User Story
+        </h1>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* LEFT: 2/3 width */}
-          <div className="xl:col-span-2 space-y-5">
-            {/* Subject + Due date */}
-            <div className="flex gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* LEFT: Title, hashtag, description, attachment */}
+          <div className="space-y-6">
+            <div>
+              <label className="text-gray-700 font-medium">Story Title</label>
               <input
                 type="text"
-                placeholder="Subject"
-                className="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Enter story title..."
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-              />
-              <input
-                type="date"
-                className="w-44 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                value={expireDate}
-                onChange={(e) => setExpireDate(e.target.value)}
-                title="Ngày hết hạn"
+                className="mt-2 w-full border-gray-300 rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
-            {/* Hashtags with suggestions */}
-            <div ref={tagBoxRef}>
-              <div className="border rounded px-3 py-2 bg-white">
-                <div className="flex flex-wrap gap-2">
-                  {selectedTags.map((t) => (
-                    <span
-                      key={t}
-                      className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded"
+            {/* Hashtags */}
+            <div ref={tagBoxRef} className="relative">
+              <label className="text-gray-700 font-medium">Hashtags</label>
+              <div className="mt-2 border border-gray-300 rounded-lg shadow-sm px-3 py-2 flex flex-wrap gap-2 bg-white">
+                {selectedTags.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-sm font-medium"
+                  >
+                    #{t}
+                    <button
+                      type="button"
+                      className="ml-1 text-emerald-600 hover:text-red-500"
+                      onClick={() => removeTag(t)}
                     >
-                      #{t}
-                      <button
-                        type="button"
-                        className="text-green-700/70 hover:text-green-900"
-                        onClick={() => removeTag(t)}
-                        aria-label={`Remove ${t}`}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onFocus={() => setShowSuggest(true)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addTag(tagInput);
-                      }
-                    }}
-                    placeholder="Enter tag"
-                    className="min-w-[160px] flex-1 outline-none"
-                  />
-                </div>
+                      ✕
+                    </button>
+                  </span>
+                ))}
+                <input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onFocus={() => setShowSuggest(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addTag(tagInput);
+                    }
+                  }}
+                  placeholder="Add a tag..."
+                  className="flex-1 border-none outline-none text-gray-700 placeholder-gray-400"
+                />
               </div>
 
               {showSuggest && tagSuggestions.length > 0 && (
-                <div className="mt-1 max-h-56 overflow-auto border rounded bg-white shadow z-10">
+                <div className="absolute mt-1 w-full border border-gray-200 rounded-lg bg-white shadow-lg z-20 max-h-40 overflow-auto">
                   {tagSuggestions.map((h) => (
                     <button
-                      type="button"
                       key={h.id ?? h.name}
-                      className="w-full text-left px-3 py-2 hover:bg-green-50"
+                      type="button"
+                      className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-emerald-50"
                       onClick={() => addTag(h.name)}
                     >
-                      {h.name}
+                      #{h.name}
                     </button>
                   ))}
                 </div>
@@ -241,79 +207,38 @@ export default function UserStory() {
 
             {/* Description */}
             <div>
+              <label className="text-gray-700 font-medium">Description</label>
               <textarea
-                placeholder="Please add descriptive text to help others better understand this user story"
-                rows={8}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                rows={4}
+                placeholder="Briefly describe this user story..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                className="mt-2 w-full border-gray-300 rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
-            {/* Attachments — drag & drop */}
-            <div className="border rounded">
-              <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b">
-                <span className="font-medium text-gray-700">
-                  {files.length} Attachments
-                </span>
-                <button
-                  type="button"
-                  className="rounded bg-teal-400 hover:bg-teal-500 text-white px-2 py-1"
-                  onClick={() => inputFileRef.current?.click()}
-                  title="Add"
-                >
-                  +
-                </button>
-                <input
-                  ref={inputFileRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileInput}
-                />
-              </div>
-
-              <div
-                className="p-6 text-center text-gray-500 border-dashed border-2 border-gray-300 rounded-b cursor-pointer"
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = "copy";
-                }}
-                onDrop={onDropZone}
-                onClick={() => inputFileRef.current?.click()}
-              >
-                Drop attachments here!
-              </div>
-
-              {files.length > 0 && (
-                <ul className="divide-y">
-                  {files.map((f, i) => (
-                    <li
-                      key={`${f.name}-${i}`}
-                      className="flex items-center justify-between px-4 py-2 text-sm"
-                    >
-                      <span className="truncate">{f.name}</span>
-                      <button
-                        type="button"
-                        className="text-red-600 hover:underline"
-                        onClick={() => removeFile(i)}
-                      >
-                        remove
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            {/* Upload file (reusable component) */}
+            <ComponentUpload files={files} setFiles={setFiles} label="Attachments" />
           </div>
 
-          {/* RIGHT: 1/3 width */}
-          <div className="space-y-5">
+          {/* RIGHT: status + complexity + upload */}
+          <div className="space-y-6">
+            {/* Due date */}
+            <div>
+              <label className="text-gray-700 font-medium">Due Date</label>
+              <input
+                type="date"
+                value={expireDate}
+                onChange={(e) => setExpireDate(e.target.value)}
+                className="mt-2 w-full border-gray-300 rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
             {/* Status dropdown */}
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Status</label>
+              <label className="text-gray-700 font-medium">Status</label>
               <select
-                className="w-full border rounded px-3 py-2 bg-slate-700 text-white"
+                className="mt-2 w-full border-gray-300 rounded-lg shadow-sm px-3 py-2 bg-slate-700 text-white"
                 value={statusId ?? ""}
                 onChange={(e) => setStatusId(Number(e.target.value))}
               >
@@ -326,9 +251,9 @@ export default function UserStory() {
             </div>
 
             {/* Complexity points */}
-            <div className="border rounded">
+            <div className="border rounded-lg shadow-sm">
               <div className="px-4 py-2 bg-gray-50 border-b font-medium text-gray-700">
-                Points
+                Complexity Points
               </div>
               <div className="p-3">
                 <table className="w-full">
@@ -341,7 +266,9 @@ export default function UserStory() {
                             <select
                               className="border rounded px-2 py-1"
                               value={complexities[opt.name] ?? 0}
-                              onChange={(e) => setPoint(opt.name, e.target.value)}
+                              onChange={(e) =>
+                                setPoint(opt.name, e.target.value)
+                              }
                             >
                               {opt.points.map((p) => (
                                 <option key={`${opt.name}-${p}`} value={p}>
@@ -355,7 +282,9 @@ export default function UserStory() {
                               min="0"
                               className="border rounded px-2 py-1 w-24"
                               value={complexities[opt.name] ?? 0}
-                              onChange={(e) => setPoint(opt.name, e.target.value)}
+                              onChange={(e) =>
+                                setPoint(opt.name, e.target.value)
+                              }
                             />
                           )}
                         </td>
@@ -363,7 +292,7 @@ export default function UserStory() {
                     ))}
                     <tr>
                       <td className="py-2 pr-3 font-semibold text-gray-700">
-                        total points
+                        Total Points
                       </td>
                       <td className="py-2 font-semibold">{totalPoints}</td>
                     </tr>
@@ -372,17 +301,17 @@ export default function UserStory() {
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex gap-2">
+            {/* Buttons */}
+            <div className="flex gap-3">
               <button
                 type="submit"
-                className="flex-1 bg-teal-400 hover:bg-teal-500 text-white font-semibold py-2 rounded"
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold py-2 rounded-lg shadow hover:from-emerald-600 hover:to-green-700 transition"
               >
                 CREATE
               </button>
               <button
                 type="button"
-                className="px-4 py-2 rounded border"
+                className="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
                 onClick={() => navigate("/user-stories")}
               >
                 Cancel

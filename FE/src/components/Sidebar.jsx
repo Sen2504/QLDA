@@ -26,10 +26,7 @@ export default function Sidebar() {
   return (
     <aside className="bg-white border-r border-gray-200 w-64 min-h-screen p-6">
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-green-600">
-          Menu
-        </h2>
+      <div className="flex items-center justify-center mb-2">
 
         {/* Dropdown chọn project */}
         <select

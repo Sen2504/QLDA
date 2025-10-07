@@ -35,15 +35,19 @@ const UserStoryService = {
   },
 
   // load danh sách Role để chọn điểm
-  async getComplexityOptions() {
-    try {
-      const res = await api.get("/complexity_points/options");
-      return res.data; // [{ name: "Front End", points: [0,1,2,3,5,8] }, ...]
-    } catch (err) {
-      console.error("Error loading complexity options:", err);
-      return [];
-    }
+  async getComplexityOptions(projectId) {
+    const defaultRoles = ["Front End", "Back End", "Design", "Test"];
+    const pointLevels = [0, 1, 2, 3, 5, 8];
+
+    // Tạo danh sách role + mức điểm
+    const options = defaultRoles.map((role) => ({
+      name: role,
+      points: pointLevels,
+    }));
+
+    return options;
   }
+
 }
 
 export default UserStoryService;
