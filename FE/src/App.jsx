@@ -37,7 +37,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
         <Route path="/projects/:projectId/sprints/:sprintId/taskboard" element={<SprintBoard />} />
-  <Route path="/tasks" element={<Tasks />} />
+        <Route path="/tasks" element={<Tasks />} />
         </Routes>
     </BrowserRouter>
   );
