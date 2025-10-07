@@ -335,3 +335,8 @@ class UserStoryService:
         except Exception as e:
             db.session.rollback()
             return False, str(e)
+        
+    @staticmethod
+    def get_by_project(project_id):
+        return UserStory.query.filter_by(project_id=project_id).all()
+

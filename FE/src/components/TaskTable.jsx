@@ -16,9 +16,13 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange }) {
       });
   }, []);
 
-  const handleChange = (taskId, newStatusId) => {
-    setSelectedStatus((prev) => ({ ...prev, [taskId]: newStatusId }));
-    if (onStatusChange) onStatusChange(taskId, newStatusId);
+  const handleChange = (taskId, rawValue) => {
+    const parsed = Number(rawValue);
+    const nextStatusId = Number.isNaN(parsed) ? null : parsed;
+    setSelectedStatus((prev) => ({ ...prev, [taskId]: nextStatusId }));
+    if (onStatusChange && nextStatusId !== null) {
+      onStatusChange(taskId, nextStatusId);
+    }
   };
 
   return (
@@ -50,7 +54,13 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange }) {
                 {/* Dropdown trạng thái lấy từ BE */}
                 <td className="px-4 py-2">
                   <select
-                    value={selectedStatus[t.id] || t.status_id || ""}
+                    value={
+                      selectedStatus[t.id] !== undefined
+                        ? String(selectedStatus[t.id])
+                        : t.status_id !== undefined && t.status_id !== null
+                        ? String(t.status_id)
+                        : ""
+                    }
                     onChange={(e) => handleChange(t.id, e.target.value)}
                     className="border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-[var(--color-accent,#16a34a)]"
                   >

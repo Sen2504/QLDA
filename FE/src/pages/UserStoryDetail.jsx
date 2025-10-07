@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import api from "../services/api";
 import TaskService from "../services/taskService";
 import TeamService from "../services/teamService";
@@ -72,11 +73,25 @@ export default function UserStoryDetail() {
         <TaskTable
           tasks={tasks}
           onCreateClick={() => setShowForm(true)}
-          onStatusChange={(taskId, newStatusId) => {
-            api
-              .put(`/tasks/${taskId}`, { status_id: newStatusId })
-              .then(() => toast.success("Cập nhật trạng thái thành công!"))
-              .catch(() => toast.error("Lỗi khi cập nhật trạng thái"));
+          onStatusChange={async (taskId, newStatusId) => {
+            try {
+              await api.put(`/tasks/${taskId}`, { status_id: Number(newStatusId) });
+              setTasks((prev) =>
+                prev.map((task) =>
+                  task.id === taskId
+                    ? {
+                        ...task,
+                        status_id: Number(newStatusId),
+                      }
+                    : task
+                )
+              );
+              toast.success("Cập nhật trạng thái thành công!");
+            } catch (err) {
+              toast.error(
+                err.response?.data?.error || "Lỗi khi cập nhật trạng thái"
+              );
+            }
           }}
         />
         {showForm && (

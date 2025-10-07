@@ -121,3 +121,11 @@ def download_user_story_file(story_id):
     if not story or not story.evidence_file:
         return jsonify({"error": "Không có file để tải."}), 404
     return send_file(story.evidence_file, as_attachment=True)
+# ----------------- GET BY PROJECT -----------------
+@user_story_bp.route("/project/<int:project_id>", methods=["GET"])
+@login_required
+def get_user_stories_by_project(project_id):
+    stories = UserStoryService.get_by_project(project_id)
+    if not stories:
+        return jsonify([]), 200
+    return jsonify(user_stories_schema.dump(stories)), 200
