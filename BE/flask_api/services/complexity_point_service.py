@@ -1,4 +1,5 @@
 from flask_api.models.complexity_point_models import ComplexityPoint
+from flask_api.models.project_role_models import ProjectRole
 from flask_api.extensions import db
 
 class ComplexityPointService:
@@ -9,19 +10,28 @@ class ComplexityPointService:
     DEFAULT_POINTS = [0, 1, 2, 3, 5, 8]
 
     @staticmethod
-    def get_options():
-        from flask_api.models.role_models import Role
+    def get_options(project_id=None):
+        query = ProjectRole.query
+        if project_id:
+            query = query.filter_by(project_id=project_id)
 
-        roles = Role.query.all()
+        roles = query.all()
         excluded = ["Project Owner", "Project Manager", "Scrum Master"]
         result = []
+        seen = set()
+
         for r in roles:
-            if r.name not in excluded:
+            name = (r.name or "").strip()
+            if not name or name in excluded:
+                continue
+            if name not in seen:
+                seen.add(name)
                 result.append({
-                    "name": r.name.strip(),   # đảm bảo giống hệt Role.name
+                    "name": name,
                     "points": ComplexityPointService.DEFAULT_POINTS
                 })
         return result
+
 
     @staticmethod
     def create(name, point):

@@ -10,6 +10,7 @@ from flask_api.models.hashtag_models import Hashtag
 from flask_api.models.user_story_hashtag_models import UserStoryHashtag
 from flask_api.models.workflow_status_models import WorkflowStatus
 from flask_api.services.hashtag_service import HashtagService
+from flask import send_from_directory
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "..", "uploads", "user_story")
 MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB
@@ -62,6 +63,8 @@ class UserStoryService:
                 return [x.strip() for x in field_value.split(",") if x.strip()]
         return field_value
 
+    
+    
     # ====================== PUBLIC METHODS ======================
     @staticmethod
     def create(data, files=None):
@@ -114,7 +117,7 @@ class UserStoryService:
         # Tạo sẵn folder (dù chưa có file)
         story_folder = UserStoryService._story_folder(new_story.id)
         os.makedirs(story_folder, exist_ok=True)
-        new_story.evidence_file = story_folder
+        # new_story.evidence_file = story_folder
 
         # Lưu file nếu có
         if files:
@@ -200,6 +203,27 @@ class UserStoryService:
         ]
         total_points = sum(c["point"] or 0 for c in complexities)
 
+        # --- Parse evidence_file ---
+        evidence_files = []
+        if story.evidence_file:
+            # Nếu DB lưu chuỗi ['a','b'] thì chuyển thành list thật
+            if isinstance(story.evidence_file, str):
+                try:
+                    import ast
+                    parsed = ast.literal_eval(story.evidence_file)
+                    if isinstance(parsed, list):
+                        evidence_files = parsed
+                    else:
+                        evidence_files = []
+                except Exception:
+                    evidence_files = []
+            elif isinstance(story.evidence_file, list):
+                evidence_files = story.evidence_file
+
+        # Nếu DB không có danh sách, đọc trực tiếp trong thư mục
+        if not evidence_files:
+            evidence_files = UserStoryService._list_files(story.id)
+
         story_data = {
             "id": story.id,
             "name": story.name,
@@ -208,9 +232,9 @@ class UserStoryService:
             "status_id": story.status_id,
             "project_id": story.project_id,
             "sprint_id": story.sprint_id,
-            "evidence_file": UserStoryService._list_files(story.id),
+            "evidence_file": evidence_files,
             "complexity_points": complexities,
-            "total_points": total_points,   # thêm tổng điểm
+            "total_points": total_points,
             "hashtags": [
                 {"hashtag": {"id": h.hashtag.id, "name": h.hashtag.name}}
                 for h in story.hashtags
@@ -299,7 +323,7 @@ class UserStoryService:
             # ==== Quản lý files ====
             story_folder = UserStoryService._story_folder(story.id)
             os.makedirs(story_folder, exist_ok=True)
-            story.evidence_file = story_folder
+            # story.evidence_file = story_folder
 
             existing_files = set(os.listdir(story_folder)) if os.path.exists(story_folder) else set()
             keep_files = set(keep_files or [])

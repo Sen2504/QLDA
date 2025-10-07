@@ -13,10 +13,8 @@ import UserStory from "./pages/UserStory";
 import UserStoryEdit from "./pages/UserStoryEdit";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
-import UserStoryDetail from "./pages/UserStoryDetail";
-import SprintBoard from "./pages/SprintBoard";
-import Tasks from "./pages/Tasks";
 
+>>>>>>>>> Temporary merge branch 2
 export default function App() {
   return (
     <BrowserRouter>
@@ -35,10 +33,8 @@ export default function App() {
         <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
-        <Route path="/projects/:projectId/sprints/:sprintId/taskboard" element={<SprintBoard />} />
-        <Route path="/tasks" element={<Tasks />} />
-        </Routes>
+>>>>>>>>> Temporary merge branch 2
+      </Routes>
     </BrowserRouter>
   );
 }
