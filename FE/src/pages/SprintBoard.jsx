@@ -111,6 +111,11 @@ export default function SprintBoard() {
       .catch(() => toast.error("Không tải được Sprint Taskboard"));
   }, [currentProject, projectId, sprintId]);
 
+  const handleOpenUserStory = (userStoryId) => {
+    if (!userStoryId) return;
+    navigate(`/user-stories/${userStoryId}`);
+  };
+
   const onDragEnd = async (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -207,7 +212,18 @@ export default function SprintBoard() {
           {userStories.map((us) => (
             <div key={us.id} className="grid grid-cols-6 gap-2 mb-4">
               <div className="px-2">
-                <div className="bg-gray-50 border rounded-xl p-3 h-full">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOpenUserStory(us.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleOpenUserStory(us.id);
+                    }
+                  }}
+                  className="bg-gray-50 border rounded-xl p-3 h-full cursor-pointer hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-secondary)]"
+                >
                   <div className="text-sm font-semibold mb-1">
                     #{us.id} {us.title || us.name}
                   </div>
