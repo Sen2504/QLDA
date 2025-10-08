@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
+    "@hello-pangea/dnd": "^18.0.1",
     "axios": "^1.12.2",
+    "dayjs": "^1.11.18",
     "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
     "mdb-react-ui-kit": "^9.0.0",

@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+	--color-primary: #13341e; /* Dark green */
+	--color-secondary: #4e7145; /* Fern green */
+	--color-accent: #eb9c35; /* Carthage */
+	--color-warning: #c4501b; /* Orange */
+	--color-danger: #8a2b13; /* Sienna */
+}

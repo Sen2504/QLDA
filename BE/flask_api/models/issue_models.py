@@ -14,7 +14,7 @@ class IssueStatus(enum.Enum):
 class Severity(enum.Enum):
     WISHLIST = "Wishlist"
     MINOR = "Minor"
-    NORMAL = "NORMAL"
+    NORMAL = "Normal"
     IMPORTANT = "Important"
     CRITICAL = "Critical"
 

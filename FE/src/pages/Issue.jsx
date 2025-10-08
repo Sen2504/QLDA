@@ -26,7 +26,7 @@ export default function IssueCreate() {
   const [types, setTypes] = useState([]);
   const [typeId, setTypeId] = useState("");
   const [status, setStatus] = useState("New");
-  const [severity, setSeverity] = useState("NORMAL");
+  const [severity, setSeverity] = useState("Normal");
   const [priority, setPriority] = useState("Normal");
 
   const [tagInput, setTagInput] = useState("");
@@ -36,10 +36,10 @@ export default function IssueCreate() {
   const debouncedTagInput = useDebounce(tagInput, 250);
   const tagBoxRef = useRef(null);
 
-  const [files, setFiles] = useState([]); // ✅ nhiều file
+  const [files, setFiles] = useState([]);
 
   const STATUS_OPTIONS = ["New", "In Progress", "Ready for test", "Closed", "Need Info", "Rejected", "Postponed"];
-  const SEVERITY_OPTIONS = ["Wishlist", "Minor", "NORMAL", "Important", "Critical"];
+  const SEVERITY_OPTIONS = ["Wishlist", "Minor", "Normal", "Important", "Critical"];
   const PRIORITY_OPTIONS = ["Low", "Normal", "High"];
 
   // Load issue types

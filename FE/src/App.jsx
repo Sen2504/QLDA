@@ -5,16 +5,20 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Projects from "./pages/Projects";
-import Tasks from "./pages/Tasks"; 
+import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
 import ProjectDashboard from "./pages/ProjectDashboard";
 import MyInvites from "./pages/MyInvites";
 import UserStoryList from "./pages/UserStoryList";
 import UserStory from "./pages/UserStory";
 import UserStoryEdit from "./pages/UserStoryEdit";
-import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
 import Issue from "./pages/Issue";
+import IssueEdit from "./pages/IssueEdit";
+import UserStoryDetail from "./pages/UserStoryDetail";
+import SprintBoard from "./pages/SprintBoard";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -34,7 +38,10 @@ export default function App() {
         <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
+        <Route path="/projects/:projectId/sprints/:sprintId/taskboard" element={<SprintBoard />} />
         <Route path="/issues" element={<Issue />} />
+        <Route path="/issues/:id/edit" element={<IssueEdit />} />
       </Routes>
     </BrowserRouter>
   );
