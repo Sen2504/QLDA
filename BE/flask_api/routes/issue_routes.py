@@ -30,6 +30,7 @@ def get_issue(issue_id):
     issue = IssueService.get_by_id(issue_id)
     if not issue:
         return jsonify({"error": "Không tìm thấy Issue."}), 404
+
     return jsonify(issue_schema.dump(issue)), 200
 
 # ----------------- CREATE -----------------
@@ -45,9 +46,6 @@ def create_issue():
         single_file = request.files.get("files")
         if single_file:
             files = [single_file]
-
-    print("DEBUG FORM:", data)
-    print("DEBUG FILES:", [f.filename for f in files])
 
     issue, error = IssueService.create(data, files)
     if error:
@@ -69,17 +67,18 @@ def update_issue(issue_id):
         if single_file:
             new_files = [single_file]
 
-    keep_files = data.get("keep_files")
-    if keep_files:
+    deleted_files = data.get("deleted_files")
+    if deleted_files:
         import json
         try:
-            keep_files = json.loads(keep_files)
+            deleted_files = json.loads(deleted_files)
         except Exception:
-            keep_files = []
+            deleted_files = []
     else:
-        keep_files = []
+        deleted_files = []
 
-    issue, error = IssueService.update(issue_id, data, new_files=new_files, keep_files=keep_files)
+    issue, error = IssueService.update(issue_id, data, new_files=new_files, deleted_files=deleted_files)
+
     if error:
         return jsonify({"error": error}), 400
 

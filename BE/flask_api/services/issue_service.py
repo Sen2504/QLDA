@@ -64,19 +64,7 @@ class IssueService:
     @staticmethod
     def get_by_id(issue_id):
         issue = Issue.query.get(issue_id)
-        if not issue:
-            return None
-
-        return {
-            "id": issue.id,
-            "name": issue.name,
-            "description": issue.description,
-            "status": issue.status.value if issue.status else None,
-            "severity": issue.severity.value if issue.severity else None,
-            "priority": issue.priority.value if issue.priority else None,
-            "expire_date": issue.expire_date,
-            "evidence_files": IssueService._list_files(issue.id)
-        }
+        return issue
 
     @staticmethod
     def create(data, files=None):
@@ -111,15 +99,22 @@ class IssueService:
         # Tạo thư mục lưu file
         issue_folder = IssueService._issue_folder(new_issue.id)
         os.makedirs(issue_folder, exist_ok=True)
-        new_issue.evidence_file = issue_folder
 
         # Lưu file nếu có
+        filenames = []
         if files:
             for file in files:
-                _, error = IssueService._save_file(file, new_issue.id)
-                if error:
-                    db.session.rollback()
-                    return None, error
+                if file and file.filename:
+                    _, error = IssueService._save_file(file, new_issue.id)
+                    if error:
+                        db.session.rollback()
+                        return None, error
+                    filenames.append(secure_filename(file.filename))
+
+        # Lưu danh sách tên file vào DB 
+        if filenames:
+            import json
+            new_issue.evidence_file = json.dumps(filenames)
 
         # Thêm record IssueResolve mặc định
         db.session.add(IssueResolve(issue_id=new_issue.id, team_id=None))
@@ -128,47 +123,62 @@ class IssueService:
         return new_issue, None
 
     @staticmethod
-    def update(issue_id, data, new_files=None, keep_files=None):
+    def update(issue_id, data, new_files=None, deleted_files=None):
         issue = Issue.query.get(issue_id)
         if not issue:
             return None, "Không tìm thấy Issue."
 
-        # Cập nhật field cơ bản
-        for field in [
-            "name", "description", "hashtag", "status",
-            "severity", "priority", "expire_date", "type_id"
-        ]:
-            if field in data and data[field] is not None:
-                setattr(issue, field, data[field])
+        try:
+            # ==== Cập nhật field cơ bản ====
+            for field in [
+                "name", "description", "hashtag", "status",
+                "severity", "priority", "expire_date", "type_id"
+            ]:
+                if field in data and data[field] is not None:
+                    setattr(issue, field, data[field])
 
-        # Cập nhật team_id (nếu có)
-        team_id = data.get("team_id")
-        if team_id is not None:
-            resolve = IssueResolve.query.filter_by(issue_id=issue_id).first()
-            if not resolve:
-                db.session.add(IssueResolve(issue_id=issue_id, team_id=team_id))
-            else:
-                resolve.team_id = team_id
+            # ==== Cập nhật team_id (nếu có) ====
+            team_id = data.get("team_id")
+            if team_id is not None:
+                resolve = IssueResolve.query.filter_by(issue_id=issue_id).first()
+                if not resolve:
+                    db.session.add(IssueResolve(issue_id=issue_id, team_id=team_id))
+                else:
+                    resolve.team_id = team_id
 
-        # Quản lý file upload
-        issue_folder = IssueService._issue_folder(issue.id)
-        os.makedirs(issue_folder, exist_ok=True)
-        issue.evidence_file = issue_folder
+            # ==== Quản lý file upload ====
+            issue_folder = IssueService._issue_folder(issue.id)
+            os.makedirs(issue_folder, exist_ok=True)
 
-        existing_files = set(os.listdir(issue_folder)) if os.path.exists(issue_folder) else set()
-        keep_files = set(keep_files or [])
+            # 1️⃣ Xóa file bị đánh dấu xoá (FE gửi deleted_files)
+            if deleted_files:
+                for filename in deleted_files:
+                    fpath = os.path.join(issue_folder, filename)
+                    if os.path.exists(fpath):
+                        os.remove(fpath)
+                        print(f"🗑️ Đã xóa file: {fpath}")
 
-        # Xóa file cũ không giữ lại
-        for f in existing_files - keep_files:
-            os.remove(os.path.join(issue_folder, f))
+            # 2️⃣ Lưu file mới (FE gửi qua formData 'files')
+            if new_files:
+                for file in new_files:
+                    if file and file.filename:
+                        _, error = IssueService._save_file(file, issue.id)
+                        if error:
+                            db.session.rollback()
+                            return None, error
 
-        # Lưu file mới
-        if new_files:
-            for file in new_files:
-                _, error = IssueService._save_file(file, issue.id)
-                if error:
-                    db.session.rollback()
-                    return None, error
+            # 3️⃣ Cập nhật danh sách file hiện có trong DB (nếu có field này)
+            current_files = [
+                f for f in os.listdir(issue_folder)
+                if os.path.isfile(os.path.join(issue_folder, f))
+            ]
+            issue.evidence_file = json.dumps(current_files)
 
-        db.session.commit()
-        return issue, None
+            # ==== Commit ====
+            db.session.commit()
+            return issue, None
+
+        except Exception as e:
+            db.session.rollback()
+            return None, str(e)
+

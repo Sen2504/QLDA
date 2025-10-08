@@ -1,6 +1,5 @@
 import os
 import json
-import shutil
 from datetime import date
 from werkzeug.utils import secure_filename
 from flask_api.extensions import db
@@ -243,7 +242,7 @@ class UserStoryService:
         return story_data
 
     @staticmethod
-    def update(story_id, data, new_files=None, keep_files=None):
+    def update(story_id, data, new_files=None, deleted_files=None):
         story = UserStory.query.get(story_id)
         if not story:
             return None, "Không tìm thấy User Story."
@@ -255,7 +254,6 @@ class UserStoryService:
                 if not new_name:
                     return None, "Tên User Story là bắt buộc."
 
-                # Kiểm tra trùng tên trong cùng project (ngoại trừ chính nó)
                 existing_story = UserStory.query.filter(
                     db.func.lower(UserStory.name) == new_name.lower(),
                     UserStory.project_id == story.project_id,
@@ -293,6 +291,7 @@ class UserStoryService:
                     comp_point = comp.get("point")
                     if not comp_name:
                         continue
+
                     existing = ComplexityPoint.query.filter_by(
                         user_story_id=story.id, name=comp_name
                     ).first()
@@ -308,7 +307,6 @@ class UserStoryService:
             # ==== Update hashtags ====
             if "hashtags" in data:
                 hashtags = UserStoryService._parse_json_field(data["hashtags"], [])
-                # clear old hashtags
                 UserStoryHashtag.query.filter_by(user_story_id=story.id).delete()
                 for tag in hashtags:
                     tag_name = tag.strip() if isinstance(tag, str) else (tag.get("name") or "").strip()
@@ -323,29 +321,41 @@ class UserStoryService:
             # ==== Quản lý files ====
             story_folder = UserStoryService._story_folder(story.id)
             os.makedirs(story_folder, exist_ok=True)
-            # story.evidence_file = story_folder
 
-            existing_files = set(os.listdir(story_folder)) if os.path.exists(story_folder) else set()
-            keep_files = set(keep_files or [])
+            # 1️⃣ Xóa file bị đánh dấu xoá (FE gửi deleted_files)
+            if deleted_files:
+                deleted_list = UserStoryService._parse_json_field(deleted_files, [])
+                for filename in deleted_list:
+                    path = os.path.join(story_folder, filename)
+                    if os.path.exists(path):
+                        os.remove(path)
+                        print(f"🗑️ Đã xóa file: {path}")
 
-            # Xóa file không nằm trong keep_files
-            for f in existing_files - keep_files:
-                os.remove(os.path.join(story_folder, f))
-
-            # Thêm file mới
+            # 2️⃣ Thêm file mới (FE gửi formData 'files')
             if new_files:
                 for file in new_files:
-                    _, error = UserStoryService._save_file(file, story.id)
-                    if error:
-                        db.session.rollback()
-                        return None, error
+                    if file and file.filename:
+                        _, error = UserStoryService._save_file(file, story.id)
+                        if error:
+                            db.session.rollback()
+                            return None, error
 
+            # 3️⃣ Cập nhật danh sách file hiện có vào DB
+            current_files = [
+                f for f in os.listdir(story_folder)
+                if os.path.isfile(os.path.join(story_folder, f))
+            ]
+            story.evidence_file = json.dumps(current_files)
+
+            # ==== Commit ====
             db.session.commit()
             return story, None
 
         except Exception as e:
             db.session.rollback()
             return None, str(e)
+
+
 
     @staticmethod
     def delete(story_id):

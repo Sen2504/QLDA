@@ -10,6 +10,7 @@ user_story_bp = Blueprint("user_story_bp", __name__, url_prefix="/api/user_stori
 user_story_schema = UserStorySchema()
 user_stories_schema = UserStorySchema(many=True)
 
+
 @login_required
 @user_story_bp.route("/", methods=["POST"])
 def create_user_story():
@@ -65,36 +66,37 @@ def get_user_story(id):
     return jsonify(data), 200
 
 
-
 @user_story_bp.route("/<int:story_id>", methods=["PUT"])
 def update_user_story(story_id):
     data = request.form.to_dict()
 
-    # lấy file mới (có thể nhiều file)
+    # ---- Lấy file mới (có thể nhiều file) ----
     new_files = request.files.getlist("files")
     if not new_files:
         single_file = request.files.get("files")
         if single_file:
             new_files = [single_file]
 
-    # danh sách file giữ lại (nếu client có gửi)
-    keep_files = data.get("keep_files")
-    if keep_files:
+    # ---- Lấy danh sách file cần xoá (client gửi dạng JSON string) ----
+    deleted_files = data.get("deleted_files")
+    if deleted_files:
         try:
             import json
-            keep_files = json.loads(keep_files)   # client gửi dạng JSON string: ["a.pdf","b.png"]
+            deleted_files = json.loads(deleted_files)
         except Exception:
-            keep_files = []
+            deleted_files = []
     else:
-        keep_files = []
+        deleted_files = []
 
+    # ---- Gọi service update ----
     updated_story, error = UserStoryService.update(
         story_id,
         data,
         new_files=new_files,
-        keep_files=keep_files
+        deleted_files=deleted_files    # ✅ đổi sang deleted_files
     )
 
+    # ---- Trả về response ----
     if error:
         status_code = 404 if error == "Không tìm thấy User Story." else 400
         return jsonify({"error": error}), status_code
@@ -121,6 +123,7 @@ def download_user_story_file(story_id):
     if not story or not story.evidence_file:
         return jsonify({"error": "Không có file để tải."}), 404
     return send_file(story.evidence_file, as_attachment=True)
+
 # ----------------- GET BY PROJECT -----------------
 @user_story_bp.route("/project/<int:project_id>", methods=["GET"])
 @login_required
