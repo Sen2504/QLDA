@@ -44,6 +44,7 @@ class TaskService:
         status_id = data.get("status_id")
         team_id = data.get("team_id")
         team_ids = data.get("team_ids") or []
+        due_date = data.get("due_date")
 
         if not name:
             return None, "Ten task la bat buoc."
@@ -80,6 +81,7 @@ class TaskService:
                 description=description,
                 user_story_id=user_story.id,
                 status_id=status.id,
+                due_date=due_date,
             )
             db.session.add(new_task)
             db.session.flush()
@@ -105,6 +107,8 @@ class TaskService:
         user_story_id = data.get("user_story_id")
         team_id = data.get("team_id")
         team_ids = data.get("team_ids") or []
+        update_due_date = "due_date" in data
+        due_date = data.get("due_date")
 
         try:
             if name is not None:
@@ -132,6 +136,9 @@ class TaskService:
                 if not status:
                     return None, "Khong tim thay trang thai Task."
                 task.status_id = status.id
+
+            if update_due_date:
+                task.due_date = due_date
 
             # Cập nhật 1 người cũ (team_id) hoặc nhiều người (team_ids)
             if team_ids:

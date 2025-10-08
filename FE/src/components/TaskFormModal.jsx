@@ -7,6 +7,7 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
     description: "",
     status_id: "",
     team_ids: [], // danh sách nhiều team id
+    due_date: "",
   });
 
   const [statuses, setStatuses] = useState([]);
@@ -61,6 +62,7 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
         user_story_id: Number(userStoryId),
         status_id: Number(form.status_id),
         team_ids: form.team_ids.map(Number),
+        due_date: form.due_date ? form.due_date : null,
       });
     } finally {
       setSubmitting(false);
@@ -97,6 +99,16 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
           rows={3}
           className="border rounded-lg w-full p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           placeholder="Mô tả chi tiết..."
+        />
+
+        {/* Hạn chót */}
+        <label className="block text-sm mb-1">Ngày hết hạn</label>
+        <input
+          type="date"
+          name="due_date"
+          value={form.due_date}
+          onChange={handleChange}
+          className="border rounded-lg w-full p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
 
         {/* Dropdown */}

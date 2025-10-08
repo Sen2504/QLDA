@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import TaskStatusService from "../services/taskStatusService";
+import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 
 export default function TaskTable({ tasks, onCreateClick, onStatusChange }) {
   const [statuses, setStatuses] = useState([]);
@@ -25,6 +26,23 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange }) {
     }
   };
 
+  const decoratedTasks = useMemo(
+    () =>
+      (tasks || []).map((task) => {
+        const assignees = Array.isArray(task.assignees)
+          ? task.assignees
+          : task.assignee
+          ? [task.assignee]
+          : [];
+        return {
+          ...task,
+          assignees,
+          dueInfo: evaluateDueDate(task.due_date),
+        };
+      }),
+    [tasks]
+  );
+
   return (
     <div className="mt-6 bg-white rounded-2xl shadow p-5">
       <div className="flex justify-between items-center mb-4">
@@ -42,14 +60,50 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange }) {
           <thead className="text-xs uppercase bg-gray-100 text-gray-600">
             <tr>
               <th className="px-4 py-2">Tên task</th>
-              <th className="px-4 py-2">Trạng thái</th>
+              <th className="px-4 py-2">Hạn chót</th>
+              <th className="px-4 py-2">Ưu tiên</th>
               <th className="px-4 py-2">Người thực hiện</th>
+              <th className="px-4 py-2">Trạng thái</th>
             </tr>
           </thead>
           <tbody>
-            {tasks.map((t) => (
+            {decoratedTasks.map((t) => (
               <tr key={t.id} className="border-t hover:bg-gray-50">
                 <td className="px-4 py-2">{t.name}</td>
+
+                <td className="px-4 py-2">{t.dueInfo.dueDisplay}</td>
+
+                <td className="px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${t.dueInfo.badgeClass}`}
+                    >
+                      {t.dueInfo.label}
+                    </span>
+                    {t.dueInfo.diffDays !== null && (
+                      <span className="text-xs text-gray-500">
+                        {describeDiffDays(t.dueInfo.diffDays)}
+                      </span>
+                    )}
+                  </div>
+                </td>
+
+                <td className="px-4 py-2">
+                  {t.assignees && t.assignees.length > 0 ? (
+                    <div className="space-y-1">
+                      {t.assignees.map((assignee) => (
+                        <div key={`assignee-${t.id}-${assignee.team_id}`} className="text-xs text-gray-700">
+                          {assignee.user_name || assignee.name || assignee.user_email || assignee.email || "Ẩn danh"}
+                          {assignee.role_name && (
+                            <span className="ml-1 text-gray-400">({assignee.role_name})</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">Chưa phân công</span>
+                  )}
+                </td>
 
                 {/* Dropdown trạng thái lấy từ BE */}
                 <td className="px-4 py-2">
@@ -71,10 +125,6 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange }) {
                       </option>
                     ))}
                   </select>
-                </td>
-
-                <td className="px-4 py-2">
-                  {t.assignee?.user_email || "Chưa phân công"}
                 </td>
               </tr>
             ))}

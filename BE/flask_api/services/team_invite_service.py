@@ -77,15 +77,11 @@ class TeamInviteService:
         db.session.commit()
 
         # 6) Gửi email Accept/Reject cho user
-        accept_url = url_for("team_invite.accept_invite", invite_id=invite.id, _external=True)
-        reject_url = url_for("team_invite.reject_invite", invite_id=invite.id, _external=True)
+        frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:5173")
+        invite_page = f"{frontend_url.rstrip('/')}/my-invites?invite={invite.id}"
         html = f"""
             <p>Bạn được mời tham gia dự án <b>{project_name}</b> với vai trò <b>{role_name}</b>.</p>
-            <p>Chọn một trong hai hành động:</p>
-            <ul>
-                <li><a href="{accept_url}">Chấp nhận</a></li>
-                <li><a href="{reject_url}">Từ chối</a></li>
-            </ul>
+            <p>Vui lòng truy cập trang <a href="{invite_page}">Lời mời của tôi</a> để chấp nhận hoặc từ chối.</p>
         """
         send_email("Lời mời tham gia dự án", [email], html)
 

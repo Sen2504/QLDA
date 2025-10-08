@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserCircle, Mail } from "lucide-react";
 import api from "../services/api";
 import TeamService from "../services/teamService";
 import PopupMessage from "../components/Popup_message";
+import { useProject } from "../store/ProjectContext";
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
@@ -11,23 +12,50 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [popup, setPopup] = useState({ message: "", type: "", visible: false });
   const navigate = useNavigate();
+  const { setCurrentProject } = useProject();
 
-  const showPopup = (message, type = "success") => {
+  const showPopup = useCallback((message, type = "success") => {
     setPopup({ message, type, visible: true });
     setTimeout(() => {
       setPopup({ message: "", type: "", visible: false });
     }, 3000);
-  };
+  }, []);
 
   useEffect(() => {
-    api.get("/auth/me")
-      .then((res) => setUser(res.data))
-      .catch(() => navigate("/login"));
+    let ignore = false;
+
+    api
+      .get("/auth/me")
+      .then((res) => {
+        if (!ignore) setUser(res.data);
+      })
+      .catch(() => {
+        setCurrentProject(null);
+        navigate("/login");
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [navigate, setCurrentProject]);
+
+  useEffect(() => {
+    let ignore = false;
 
     TeamService.getMyInvites()
-      .then((res) => setInvites(res.data))
-      .catch(() => showPopup("Không thể tải lời mời!", "error"));
-  }, [navigate]);
+      .then((res) => {
+        if (!ignore) setInvites(res.data);
+      })
+      .catch((err) => {
+        if (!ignore && err.response?.status !== 401) {
+          showPopup("Không thể tải lời mời!", "error");
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [showPopup]);
 
   const handleAccept = async (inviteId) => {
     try {

@@ -49,17 +49,22 @@ export default function CustomRoleManager({ projectId }) {
 
       {/* Danh sách role */}
       <ul className="space-y-2">
-        {roles.map((r) => (
-          <li
-            key={r.id}
-            className="flex justify-between items-center p-3 border rounded-md"
-          >
-            <span>{r.name}</span>
-            <span className="text-sm text-gray-500">
-              {r.role_id ? "Toàn cục" : "Custom"}
-            </span>
-          </li>
-        ))}
+        {roles.map((r) => {
+          const linkedRoleId = r.role_id ?? r.id_role;
+          const isCustom = linkedRoleId == null;
+
+          return (
+            <li
+              key={r.id}
+              className="flex justify-between items-center p-3 border rounded-md"
+            >
+              <span>{r.name}</span>
+              <span className="text-sm text-gray-500">
+                {isCustom ? "Custom" : ""}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

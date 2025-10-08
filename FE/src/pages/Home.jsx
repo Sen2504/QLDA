@@ -171,18 +171,31 @@ export default function Home() {
           <h1 className="text-xl font-semibold">
             Scrum — {currentProject.name}
           </h1>
-          <button
-            className="px-3 py-2 rounded-xl bg-[var(--color-accent)] text-white hover:opacity-90"
-            onClick={() => setShowAddModal(true)}
-          >
-            Add+
-          </button>
+          <div className="flex items-center gap-3">
+            
+            <button
+              className="px-3 py-2 rounded-xl bg-[var(--color-accent)] text-white hover:opacity-90"
+              onClick={() => setShowAddModal(true)}
+            >
+              New Sprint
+            </button>
+          </div>
         </div>
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-12 gap-6">
             {/* Backlog */}
             <div className="col-span-8">
+                      <Link
+                to="/user-stories/new"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-semibold
+                          bg-gradient-to-r from-yellow-400 to-yellow-500 text-white shadow-md
+                          hover:from-yellow-500 hover:to-yellow-600 hover:shadow-lg
+                          transition-all duration-200 active:scale-95"
+              >
+                + User Story
+              </Link>
+
               <div className="bg-gray-50 rounded-2xl border p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="font-semibold">Backlog</div>

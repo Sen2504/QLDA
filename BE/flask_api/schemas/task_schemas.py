@@ -8,6 +8,7 @@ class TaskSchema(Schema):
     user_story_id = fields.Int()
     status_id = fields.Int()
     team_id = fields.Int(load_only=True)
+    due_date = fields.Date(allow_none=True)
 
     title = fields.Method("get_title", dump_only=True)
     status = fields.Method("get_status", dump_only=True)
@@ -43,6 +44,7 @@ class TaskSchema(Schema):
             "team_id": assignment.team_id,
             "user_id": team.user_id,
             "projrole_id": team.projrole_id,
+            "user_name": getattr(getattr(team, "user", None), "name", None),
             "user_email": getattr(getattr(team, "user", None), "email", None),
             "role_name": getattr(getattr(team, "projrole", None), "name", None),
         }
@@ -59,6 +61,7 @@ class TaskSchema(Schema):
                 "team_id": a.team_id,
                 "user_id": team.user_id,
                 "projrole_id": team.projrole_id,
+                "user_name": getattr(getattr(team, "user", None), "name", None),
                 "user_email": getattr(getattr(team, "user", None), "email", None),
                 "role_name": getattr(getattr(team, "projrole", None), "name", None),
             })
@@ -116,6 +119,7 @@ class TaskUpdateSchema(Schema):
     user_story_id = fields.Int()
     status_id = fields.Int()
     team_id = fields.Int(load_only=True)
+    due_date = fields.Date(allow_none=True)
 
     @validates("name")
     def validate_name(self, value, **kwargs):
