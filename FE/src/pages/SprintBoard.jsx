@@ -17,7 +17,7 @@ const FALLBACK_STATUSES = [
   { id: "NEEDS_INFO", rawId: null, name_status: "NEEDS INFO" },
 ];
 
-function TaskCard({ task, index }) {
+function TaskCard({ task, index, onOpenTask }) {
   const dueInfo = evaluateDueDate(task.due_date);
   const accentClass = {
     overdue: "border-l-4 border-red-500",
@@ -69,6 +69,13 @@ function TaskCard({ task, index }) {
               </span>
             </div>
           )}
+          <button
+            type="button"
+            onClick={() => onOpenTask?.(task.id)}
+            className="mt-3 inline-flex items-center text-[11px] text-emerald-600 hover:text-emerald-700"
+          >
+            ↗ Chi tiết
+          </button>
         </div>
       )}
     </Draggable>
@@ -285,7 +292,12 @@ export default function SprintBoard() {
                         className="bg-gray-50 border rounded-xl p-2 min-h-[120px]"
                       >
                         {items.map((task, idx) => (
-                          <TaskCard task={task} index={idx} key={task.id} />
+                          <TaskCard
+                            task={task}
+                            index={idx}
+                            key={task.id}
+                            onOpenTask={(id) => navigate(`/tasks/${id}`)}
+                          />
                         ))}
                         {provided.placeholder}
                       </div>

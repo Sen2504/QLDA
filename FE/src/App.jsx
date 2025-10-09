@@ -18,6 +18,7 @@ import Issue from "./pages/Issue";
 import UserStoryDetail from "./pages/UserStoryDetail";
 import SprintBoard from "./pages/SprintBoard";
 import IssueEdit from "./pages/IssueEdit";
+import TaskDetail from "./pages/TaskDetail";
 
 export default function App() {
   return (
@@ -29,7 +30,8 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/projects" element={<Projects />} />
-        <Route path="/tasks" element={<Tasks />} /> {/* <-- placeholder */}
+        <Route path="/tasks" element={<Tasks />} /> 
+        <Route path="/tasks/:taskId" element={<TaskDetail />} />
         <Route path="/projects/:projectId/team" element={<Team />} />
         <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />
         <Route path="/my-invites" element={<MyInvites />} />
@@ -41,7 +43,6 @@ export default function App() {
         <Route path="/issues" element={<Issue />} />
         <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
         <Route path="/projects/:projectId/sprints/:sprintId/taskboard" element={<SprintBoard />} />
-        <Route path="/tasks" element={<Tasks />} />
 
       </Routes>
     </BrowserRouter>

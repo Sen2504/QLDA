@@ -17,6 +17,7 @@ class User(db.Model, UserMixin):
     avatar = db.Column(db.String(500), nullable=True)  # URL ảnh đại diện
 
     teams = db.relationship("Team", back_populates="user")
+    task_comments = db.relationship("TaskComment", back_populates="user")
     
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)

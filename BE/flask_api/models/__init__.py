@@ -14,6 +14,7 @@ from .task_models import Task
 from .task_hashtag_models import TaskHashtag
 from .task_status_models import TaskStatus   # bạn đã có file này
 from .team_models import Team
+from .task_comment_models import TaskComment
 from .user_story_models import UserStory
 from .user_story_hashtag_models import UserStoryHashtag
 from .workflow_status_models import WorkflowStatus

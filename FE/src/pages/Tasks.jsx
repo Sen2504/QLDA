@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 import MainLayout from "../layouts/MainLayout";
@@ -7,6 +8,7 @@ import TaskService from "../services/taskService";
 import TaskStatusService from "../services/taskStatusService";
 
 export default function Tasks() {
+  const navigate = useNavigate();
   const { currentProject } = useProject();
   const [tasks, setTasks] = useState([]);
   const [statuses, setStatuses] = useState([]);
@@ -96,6 +98,11 @@ export default function Tasks() {
       });
   }, [tasks]);
 
+  const handleOpenTask = (taskId) => {
+    if (!taskId) return;
+    navigate(`/tasks/${taskId}`);
+  };
+
   return (
     <MainLayout>
       <div className="p-6">
@@ -149,7 +156,13 @@ export default function Tasks() {
                       return (
                         <tr key={task.id} className={rowClass}>
                           <td className="px-4 py-2 font-medium text-gray-900">
-                            #{task.id} {task.name}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenTask(task.id)}
+                              className="text-left text-gray-900 hover:text-emerald-600"
+                            >
+                              #{task.id} {task.name}
+                            </button>
                           </td>
                           <td className="px-4 py-2">
                             {task.user_story?.name || task.user_story?.title || "—"}

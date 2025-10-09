@@ -13,6 +13,13 @@ class Task(db.Model):
     status = db.relationship("TaskStatus", back_populates="tasks")
     hashtags = db.relationship("TaskHashtag", back_populates="task")
     phan_cong = db.relationship("PhanCong", back_populates="task")
+    comments = db.relationship(
+        "TaskComment",
+        back_populates="task",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    order_by="TaskComment.created_at",
+    )
 
     def __repr__(self):
         return f"<Task id={self.id} name={self.name} status_id={self.status_id}>"
