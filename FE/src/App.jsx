@@ -14,7 +14,6 @@ import UserStory from "./pages/UserStory";
 import UserStoryEdit from "./pages/UserStoryEdit";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
 import Issue from "./pages/Issue";
 import UserStoryDetail from "./pages/UserStoryDetail";
 import SprintBoard from "./pages/SprintBoard";
@@ -43,7 +42,7 @@ export default function App() {
         <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
         <Route path="/projects/:projectId/sprints/:sprintId/taskboard" element={<SprintBoard />} />
         <Route path="/tasks" element={<Tasks />} />
-        
+
       </Routes>
     </BrowserRouter>
   );
