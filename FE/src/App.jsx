@@ -40,6 +40,7 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
         <Route path="/projects/:projectId/sprints/:sprintId/taskboard" element={<SprintBoard />} />
+        <Route path="/tasks" element={<Tasks />} />
         <Route path="/issues" element={<Issue />} />
         <Route path="/issues/:id/edit" element={<IssueEdit />} />
       </Routes>

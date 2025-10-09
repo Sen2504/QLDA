@@ -173,7 +173,7 @@ export default function UserStoryEdit() {
     formData.append("deleted_files", JSON.stringify(deleted));
 
     await UserStoryService.update(id, formData);
-    navigate("/user-stories");
+    navigate("/");
   };
 
   // ----- UI -----

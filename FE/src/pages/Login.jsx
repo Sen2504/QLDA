@@ -1,17 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { useProject } from "../store/ProjectContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { setCurrentProject } = useProject();
+
+  useEffect(() => {
+    setCurrentProject(null);
+  }, [setCurrentProject]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       await api.post("/auth/login", { email, password });
+      setCurrentProject(null);
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");

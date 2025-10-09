@@ -99,6 +99,7 @@ def create_app():
     from flask_api.routes.team_invite_routes import team_invite_bp  
     from flask_api.routes.hashtag_routes import hashtag_bp
     from flask_api.routes.complexity_point_routes import complexity_point_bp
+    from flask_api.routes.sprint_routes import sprint_bp
     from flask_api.routes.issue_type_routes import issue_type_bp
     from flask_api.routes.issue_routes import issue_bp
     from flask_api.routes.issue_resolve_routes import issue_resolve_bp
@@ -117,14 +118,13 @@ def create_app():
     app.register_blueprint(team_invite_bp)
     app.register_blueprint(hashtag_bp)
     app.register_blueprint(complexity_point_bp)
+    app.register_blueprint(task_bp)
+    app.register_blueprint(sprint_bp)
     app.register_blueprint(issue_type_bp)
     app.register_blueprint(issue_bp)
     app.register_blueprint(issue_resolve_bp)
-    app.register_blueprint(task_bp)
-    app.register_blueprint(sprint_bp)
 
     app.config.from_object(Config)
-    # Enable CORS (đặt cuối cho rõ ràng)
     CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
    
 

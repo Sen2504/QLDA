@@ -7,6 +7,7 @@ import UserStoryService from "../services/userStoryService";
 import TaskService from "../services/taskService";
 import TaskStatusService from "../services/taskStatusService";
 import { toast } from "react-toastify";
+import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 
 const FALLBACK_STATUSES = [
   { id: "NEW", rawId: null, name_status: "NEW" },
@@ -17,11 +18,24 @@ const FALLBACK_STATUSES = [
 ];
 
 function TaskCard({ task, index }) {
+  const dueInfo = evaluateDueDate(task.due_date);
+  const accentClass = {
+    overdue: "border-l-4 border-red-500",
+    soon: "border-l-4 border-amber-500",
+    later: "border-l-4 border-sky-500",
+    none: "border-l-4 border-gray-200",
+  }[dueInfo.key] || "border-l-4 border-gray-200";
+  const assignees = Array.isArray(task.assignees)
+    ? task.assignees
+    : task.assignee
+    ? [task.assignee]
+    : [];
+
   return (
     <Draggable draggableId={`task-${task.id}`} index={index}>
       {(provided) => (
         <div
-          className="bg-white border rounded-lg shadow p-2 mb-2 text-sm"
+          className={`bg-white border rounded-lg shadow p-3 mb-2 text-sm ${accentClass}`}
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
@@ -29,9 +43,32 @@ function TaskCard({ task, index }) {
           <div className="font-medium">
             #{task.id} {task.title || task.name || "(no title)"}
           </div>
-          <div className="text-xs opacity-70">
-            {task.assignee_name || "Unassigned"}
+          <div className="text-[11px] text-gray-600 leading-snug">
+            {assignees.length > 0 ? (
+              assignees.map((assignee) => (
+                <div key={`card-${task.id}-assignee-${assignee.team_id || assignee.user_id || assignee.user_email}`}>
+                  {assignee.user_name || assignee.name || assignee.user_email || assignee.email || "Ẩn danh"}
+                  {assignee.role_name && (
+                    <span className="ml-1 text-gray-400">({assignee.role_name})</span>
+                  )}
+                </div>
+              ))
+            ) : (
+              <span className="text-gray-400">Unassigned</span>
+            )}
           </div>
+          {dueInfo.dueDate && (
+            <div className="mt-2 flex items-center gap-2 text-[11px]">
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${dueInfo.badgeClass}`}
+              >
+                {dueInfo.label}
+              </span>
+              <span className="text-gray-500">
+                {describeDiffDays(dueInfo.diffDays)} • {dueInfo.dueDisplay}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </Draggable>

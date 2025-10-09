@@ -1,4 +1,3 @@
-// pages/Team.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TeamService from "../services/teamService";
@@ -28,8 +27,6 @@ export default function Team() {
 
   const showPopup = (message, type = "success") => {
     setPopup({ message, type, visible: true });
-
-    // Auto close sau 3s
     setTimeout(() => {
       setPopup({ message: "", type: "", visible: false });
     }, 3000);
@@ -45,12 +42,10 @@ export default function Team() {
         .catch((err) => {
           console.error("Lỗi load team:", err);
           showPopup("Không thể tải team. Vui lòng thử lại!", "warning");
-          if (err.response?.status === 401) {
-            navigate("/login");
-          }
+          if (err.response?.status === 401) navigate("/login");
         });
 
-      TeamService.getProjectRoles(currentProject.id)   
+      TeamService.getProjectRoles(currentProject.id)
         .then((res) => setRoles(res.data))
         .catch(() => showPopup("Không thể tải danh sách roles!", "warning"));
     }
@@ -90,49 +85,61 @@ export default function Team() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Danh sách thành viên</h3>
             {members.length > 0 ? (
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {members.map((m) => (
-                  <li
-                    key={m.id}
-                    className={`flex justify-between items-center p-4 rounded shadow transition 
-                      ${
-                        m.role_name === "Project Owner"
-                          ? "bg-yellow-100 border border-yellow-400"
-                          : "bg-white"
-                      }`}
-                  >
-                    <div>
-                      <p
-                        className={`font-bold ${
-                          m.role_name === "Project Owner"
-                            ? "text-yellow-800"
-                            : "text-gray-900"
-                        }`}
-                      >
-                        
-                      </p>
-                     
-                      <p className="text-sm text-gray-700">
-                        Email: {m.user_email}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Vai trò: {m.role_name}
-                      </p>
-                    </div>
+              <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {members.map((m) => {
+                  const isOwner = m.role_name === "Project Owner";
+                  const isCurrentUser = m.user_id === currentUser?.id;
 
-                    {/* Ẩn nút Remove với Project Owner */}
-                    {currentProject?.role_name === "Project Owner" &&
-                    m.role_name !== "Project Owner" &&
-                    m.user_id !== currentUser?.id && (
-                      <button
-                        onClick={() => handleRemove(m.user_id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                      >
-                        Xóa
-                      </button>
-                    )}
-                  </li>
-                ))}
+                  const liClass = [
+                    "flex justify-between items-center p-3 rounded-lg shadow-sm border text-sm transition",
+                    isOwner
+                      ? "bg-yellow-50 border-yellow-300"
+                      : "bg-gray-50 hover:bg-gray-100 border-gray-200",
+                    isCurrentUser ? "ring-2 ring-green-400 bg-green-50" : ""
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+
+                  const nameClass = [
+                    "font-semibold",
+                    isOwner ? "text-yellow-800" : "text-gray-800",
+                    isCurrentUser ? "text-green-700 font-bold" : ""
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+
+                  return (
+                    <li key={m.id} className={liClass}>
+                      <div>
+                        <p className={nameClass}>
+                          {m.user_name || "(Chưa có tên)"}
+                          {isCurrentUser && (
+                            <span className="ml-2 text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold">
+                              Bạn
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {m.user_email}
+                        </p>
+                        <p className="text-xs text-gray-500 italic">
+                          {m.role_name}
+                        </p>
+                      </div>
+
+                      {currentProject?.role_name === "Project Owner" &&
+                        m.role_name !== "Project Owner" &&
+                        m.user_id !== currentUser?.id && (
+                          <button
+                            onClick={() => handleRemove(m.user_id)}
+                            className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 transition"
+                          >
+                            Xóa
+                          </button>
+                        )}
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-gray-500">Chưa có thành viên nào.</p>
@@ -150,7 +157,6 @@ export default function Team() {
         </div>
       </MainLayout>
 
-      {/* Popup hiển thị thông báo */}
       {popup.visible && (
         <PopupMessage
           message={popup.message}

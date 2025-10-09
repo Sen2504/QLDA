@@ -7,6 +7,7 @@ class Task(db.Model):
     status_id = db.Column("ID", db.Integer, db.ForeignKey("task_status.ID"), nullable=False)
     name = db.Column("NAME", db.String(200), nullable=False)
     description = db.Column("DESCRIPTION", db.Text, nullable=False)
+    due_date = db.Column("DUE_DATE", db.Date, nullable=True)
 
     user_story = db.relationship("UserStory", back_populates="tasks")
     status = db.relationship("TaskStatus", back_populates="tasks")
