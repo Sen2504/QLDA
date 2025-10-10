@@ -2,23 +2,27 @@
 import { useState } from "react";
 import TeamService from "../services/teamService";
 
-export default function InviteForm({ projectId, roles, onInvited }) {
+export default function InviteForm({ projectId, roles, onInvited, onError }) {
   const [email, setEmail] = useState("");
   const [roleId, setRoleId] = useState("");
 
   const handleInvite = async (e) => {
     e.preventDefault();
+    if (!projectId) {
+      onError?.("Không xác định được project hiện tại. Hãy chọn project trước khi mời.");
+      return;
+    }
     try {
       const res = await TeamService.inviteUser({
-        project_id: projectId,
+        project_id: Number(projectId),
         email,
-        projrole_id: roleId,
+        projrole_id: Number(roleId),
       });
       onInvited(res.data); // báo về parent
       setEmail("");
       setRoleId("");
     } catch (err) {
-      alert(err.response?.data?.error || "Error inviting user");
+      onError?.(err.response?.data?.error || "Lỗi khi mời thành viên");
     }
   };
 

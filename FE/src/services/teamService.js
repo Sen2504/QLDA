@@ -7,14 +7,15 @@ const TeamService = {
     // lấy cả members + pending_invites
     return api.get(`/team_invites/project/${projectId}/summary`);
   },
-
-  getByProjectId(projectId) {
+    getByProjectId(projectId) {
     // lấy danh sách thành viên trong project
     return api.get(`/teams/${projectId}`);
   },
 
-  removeUser(projectId, userId) {
-    return api.delete(`/teams/${projectId}/remove/${userId}`);
+  removeUser(projectId, userId, force = false) {
+    return api.delete(`/teams/${projectId}/remove/${userId}`, {
+      data: { force }
+    });
   },
   
   // --- TEAM_INVITE ---

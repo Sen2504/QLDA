@@ -8,6 +8,8 @@ import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import SprintService from "../services/sprintService";
 import UserStoryService from "../services/userStoryService";
+import TaskService from "../services/taskService";
+import { evaluateDueDate } from "../utils/dueDate";
 
 function SmallUSCard({ us, index, onOpen }) {
   return (
@@ -52,6 +54,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [sprints, setSprints] = useState([]);
   const [userStories, setUserStories] = useState([]);
+  const [myTasks, setMyTasks] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -80,10 +83,16 @@ export default function Home() {
     Promise.all([
       SprintService.getByProject(projectId),
       UserStoryService.getByProject(projectId),
+      TaskService.getMyTasks(),
     ])
-      .then(([sRes, usRes]) => {
+      .then(([sRes, usRes, tRes]) => {
         setSprints(sRes.data || []);
         setUserStories(usRes.data || []);
+        // Lọc task thuộc project hiện tại
+        const tasksInProject = (tRes.data || []).filter(
+          (t) => t.project_id === projectId
+        );
+        setMyTasks(tasksInProject);
       })
       .catch(() => toast.error("Không tải được dữ liệu Sprint / User Stories"))
       .finally(() => setLoading(false));
@@ -184,8 +193,70 @@ export default function Home() {
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-12 gap-6">
+            {/* My Tasks Panel */}
+            <div className="col-span-3">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 p-4 sticky top-6">
+                <h3 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                  My Tasks
+                  <span className="ml-auto text-xs bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full">
+                    {myTasks.length}
+                  </span>
+                </h3>
+                
+                <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
+                  {myTasks.length === 0 ? (
+                    <p className="text-sm text-blue-600 text-center py-4">
+                      Chưa có task nào được phân công
+                    </p>
+                  ) : (
+                    myTasks.map((task) => {
+                      const dueInfo = task.due_date
+                        ? evaluateDueDate(task.due_date)
+                        : null;
+                      return (
+                        <Link
+                          key={task.id}
+                          to={`/tasks/${task.id}`}
+                          className="block bg-white rounded-lg p-3 border border-blue-200 hover:shadow-md transition group"
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <p className="font-semibold text-sm text-gray-800 group-hover:text-blue-600 line-clamp-2">
+                              {task.name || task.title}
+                            </p>
+                            {dueInfo && (
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${dueInfo.badgeClass}`}
+                              >
+                                {dueInfo.label}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 line-clamp-1">
+                            {task.status || "Pending"}
+                          </p>
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Backlog */}
-            <div className="col-span-8">
+            <div className="col-span-5">
                       <Link
                 to="/user-stories/new"
                 className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-semibold

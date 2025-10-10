@@ -5,6 +5,8 @@ from flask_api.models.user_models import User
 from flask_api.models.project_role_models import ProjectRole
 from flask_api.models.role_models import Role
 from flask_api.models.team_invite_models import TeamInvite
+from flask_api.models.task_models import Task
+from flask_api.models.phan_cong_models import PhanCong
 
 class TeamService:
     # @staticmethod
@@ -107,11 +109,14 @@ class TeamService:
         return results
 
     @staticmethod
-    def remove_member(project_id, user_id, current_user_id):
+    def remove_member(project_id, user_id, current_user_id, force=False):
         """
         Chỉ Project Owner mới được xóa member khác.
         Owner không thể tự xóa mình hoặc xóa Owner khác.
-        Khi xóa thành viên thì đồng thời cập nhật TeamInvite status -> 'removed'
+        Khi xóa thành viên thì đồng thời xóa luôn các invite liên quan.
+        
+        Args:
+            force (bool): Nếu True, bỏ qua cảnh báo task và xóa luôn (bao gồm xóa phân công).
         """
         # Kiểm tra current_user có phải Owner không
         owner_projrole = (
@@ -134,9 +139,9 @@ class TeamService:
 
         # Kiểm tra role của user bị xóa
         team_member = (
-            db.session.query(Team, Role, User)
+            db.session.query(Team, ProjectRole, User)
             .join(ProjectRole, Team.projrole_id == ProjectRole.id)
-            .join(Role, ProjectRole.role_id == Role.id)
+            .outerjoin(Role, ProjectRole.role_id == Role.id)
             .join(User, Team.user_id == User.id)
             .filter(ProjectRole.project_id == project_id, Team.user_id == user_id)
             .first()
@@ -144,20 +149,51 @@ class TeamService:
         if not team_member:
             return False, "Không tìm thấy thành viên trong project."
 
-        team, role, user = team_member
-        if role.name == "Project Owner":
+        team, proj_role, user = team_member
+        
+        # Kiểm tra nếu là Owner (dựa vào global role hoặc project role name)
+        global_role = Role.query.get(proj_role.role_id) if proj_role.role_id else None
+        role_name = (global_role.name if global_role else None) or proj_role.name
+        
+        if role_name == "Project Owner":
             return False, "Không thể xóa một Owner khác."
+
+        # Kiểm tra user có task đang phân công không
+        assigned_tasks = (
+            db.session.query(PhanCong, Task)
+            .join(Task, PhanCong.task_id == Task.id)
+            .filter(PhanCong.team_id == team.id)
+            .all()
+        )
+        
+        if assigned_tasks and not force:
+            # Trả về danh sách task để frontend hiển thị cảnh báo
+            task_list = [
+                {
+                    "id": task.id,
+                    "name": task.name,
+                    "description": task.description
+                }
+                for _, task in assigned_tasks
+            ]
+            return False, {
+                "message": "Thành viên này đang được phân công thực hiện các task sau:",
+                "tasks": task_list,
+                "require_confirmation": True
+            }
+
+        # Xóa các phân công task trước
+        if assigned_tasks:
+            for phan_cong, _ in assigned_tasks:
+                db.session.delete(phan_cong)
 
         # Xóa team member
         db.session.delete(team)
 
-        # Cập nhật invite -> removed
-        invites = (
-            TeamInvite.query.filter_by(project_id=project_id, email=user.email).all()
-        )
+        # Xóa luôn tất cả invite liên quan đến user trong project này
+        invites = TeamInvite.query.filter_by(project_id=project_id, email=user.email).all()
         for inv in invites:
-            if inv.status == "accepted":
-                inv.status = "removed"
+            db.session.delete(inv)
 
         db.session.commit()
         return True, None

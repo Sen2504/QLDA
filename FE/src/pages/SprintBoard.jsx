@@ -13,8 +13,9 @@ const FALLBACK_STATUSES = [
   { id: "NEW", rawId: null, name_status: "NEW" },
   { id: "IN_PROGRESS", rawId: null, name_status: "IN PROGRESS" },
   { id: "READY_FOR_TEST", rawId: null, name_status: "READY FOR TEST" },
-  { id: "CLOSED", rawId: null, name_status: "CLOSED" },
+  { id: "TEST", rawId: null, name_status: "TEST" },
   { id: "NEEDS_INFO", rawId: null, name_status: "NEEDS INFO" },
+  { id: "CLOSED", rawId: null, name_status: "CLOSED" },
 ];
 
 function TaskCard({ task, index, onOpenTask }) {
