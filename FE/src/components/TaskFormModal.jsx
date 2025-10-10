@@ -6,7 +6,7 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
     name: "",
     description: "",
     status_id: "",
-    team_ids: [], // danh sách nhiều team id
+    team_ids: [], // mảng id của team members được chọn
     due_date: "",
   });
 

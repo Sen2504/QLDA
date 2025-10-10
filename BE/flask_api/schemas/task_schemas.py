@@ -15,6 +15,7 @@ class TaskSchema(Schema):
     project_id = fields.Method("get_project_id", dump_only=True)
     assignee = fields.Method("get_assignee", dump_only=True)  # Giữ tương thích cũ (lấy người đầu tiên)
     assignees = fields.Method("get_assignees", dump_only=True)
+    comments = fields.Nested("TaskCommentSchema", many=True, dump_only=True)
 
     user_story = fields.Nested("UserStorySchema", only=("id", "name"), dump_only=True)
 

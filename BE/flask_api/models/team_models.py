@@ -11,6 +11,7 @@ class Team(db.Model):
     
     phan_cong = db.relationship("PhanCong", back_populates="team")
     issues_resolved = db.relationship("IssueResolve", back_populates="team", cascade="all, delete-orphan")
+    task_comments = db.relationship("TaskComment", back_populates="team")
 
     def __repr__(self):
         return f"<Team id={self.id} user_id={self.user_id} projrole_id={self.projrole_id}>"

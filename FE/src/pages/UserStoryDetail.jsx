@@ -245,6 +245,7 @@ export default function UserStoryDetail() {
               );
             }
           }}
+          onTaskClick={(id) => navigate(`/tasks/${id}`)}
         />
         {showForm && (
           <TaskFormModal

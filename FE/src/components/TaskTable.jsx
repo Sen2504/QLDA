@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import TaskStatusService from "../services/taskStatusService";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 
-export default function TaskTable({ tasks, onCreateClick, onStatusChange }) {
+export default function TaskTable({ tasks, onCreateClick, onStatusChange, onTaskClick }) {
   const [statuses, setStatuses] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState({});
 
@@ -69,7 +69,15 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange }) {
           <tbody>
             {decoratedTasks.map((t) => (
               <tr key={t.id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-2">{t.name}</td>
+                <td className="px-4 py-2">
+                  <button
+                    type="button"
+                    onClick={() => onTaskClick?.(t.id)}
+                    className="text-left text-gray-800 hover:text-emerald-600"
+                  >
+                    {t.name}
+                  </button>
+                </td>
 
                 <td className="px-4 py-2">{t.dueInfo.dueDisplay}</td>
 

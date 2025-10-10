@@ -1,9 +1,12 @@
+from sqlalchemy.orm import joinedload
+
 from flask_api.extensions import db
 from flask_api.models.task_models import Task
 from flask_api.models.task_status_models import TaskStatus
 from flask_api.models.user_story_models import UserStory
 from flask_api.models.team_models import Team
 from flask_api.models.phan_cong_models import PhanCong
+from flask_api.models.task_comment_models import TaskComment
 
 
 class TaskService:
@@ -13,7 +16,28 @@ class TaskService:
 
     @staticmethod
     def get_by_id(task_id):
-        return Task.query.get(task_id)
+        return (
+            Task.query.options(
+                joinedload(Task.user_story),
+                joinedload(Task.status),
+                joinedload(Task.phan_cong)
+                .joinedload(PhanCong.team)
+                .joinedload(Team.user),
+                joinedload(Task.phan_cong)
+                .joinedload(PhanCong.team)
+                .joinedload(Team.projrole),
+                joinedload(Task.comments)
+                .joinedload(TaskComment.user),
+                joinedload(Task.comments)
+                .joinedload(TaskComment.team)
+                .joinedload(Team.user),
+                joinedload(Task.comments)
+                .joinedload(TaskComment.team)
+                .joinedload(Team.projrole),
+            )
+            .filter(Task.id == task_id)
+            .first()
+        )
 
     @staticmethod
     def get_by_user_story(user_story_id):
@@ -90,7 +114,8 @@ class TaskService:
                 assignment = PhanCong(team_id=t.id, task_id=new_task.id)
                 db.session.add(assignment)
             db.session.commit()
-            return new_task, None
+            refreshed = TaskService.get_by_id(new_task.id)
+            return refreshed or new_task, None
         except Exception:
             db.session.rollback()
             return None, "Khong the tao task."
@@ -168,7 +193,8 @@ class TaskService:
                     db.session.add(PhanCong(team_id=team.id, task_id=task.id))
 
             db.session.commit()
-            return task, None
+            refreshed = TaskService.get_by_id(task.id)
+            return refreshed or task, None
         except Exception:
             db.session.rollback()
             return None, "Khong the cap nhat task."
