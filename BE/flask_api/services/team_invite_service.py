@@ -53,18 +53,7 @@ class TeamInviteService:
         if any(inv.status == "pending" for inv in existing_invites):
             return None, "Đã tồn tại một lời mời đang chờ xử lý."
 
-        # 4b) Nếu có accepted nhưng user KHÔNG còn trong team -> đổi về removed
-        if any(inv.status == "accepted" for inv in existing_invites):
-            in_team = Team.query.filter_by(user_id=user.id).first()
-            if not in_team:
-                for inv in existing_invites:
-                    if inv.status == "accepted":
-                        inv.status = "removed"
-                db.session.flush()
-            else:
-                return None, "User đã chấp nhận lời mời trước đó."
-
-        # 4c) 'rejected'/'removed' thì cho phép mời lại
+        # 4b) Không cần kiểm tra accepted/rejected/removed vì đã xóa khi accept/reject
 
         # 5) Tạo invite mới (pending)
         invite = TeamInvite(
@@ -118,8 +107,8 @@ class TeamInviteService:
         new_team = Team(user_id=user_id, projrole_id=proj_role.id)
         db.session.add(new_team)
 
-        # Update invite
-        invite.status = "accepted"
+        # Xóa invite thay vì update status
+        db.session.delete(invite)
         db.session.commit()
         return new_team, None
 
@@ -129,7 +118,8 @@ class TeamInviteService:
         if not invite or invite.status != "pending":
             return False, "Lời mời không hợp lệ."
 
-        invite.status = "rejected"
+        # Xóa invite thay vì update status
+        db.session.delete(invite)
         db.session.commit()
         return True, None
 

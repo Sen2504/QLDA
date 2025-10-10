@@ -37,9 +37,16 @@ def invite_user(project_id):
 @team_bp.route("/<int:project_id>/remove/<int:user_id>", methods=["DELETE"])
 @login_required
 def remove_member(project_id, user_id):
-    success, error = TeamService.remove_member(project_id, user_id,current_user.id)
+    data = request.get_json() or {}
+    force = data.get("force", False)  # Xác nhận xóa bắt buộc
+    
+    success, error = TeamService.remove_member(project_id, user_id, current_user.id, force=force)
     if not success:
-        return jsonify({"error": error}), 404
+        # Nếu error là dict với require_confirmation -> trả về 409 Conflict
+        if isinstance(error, dict) and error.get("require_confirmation"):
+            return jsonify(error), 409
+        # Lỗi thường -> 403/404
+        return jsonify({"error": error}), 403
     return jsonify({"message": "Đã xóa thành viên khỏi project."}), 200
 
 # ----------------- GET team summary -----------------

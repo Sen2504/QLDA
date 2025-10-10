@@ -8,8 +8,10 @@ const TeamService = {
     return api.get(`/team_invites/project/${projectId}/summary`);
   },
 
-  removeUser(projectId, userId) {
-    return api.delete(`/teams/${projectId}/remove/${userId}`);
+  removeUser(projectId, userId, force = false) {
+    return api.delete(`/teams/${projectId}/remove/${userId}`, {
+      data: { force }
+    });
   },
   
   // --- TEAM_INVITE ---

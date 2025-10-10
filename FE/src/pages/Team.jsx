@@ -16,6 +16,12 @@ export default function Team() {
   const navigate = useNavigate();
   const { currentProject } = useProject();
   const [currentUser, setCurrentUser] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({
+    visible: false,
+    message: "",
+    tasks: [],
+    onConfirm: null,
+  });
 
   const [popup, setPopup] = useState({ message: "", type: "", visible: false });
 
@@ -52,13 +58,36 @@ export default function Team() {
   }, [currentProject, navigate]);
 
   const handleRemove = async (userId) => {
-    if (!window.confirm("Bạn có chắc muốn xóa thành viên này?")) return;
     try {
+      // Thử xóa lần đầu (không force)
       await TeamService.removeUser(projectId, userId);
       setMembers(members.filter((m) => m.user_id !== userId));
       showPopup("Xóa thành viên thành công!", "success");
     } catch (err) {
-      showPopup(err.response?.data?.error || "Lỗi khi xóa user", "error");
+      // Nếu lỗi 409 -> có task đang phân công
+      if (err.response?.status === 409) {
+        const data = err.response.data;
+        const taskList = data.tasks || [];
+        
+        // Hiển thị dialog xác nhận với danh sách task
+        setConfirmDialog({
+          visible: true,
+          message: data.message,
+          tasks: taskList,
+          onConfirm: async () => {
+            setConfirmDialog({ visible: false, message: "", tasks: [], onConfirm: null });
+            try {
+              await TeamService.removeUser(projectId, userId, true);
+              setMembers(members.filter((m) => m.user_id !== userId));
+              showPopup("Đã xóa thành viên và hủy phân công task!", "success");
+            } catch (forceErr) {
+              showPopup(forceErr.response?.data?.error || "Lỗi khi xóa user", "error");
+            }
+          },
+        });
+      } else {
+        showPopup(err.response?.data?.error || "Lỗi khi xóa user", "error");
+      }
     }
   };
 
@@ -78,6 +107,9 @@ export default function Team() {
             onInvited={(invite) => {
               setPending([...pending, invite]);
               showPopup("Đã gửi lời mời thành công!", "success");
+            }}
+            onError={(errorMsg) => {
+              showPopup(errorMsg, "error");
             }}
           />
 
@@ -163,6 +195,65 @@ export default function Team() {
           type={popup.type}
           onClose={() => setPopup({ ...popup, visible: false })}
         />
+      )}
+
+      {/* Dialog xác nhận xóa thành viên có task */}
+      {confirmDialog.visible && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4">
+            <h3 className="text-lg font-bold text-red-600 mb-4">⚠️ Cảnh báo</h3>
+            <p className="text-gray-700 mb-4">{confirmDialog.message}</p>
+            
+            <div className="mb-6 max-h-64 overflow-y-auto">
+              <ul className="space-y-2">
+                {confirmDialog.tasks.map((task) => (
+                  <li
+                    key={task.id}
+                    className="p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <p className="font-semibold text-sm text-gray-800">
+                      #{task.id} {task.name}
+                    </p>
+                    {task.description && (
+                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                        {task.description}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-6">
+              Bạn có chắc chắn muốn xóa thành viên này? <br />
+              <span className="font-semibold text-red-600">
+                Tất cả phân công task sẽ bị hủy!
+              </span>
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() =>
+                  setConfirmDialog({
+                    visible: false,
+                    message: "",
+                    tasks: [],
+                    onConfirm: null,
+                  })
+                }
+                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
+              >
+                Xác nhận xóa
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
