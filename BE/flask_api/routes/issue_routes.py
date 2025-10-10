@@ -23,6 +23,13 @@ def get_all_issues():
     issues = IssueService.get_all()
     return jsonify(issues_schema.dump(issues)), 200
 
+# ----------------- GET ISSUE BY PROJECT -----------------
+@issue_bp.route("/project/<int:project_id>", methods=["GET"])
+@login_required
+def get_issues_by_project(project_id):
+    issues = IssueService.get_issue_by_project(project_id)
+    return jsonify(issues_schema.dump(issues)), 200
+
 # ----------------- GET BY ID -----------------
 @issue_bp.route("/<int:issue_id>", methods=["GET"])
 @login_required

@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields
 from flask_api.models.issue_models import IssueStatus, Severity, Priority
-
+from flask_api.models.issue_resolve_models import IssueResolve
 
 class IssueTypeSchema(Schema):
     id = fields.Int()
@@ -26,6 +26,26 @@ class IssueSchema(Schema):
     priority = fields.Method("get_priority")
     expire_date = fields.Date(required=True)
     evidence_file = fields.Method("get_evidence_files", dump_only=True)
+
+    assignee = fields.Method("get_assignee")
+
+    def get_assignee(self, obj):
+        """Lấy thông tin người đang xử lý issue từ bảng issue_resolve"""
+        resolve = IssueResolve.query.filter_by(issue_id=obj.id).first()
+        if not resolve or not resolve.team:
+            return None
+
+        team = resolve.team
+        user = team.user
+        proj_role = team.projrole
+        role = proj_role.role if proj_role else None
+
+        return {
+            "team_id": team.id,
+            "user_id": user.id if user else None,
+            "user_email": user.email if user else None,
+            "role_name": role.name if role else None,
+        }
 
     # Nested
     # type = fields.Nested(

@@ -203,7 +203,7 @@ export default function IssueCreate() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("/issues")}
+                  onClick={() => navigate("/issues/list")}
                   className="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
                 >
                   Cancel

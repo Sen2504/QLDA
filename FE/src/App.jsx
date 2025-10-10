@@ -15,8 +15,10 @@ import UserStoryEdit from "./pages/UserStoryEdit";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import Issue from "./pages/Issue";
+import IssueEdit from "./pages/IssueEdit";
 import UserStoryDetail from "./pages/UserStoryDetail";
 import SprintBoard from "./pages/SprintBoard";
+import IssueList from "./pages/IssueList";
 import IssueEdit from "./pages/IssueEdit";
 import TaskDetail from "./pages/TaskDetail";
 
@@ -40,10 +42,12 @@ export default function App() {
         <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/issues" element={<Issue />} />
         <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
         <Route path="/projects/:projectId/sprints/:sprintId/taskboard" element={<SprintBoard />} />
-
+        <Route path="/tasks" element={<Tasks />} />
+        <Route path="/issues" element={<Issue />} />
+        <Route path="/issues/:id/edit" element={<IssueEdit />} />
+        <Route path="/issues/list" element={<IssueList />} />
       </Routes>
     </BrowserRouter>
   );
