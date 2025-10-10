@@ -163,7 +163,6 @@ class UserService:
 
         # Lưu file mới
         save_path = os.path.join(save_dir, filename)
-        print(f"💾 Lưu avatar mới vào: {save_path}")
         file.save(save_path)
 
         # Cập nhật DB (đường dẫn public cho FE)

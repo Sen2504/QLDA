@@ -56,17 +56,29 @@ export default function Sidebar() {
   }, [navigate, setCurrentProject]);
 
   useEffect(() => {
-    if (!projectsLoaded) return;
-    if (!currentProject) {
-      if (projects.length > 0) {
-        setCurrentProject(projects[0]);
+  if (!projectsLoaded) return;
+
+  // Ưu tiên project trong localStorage
+  const stored = localStorage.getItem("currentProject");
+    if (stored) {
+      try {
+        const saved = JSON.parse(stored);
+        const match = projects.find((p) => p.id === saved.id);
+        if (match) {
+          setCurrentProject(match);
+          return;
+        }
+      } catch (e) {
+        console.error("Lỗi đọc project từ localStorage:", e);
       }
-      return;
     }
-    if (!projects.some((proj) => proj.id === currentProject.id)) {
-      setCurrentProject(null);
+
+    // Nếu chưa có currentProject → chọn cái đầu tiên
+    if (!currentProject && projects.length > 0) {
+      setCurrentProject(projects[0]);
     }
-  }, [projectsLoaded, projects, currentProject, setCurrentProject]);
+  }, [projectsLoaded, projects]);
+
 
   useEffect(() => {
     if (!currentProject?.id) {

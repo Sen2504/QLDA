@@ -19,7 +19,6 @@ import IssueEdit from "./pages/IssueEdit";
 import UserStoryDetail from "./pages/UserStoryDetail";
 import SprintBoard from "./pages/SprintBoard";
 import IssueList from "./pages/IssueList";
-import IssueEdit from "./pages/IssueEdit";
 import TaskDetail from "./pages/TaskDetail";
 
 export default function App() {

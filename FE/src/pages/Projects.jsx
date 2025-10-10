@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import ProjectService from "../services/projectService";
+import { useProject } from "../store/ProjectContext";
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
+  const { setCurrentProject } = useProject(); // 👈 dùng context để chọn project trong sidebar
 
   useEffect(() => {
     ProjectService.getMyProjects()
@@ -19,16 +22,42 @@ export default function Projects() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setIsCreating(true);
     try {
+      // gọi API tạo project
       const res = await ProjectService.create({
         name_project: name,
         description,
       });
-      setProjects([...projects, res.data]);
+
+      const newProject = res.data;
+
+      // thêm vào danh sách tạm
+      setProjects((prev) => [...prev, newProject]);
+
+      // đặt project mới làm currentProject (sidebar auto chọn)
+      setCurrentProject(newProject);
+
+      // reset form
       setName("");
       setDescription("");
+
+      // điều hướng sang dashboard
+      navigate("/");
+
+      // gọi lại API để sidebar cập nhật danh sách mới
+      setTimeout(async () => {
+        try {
+          const list = await ProjectService.getMyProjects();
+          setProjects(list.data);
+        } catch (err) {
+          console.error("Reload project list failed", err);
+        }
+      }, 500);
     } catch (err) {
       alert(err.response?.data?.error || "Error creating project");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -80,9 +109,14 @@ export default function Projects() {
             />
             <button
               type="submit"
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
+              disabled={isCreating}
+              className={`${
+                isCreating
+                  ? "bg-green-300 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+              } text-white px-6 py-2 rounded-lg transition`}
             >
-              Tạo
+              {isCreating ? "Đang tạo..." : "Tạo"}
             </button>
           </form>
         </div>

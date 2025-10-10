@@ -11,7 +11,10 @@ import {
 } from "mdb-react-ui-kit";
 import UserService from "../services/userService";
 import MainLayout from "../layouts/MainLayout";
-import PopupMessage from "../components/Popup_message"; // ✅ sử dụng popup custom
+import PopupMessage from "../components/Popup_message";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import CreatableSelect from "react-select/creatable";
+
 
 const API_BASE = "http://localhost:5000";
 
@@ -24,9 +27,42 @@ export default function ProfilePage() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [passwordMatchError, setPasswordMatchError] = useState(""); // 👈 lỗi khi confirm sai
 
-  // ✅ popup state
-  const [popup, setPopup] = useState({ show: false, message: "", type: "success" });
+  const [showPass, setShowPass] = useState({
+    old: false,
+    new: false,
+    confirm: false,
+  });
+
+  const skillOptions = [
+  { value: "JavaScript", label: "JavaScript" },
+  { value: "TypeScript", label: "TypeScript" },
+  { value: "React", label: "React" },
+  { value: "Next.js", label: "Next.js" },
+  { value: "Node.js", label: "Node.js" },
+  { value: "Express.js", label: "Express.js" },
+  { value: "Python", label: "Python" },
+  { value: "Flask", label: "Flask" },
+  { value: "Django", label: "Django" },
+  { value: "Java", label: "Java" },
+  { value: "Spring Boot", label: "Spring Boot" },
+  { value: "C#", label: "C#" },
+  { value: ".NET", label: ".NET" },
+  { value: "PHP", label: "PHP" },
+  { value: "Laravel", label: "Laravel" },
+  { value: "MySQL", label: "MySQL" },
+  { value: "PostgreSQL", label: "PostgreSQL" },
+  { value: "MongoDB", label: "MongoDB" },
+  { value: "Docker", label: "Docker" },
+  { value: "Kubernetes", label: "Kubernetes" },
+];
+
+  const [popup, setPopup] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   const showPopup = (message, type = "success") => {
     setPopup({ show: true, message, type });
@@ -52,13 +88,46 @@ export default function ProfilePage() {
   };
 
   const handlePasswordChange = (e) => {
-    setPasswords((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setPasswords((prev) => ({ ...prev, [name]: value }));
+
+    // 👇 Check trùng mật khẩu ngay khi nhập
+    if (
+      (name === "newPassword" || name === "confirmPassword") &&
+      passwords.newPassword !== passwords.confirmPassword
+    ) {
+      if (
+        name === "newPassword" &&
+        value === passwords.confirmPassword &&
+        passwords.confirmPassword !== ""
+      ) {
+        setPasswordMatchError("");
+      } else if (
+        name === "confirmPassword" &&
+        value === passwords.newPassword &&
+        passwords.newPassword !== ""
+      ) {
+        setPasswordMatchError("");
+      } else {
+        setPasswordMatchError("Mật khẩu mới và xác nhận không khớp!");
+      }
+    } else {
+      setPasswordMatchError("");
+    }
   };
 
   const handleSave = async () => {
+    if (passwordMatchError) {
+      showPopup("Vui lòng kiểm tra lại mật khẩu xác nhận!", "error");
+      return;
+    }
+
     try {
-      // Nếu có nhập mật khẩu thì đổi trước
-      if (passwords.oldPassword || passwords.newPassword || passwords.confirmPassword) {
+      if (
+        passwords.oldPassword ||
+        passwords.newPassword ||
+        passwords.confirmPassword
+      ) {
         if (passwords.newPassword !== passwords.confirmPassword) {
           showPopup("Xác nhận mật khẩu không khớp!", "error");
           return;
@@ -68,16 +137,15 @@ export default function ProfilePage() {
         showPopup("Đổi mật khẩu thành công!", "success");
       }
 
-      // Sau khi đổi mật khẩu (nếu có), mới cập nhật thông tin
       await UserService.updateProfile(formData);
       setUser({ ...user, ...formData });
       showPopup("Cập nhật thông tin thành công!", "success");
 
-      // Reset form & thoát edit
       setPasswords({ oldPassword: "", newPassword: "", confirmPassword: "" });
       setEditMode(false);
     } catch (err) {
-      const errMsg = err.response?.data?.error || "Có lỗi xảy ra khi lưu thay đổi.";
+      const errMsg =
+        err.response?.data?.error || "Có lỗi xảy ra khi lưu thay đổi.";
       showPopup(errMsg, "error");
     }
   };
@@ -90,7 +158,9 @@ export default function ProfilePage() {
         <PopupMessage
           message={popup.message}
           type={popup.type}
-          onClose={() => setPopup({ show: false, message: "", type: "success" })}
+          onClose={() =>
+            setPopup({ show: false, message: "", type: "success" })
+          }
         />
       )}
 
@@ -100,7 +170,7 @@ export default function ProfilePage() {
             {/* Cột trái: Avatar + Info */}
             <MDBCol lg="4">
               <MDBCard className="mb-4 text-center">
-                <MDBCardBody>
+                <MDBCardBody className="text-center">
                   <MDBCardImage
                     src={(() => {
                       if (user.avatar) return `${API_BASE}${user.avatar}`;
@@ -117,14 +187,45 @@ export default function ProfilePage() {
                     style={{ width: "150px", height: "150px", objectFit: "cover" }}
                     fluid
                   />
+
                   <h5 className="my-3">{user.name}</h5>
                   <p className="text-muted mb-1">{user.email}</p>
-                  <p className="text-muted mb-4">
+                  <p className="text-muted mb-2">
                     Tạo ngày:{" "}
                     {user.created_at
                       ? new Date(user.created_at).toLocaleDateString("vi-VN")
                       : "-"}
                   </p>
+                  <div className="text-center mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="avatarInput"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+
+                        try {
+                          const res = await UserService.uploadAvatar(file);
+                          setUser((prev) => ({ ...prev, avatar: res.data.avatar }));
+                          showPopup("Cập nhật avatar thành công!", "success");
+                        } catch (err) {
+                          showPopup(
+                            err.response?.data?.error || "Lỗi khi upload avatar.",
+                            "error"
+                          );
+                        }
+                      }}
+                      className="d-none"
+                    />
+                    <label
+                      htmlFor="avatarInput"
+                      className="btn btn-sm btn-outline-primary mt-2"
+                      style={{ cursor: "pointer" }}
+                    >
+                      Upload Avatar
+                    </label>
+                  </div>
                 </MDBCardBody>
               </MDBCard>
             </MDBCol>
@@ -148,7 +249,9 @@ export default function ProfilePage() {
                           className="form-control"
                         />
                       ) : (
-                        <MDBCardText className="text-muted">{user.name}</MDBCardText>
+                        <MDBCardText className="text-muted">
+                          {user.name}
+                        </MDBCardText>
                       )}
                     </MDBCol>
                   </MDBRow>
@@ -159,7 +262,9 @@ export default function ProfilePage() {
                       <MDBCardText>Email</MDBCardText>
                     </MDBCol>
                     <MDBCol sm="9">
-                      <MDBCardText className="text-muted">{user.email}</MDBCardText>
+                      <MDBCardText className="text-muted">
+                        {user.email}
+                      </MDBCardText>
                     </MDBCol>
                   </MDBRow>
 
@@ -170,32 +275,29 @@ export default function ProfilePage() {
                     </MDBCol>
                     <MDBCol sm="9">
                       {editMode ? (
-                        <textarea
-                          name="skillset"
-                          value={formData.skillset}
-                          onChange={handleChange}
-                          className="form-control"
-                          rows="2"
-                        />
-                      ) : (
-                        <MDBCardText className="text-muted">
-                          {user.skillset || "-"}
-                        </MDBCardText>
-                      )}
-                    </MDBCol>
-                  </MDBRow>
+  <CreatableSelect
+    isMulti
+    options={skillOptions}
+    value={
+      formData.skillset
+        ? formData.skillset.split(",").map((s) => ({ value: s, label: s }))
+        : []
+    }
+    onChange={(selected) => {
+      const newSkills = selected.map((s) => s.value).join(",");
+      setFormData((prev) => ({ ...prev, skillset: newSkills }));
+    }}
+    placeholder="Nhập hoặc chọn kỹ năng..."
+    classNamePrefix="select"
+  />
+) : (
+  <MDBCardText className="text-muted">
+    {user.skillset
+      ? user.skillset.split(",").join(", ")
+      : "-"}
+  </MDBCardText>
+)}
 
-                  {/* Confirmed At */}
-                  <MDBRow className="align-items-center mb-3">
-                    <MDBCol sm="3">
-                      <MDBCardText>Confirmed At</MDBCardText>
-                    </MDBCol>
-                    <MDBCol sm="9">
-                      <MDBCardText className="text-muted">
-                        {user.confirmed_at
-                          ? new Date(user.confirmed_at).toLocaleString("vi-VN")
-                          : "-"}
-                      </MDBCardText>
                     </MDBCol>
                   </MDBRow>
 
@@ -205,54 +307,121 @@ export default function ProfilePage() {
                       <hr />
                       <h6 className="fw-bold mb-3 mt-4">Đổi mật khẩu</h6>
 
-                      <MDBRow className="mb-3">
+                      {/* old password */}
+                      <MDBRow className="mb-3 align-items-center">
                         <MDBCol sm="4">
                           <MDBCardText>Mật khẩu hiện tại</MDBCardText>
                         </MDBCol>
                         <MDBCol sm="8">
-                          <input
-                            type="password"
-                            name="oldPassword"
-                            value={passwords.oldPassword}
-                            onChange={handlePasswordChange}
-                            className="form-control"
-                          />
+                          <div className="position-relative">
+                            <input
+                              type={showPass.old ? "text" : "password"}
+                              name="oldPassword"
+                              value={passwords.oldPassword}
+                              onChange={handlePasswordChange}
+                              className="form-control pe-5"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowPass((prev) => ({
+                                  ...prev,
+                                  old: !prev.old,
+                                }))
+                              }
+                              className="position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent text-muted"
+                            >
+                              {showPass.old ? (
+                                <EyeOffIcon size={18} />
+                              ) : (
+                                <EyeIcon size={18} />
+                              )}
+                            </button>
+                          </div>
                         </MDBCol>
                       </MDBRow>
 
-                      <MDBRow className="mb-3">
+                      {/* new password */}
+                      <MDBRow className="mb-3 align-items-center">
                         <MDBCol sm="4">
                           <MDBCardText>Mật khẩu mới</MDBCardText>
                         </MDBCol>
                         <MDBCol sm="8">
-                          <input
-                            type="password"
-                            name="newPassword"
-                            value={passwords.newPassword}
-                            onChange={handlePasswordChange}
-                            className="form-control"
-                          />
+                          <div className="position-relative">
+                            <input
+                              type={showPass.new ? "text" : "password"}
+                              name="newPassword"
+                              value={passwords.newPassword}
+                              onChange={handlePasswordChange}
+                              className="form-control pe-5"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowPass((prev) => ({
+                                  ...prev,
+                                  new: !prev.new,
+                                }))
+                              }
+                              className="position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent text-muted"
+                            >
+                              {showPass.new ? (
+                                <EyeOffIcon size={18} />
+                              ) : (
+                                <EyeIcon size={18} />
+                              )}
+                            </button>
+                          </div>
                         </MDBCol>
                       </MDBRow>
 
-                      <MDBRow className="mb-4">
+                      {/* confirm password */}
+                      <MDBRow className="mb-4 align-items-center">
                         <MDBCol sm="4">
                           <MDBCardText>Xác nhận mật khẩu mới</MDBCardText>
                         </MDBCol>
                         <MDBCol sm="8">
-                          <input
-                            type="password"
-                            name="confirmPassword"
-                            value={passwords.confirmPassword}
-                            onChange={handlePasswordChange}
-                            className="form-control"
-                          />
+                          <div className="position-relative">
+                            <input
+                              type={showPass.confirm ? "text" : "password"}
+                              name="confirmPassword"
+                              value={passwords.confirmPassword}
+                              onChange={handlePasswordChange}
+                              className="form-control pe-5"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowPass((prev) => ({
+                                  ...prev,
+                                  confirm: !prev.confirm,
+                                }))
+                              }
+                              className="position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent text-muted"
+                            >
+                              {showPass.confirm ? (
+                                <EyeOffIcon size={18} />
+                              ) : (
+                                <EyeIcon size={18} />
+                              )}
+                            </button>
+                          </div>
+
+                          {/* 👇 Thông báo lỗi trùng mật khẩu */}
+                          {passwordMatchError && (
+                            <small className="text-danger mt-1 d-block">
+                              {passwordMatchError}
+                            </small>
+                          )}
                         </MDBCol>
                       </MDBRow>
 
-                      {/* Save / Cancel */}
                       <div className="d-flex justify-content-end gap-2 mt-4">
-                        <MDBBtn color="success" onClick={handleSave}>
+                        <MDBBtn
+                          color="success"
+                          onClick={handleSave}
+                          disabled={Boolean(passwordMatchError)} // 👈 disable khi lỗi
+                        >
                           Save
                         </MDBBtn>
                         <MDBBtn
@@ -264,6 +433,8 @@ export default function ProfilePage() {
                               newPassword: "",
                               confirmPassword: "",
                             });
+                            setShowPass({ old: false, new: false, confirm: false });
+                            setPasswordMatchError("");
                           }}
                         >
                           Cancel
