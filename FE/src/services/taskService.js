@@ -9,6 +9,10 @@ const TaskService = {
     return api.get(`/tasks/user-story/${userStoryId}`);
   },
 
+  getMyTasks() {
+    return api.get(`/tasks/my-tasks`);
+  },
+
   create(data) {
     // data should be a plain object; backend expects JSON
     return api.post(`/tasks/`, data);
