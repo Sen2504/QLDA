@@ -5,6 +5,7 @@ import { useProject } from "../store/ProjectContext";
 import IssueService from "../services/issueService";
 import IssueTypeService from "../services/issueTypeService";
 import HashtagService from "../services/hashtagService";
+import TeamService from "../services/teamService";
 import ComponentUpload from "../components/ComponentUpload";
 import PopupMessage from "../components/Popup_message";
 
@@ -32,6 +33,10 @@ export default function IssueEdit() {
   const [severity, setSeverity] = useState("Normal");
   const [priority, setPriority] = useState("Normal");
 
+  // Người thực hiện
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
+
   // hashtags
   const [tagInput, setTagInput] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
@@ -53,84 +58,87 @@ export default function IssueEdit() {
 
   // ---- LOAD INITIAL DATA ----
   useEffect(() => {
-  if (!id) return;
+    if (!id) return;
 
-  // Load loại issue song song
-  IssueTypeService.getAll()
-    .then((res) => setTypes(res.data || []))
-    .catch(() => setTypes([]));
+    // Load loại issue
+    IssueTypeService.getAll()
+      .then((res) => setTypes(res.data || []))
+      .catch(() => setTypes([]));
 
-  // Load issue detail
-  IssueService.getById(id)
-    .then((res) => {
-      const issue = res.data;
+    // Load chi tiết issue
+    IssueService.getById(id)
+      .then((res) => {
+        const issue = res.data;
 
-      // Cập nhật các field cơ bản
-      setName(issue.name || "");
-      setDescription(issue.description || "");
-      setExpireDate(issue.expire_date?.substring(0, 10) || "");
-      setTypeId(issue.type_id || "");
+        setName(issue.name || "");
+        setDescription(issue.description || "");
+        setExpireDate(issue.expire_date?.substring(0, 10) || "");
+        setTypeId(issue.type_id || "");
+        setStatus(issue.status || "New");
+        setSeverity(issue.severity || "Normal");
+        setPriority(issue.priority || "Normal");
 
-      // Enum fields: giữ đúng chữ hoa đầu như FE
-      setStatus(issue.status || "New");
-      setSeverity(issue.severity || "Normal");
-      setPriority(issue.priority || "Normal");
+        // team xử lý (nếu BE có trả về)
+        if (issue.team_id) setSelectedTeamId(issue.team_id);
 
-      // Hashtag: có thể là mảng hoặc chuỗi
-      if (Array.isArray(issue.hashtag)) {
-        setSelectedTags(issue.hashtag);
-      } else if (typeof issue.hashtag === "string" && issue.hashtag.trim()) {
-        try {
-          setSelectedTags(JSON.parse(issue.hashtag));
-        } catch {
-          // Nếu hashtag dạng "#Test, #ABC" thì tách thủ công
-          const cleaned = issue.hashtag
-            .replace(/[\[\]'"#]/g, "")
-            .split(",")
-            .map((x) => x.trim())
-            .filter(Boolean);
-          setSelectedTags(cleaned);
+        // Hashtag
+        if (Array.isArray(issue.hashtag)) {
+          setSelectedTags(issue.hashtag);
+        } else if (typeof issue.hashtag === "string" && issue.hashtag.trim()) {
+          try {
+            setSelectedTags(JSON.parse(issue.hashtag));
+          } catch {
+            const cleaned = issue.hashtag
+              .replace(/[\[\]'"#]/g, "")
+              .split(",")
+              .map((x) => x.trim())
+              .filter(Boolean);
+            setSelectedTags(cleaned);
+          }
+        } else {
+          setSelectedTags([]);
         }
-      } else {
-        setSelectedTags([]);
-      }
 
-      // Files: chuẩn hóa về dạng object { id, filename, url }
-      let fileArray = [];
-      if (Array.isArray(issue.evidence_file)) {
-        fileArray = issue.evidence_file;
-      } else if (
-        typeof issue.evidence_file === "string" &&
-        issue.evidence_file.trim()
-      ) {
-        try {
-          fileArray = JSON.parse(issue.evidence_file);
-        } catch {
-          fileArray = issue.evidence_file
-            .replace(/[\[\]']/g, "")
-            .split(",")
-            .map((x) => x.trim())
-            .filter(Boolean);
+        // Files
+        let fileArray = [];
+        if (Array.isArray(issue.evidence_file)) {
+          fileArray = issue.evidence_file;
+        } else if (typeof issue.evidence_file === "string" && issue.evidence_file.trim()) {
+          try {
+            fileArray = JSON.parse(issue.evidence_file);
+          } catch {
+            fileArray = issue.evidence_file
+              .replace(/[\[\]']/g, "")
+              .split(",")
+              .map((x) => x.trim())
+              .filter(Boolean);
+          }
         }
-      }
 
-      setExistingFiles(
-        fileArray.map((f, idx) => ({
-          id: idx,
-          filename: f,
-          url: `/uploads/issues/${issue.id}/${f}`,
-        }))
-      );
-    })
-    .catch(() => {
-      setPopup({
-        show: true,
-        message: "Không thể tải dữ liệu issue!",
-        type: "error",
+        setExistingFiles(
+          fileArray.map((f, idx) => ({
+            id: idx,
+            filename: f,
+            url: `/uploads/issues/${issue.id}/${f}`,
+          }))
+        );
+      })
+      .catch(() => {
+        setPopup({
+          show: true,
+          message: "Không thể tải dữ liệu issue!",
+          type: "error",
+        });
       });
-    });
-}, [id]);
+  }, [id]);
 
+  // ---- LOAD TEAM MEMBERS ----
+  useEffect(() => {
+    if (!currentProject) return;
+    TeamService.getByProjectId(currentProject.id)
+      .then((res) => setTeamMembers(res.data || []))
+      .catch((err) => console.error("Load team error:", err));
+  }, [currentProject]);
 
   // ---- hashtag gợi ý ----
   useEffect(() => {
@@ -176,6 +184,8 @@ export default function IssueEdit() {
     formData.append("priority", priority);
     formData.append("hashtag", JSON.stringify(selectedTags));
 
+    if (selectedTeamId) formData.append("team_id", selectedTeamId);
+
     // file mới
     files.forEach((f) => formData.append("files", f));
 
@@ -188,7 +198,7 @@ export default function IssueEdit() {
       setPopup({ show: true, message: "Cập nhật thành công!", type: "success" });
       setTimeout(() => {
         setPopup({ ...popup, show: false });
-        navigate("/issues");
+        navigate("/issues/list");
       }, 1500);
     } catch {
       setPopup({ show: true, message: "Có lỗi xảy ra khi cập nhật!", type: "error" });
@@ -290,7 +300,7 @@ export default function IssueEdit() {
               />
             </div>
 
-            {/* Upload files ( tái sử dụng ComponentUpload) */}
+            {/* Upload files */}
             <div>
               <ComponentUpload
                 files={files}
@@ -339,6 +349,35 @@ export default function IssueEdit() {
               />
             </div>
 
+            {/* Người thực hiện */}
+            <div>
+              <label className="text-gray-700 font-medium">Người thực hiện</label>
+              <div className="mt-2 border rounded-lg p-3 max-h-48 overflow-auto bg-gray-50">
+                {!teamMembers.length && (
+                  <p className="text-sm text-gray-500">Chưa có thành viên trong project này.</p>
+                )}
+
+                {teamMembers.map((m) => (
+                  <label
+                    key={m.id}
+                    className="flex items-center gap-2 text-sm cursor-pointer select-none mb-1"
+                  >
+                    <input
+                      type="radio"
+                      name="team_id"
+                      value={m.id}
+                      checked={selectedTeamId === m.id}
+                      onChange={(e) => setSelectedTeamId(Number(e.target.value))}
+                      className="accent-emerald-600"
+                    />
+                    <span>
+                      {m.user_email} ({m.role_name})
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             {/* Buttons */}
             <div className="flex gap-3 pt-4">
               <button
@@ -349,7 +388,7 @@ export default function IssueEdit() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/issues")}
+                onClick={() => navigate("/issues/list")}
                 className="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
               >
                 Cancel

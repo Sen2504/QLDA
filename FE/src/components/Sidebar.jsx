@@ -261,7 +261,7 @@ export default function Sidebar() {
 
         <li>
           <Link
-            to="/issues"
+            to="/issues/list"
             className="flex items-center gap-3 p-2 rounded-md hover:bg-green-100 transition"
           >
             <BadgeAlert className="w-5 h-5 text-green-600" />

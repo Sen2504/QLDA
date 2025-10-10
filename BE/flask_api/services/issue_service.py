@@ -1,4 +1,4 @@
-import os
+import os, json
 from datetime import date
 from werkzeug.utils import secure_filename
 from flask_api.extensions import db
@@ -67,6 +67,10 @@ class IssueService:
         return issue
 
     @staticmethod
+    def get_issue_by_project(project_id):
+        return Issue.query.filter_by(project_id=project_id).all()
+
+    @staticmethod
     def create(data, files=None):
         issue_type = IssueType.query.get(data.get("type_id"))
         if not issue_type:
@@ -130,16 +134,47 @@ class IssueService:
 
         try:
             # ==== Cập nhật field cơ bản ====
-            for field in [
-                "name", "description", "hashtag", "status",
-                "severity", "priority", "expire_date", "type_id"
-            ]:
+            # Các field text thông thường
+            for field in ["name", "description", "hashtag", "expire_date", "type_id"]:
                 if field in data and data[field] is not None:
                     setattr(issue, field, data[field])
 
+            # ==== Enum: status ====
+            if "status" in data and data["status"]:
+                val = data["status"]
+                try:
+                    issue.status = IssueStatus(val)
+                except ValueError:
+                    # fallback khi FE gửi tên khác (ví dụ: "In Progress" -> IN_PROGRESS)
+                    enum_map = {s.value.lower(): s for s in IssueStatus}
+                    issue.status = enum_map.get(val.lower(), issue.status)
+
+            # ==== Enum: severity ====
+            if "severity" in data and data["severity"]:
+                val = data["severity"]
+                try:
+                    issue.severity = Severity(val)
+                except ValueError:
+                    enum_map = {s.value.lower(): s for s in Severity}
+                    issue.severity = enum_map.get(val.lower(), issue.severity)
+
+            # ==== Enum: priority ====
+            if "priority" in data and data["priority"]:
+                val = data["priority"]
+                try:
+                    issue.priority = Priority(val)
+                except ValueError:
+                    enum_map = {s.value.lower(): s for s in Priority}
+                    issue.priority = enum_map.get(val.lower(), issue.priority)
+
             # ==== Cập nhật team_id (nếu có) ====
             team_id = data.get("team_id")
-            if team_id is not None:
+            if team_id not in [None, "", "null"]:
+                try:
+                    team_id = int(team_id)
+                except ValueError:
+                    return None, "Giá trị team_id không hợp lệ."
+
                 resolve = IssueResolve.query.filter_by(issue_id=issue_id).first()
                 if not resolve:
                     db.session.add(IssueResolve(issue_id=issue_id, team_id=team_id))
@@ -150,15 +185,14 @@ class IssueService:
             issue_folder = IssueService._issue_folder(issue.id)
             os.makedirs(issue_folder, exist_ok=True)
 
-            # 1️⃣ Xóa file bị đánh dấu xoá (FE gửi deleted_files)
+            # Xóa file
             if deleted_files:
                 for filename in deleted_files:
                     fpath = os.path.join(issue_folder, filename)
                     if os.path.exists(fpath):
                         os.remove(fpath)
-                        print(f"🗑️ Đã xóa file: {fpath}")
 
-            # 2️⃣ Lưu file mới (FE gửi qua formData 'files')
+            # Lưu file mới
             if new_files:
                 for file in new_files:
                     if file and file.filename:
@@ -167,18 +201,17 @@ class IssueService:
                             db.session.rollback()
                             return None, error
 
-            # 3️⃣ Cập nhật danh sách file hiện có trong DB (nếu có field này)
+            # Cập nhật danh sách file hiện có
             current_files = [
                 f for f in os.listdir(issue_folder)
                 if os.path.isfile(os.path.join(issue_folder, f))
             ]
             issue.evidence_file = json.dumps(current_files)
 
-            # ==== Commit ====
+            # Commit
             db.session.commit()
             return issue, None
 
         except Exception as e:
             db.session.rollback()
             return None, str(e)
-

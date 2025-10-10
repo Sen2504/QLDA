@@ -144,6 +144,16 @@ class AuthService:
 
     @staticmethod
     def reset_password(token: str, new_password: str):
+        """Đặt lại mật khẩu qua token"""
+        # Validate password
+        if len(new_password) < 8:
+            return False, "password must be at least 8 characters"
+        if not re.search(r"[A-Za-z]", new_password):
+            return False, "password must contain at least one letter"
+        if not re.search(r"\d", new_password):
+            return False, "password must contain at least one digit"
+
+        # Giải mã token
         email = confirm_token(token)
         if not email:
             return False, "invalid or expired token"

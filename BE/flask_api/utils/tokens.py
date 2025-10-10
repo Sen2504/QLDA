@@ -13,7 +13,7 @@ def generate_confirmation_token(email: str) -> str:
     return _serializer().dumps(email)
 
 
-def confirm_token(token: str, max_age: int = 300) -> str | None:
+def confirm_token(token: str, max_age: int = 1200) -> str | None:
     """Trả về email nếu token hợp lệ; ngược lại None. max_age=300 (5 min)."""
     try:
         email = _serializer().loads(token, max_age=max_age)

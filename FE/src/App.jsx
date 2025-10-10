@@ -18,6 +18,7 @@ import Issue from "./pages/Issue";
 import IssueEdit from "./pages/IssueEdit";
 import UserStoryDetail from "./pages/UserStoryDetail";
 import SprintBoard from "./pages/SprintBoard";
+import IssueList from "./pages/IssueList";
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/issues" element={<Issue />} />
         <Route path="/issues/:id/edit" element={<IssueEdit />} />
+        <Route path="/issues/list" element={<IssueList />} />
       </Routes>
     </BrowserRouter>
   );

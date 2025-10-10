@@ -8,6 +8,11 @@ const TeamService = {
     return api.get(`/team_invites/project/${projectId}/summary`);
   },
 
+  getByProjectId(projectId) {
+    // lấy danh sách thành viên trong project
+    return api.get(`/teams/${projectId}`);
+  },
+
   removeUser(projectId, userId) {
     return api.delete(`/teams/${projectId}/remove/${userId}`);
   },
@@ -38,9 +43,10 @@ const TeamService = {
   getProjectRoles(projectId) {
     return api.get(`/project_roles/project/${projectId}`);
   },
-createCustomRole(projectId, name_role) {
-  return api.post("/project_roles/custom", {project_id: projectId,name_role,});
-},
+
+  createCustomRole(projectId, name_role) {
+    return api.post("/project_roles/custom", {project_id: projectId,name_role,});
+  },
   
 
 };

@@ -138,15 +138,13 @@ def forgot_password():
 
 @auth_bp.route("/reset-password", methods=["POST"])
 def reset_password():
-    data = request.get_json(silent=True) or {}
+    data = request.get_json() or {}
     token = data.get("token")
     new_password = data.get("new_password")
 
-    if not token or not new_password:
-        return jsonify({"error": "token and new_password are required"}), 400
+    success, error = AuthService.reset_password(token, new_password)
 
-    ok, error = AuthService.reset_password(token, new_password)
-    if not ok:
+    if not success:
         return jsonify({"error": error}), 400
 
-    return jsonify({"message": "Password has been reset successfully."}), 200
+    return jsonify({"message": "Password reset successfully"}), 200
