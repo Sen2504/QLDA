@@ -89,7 +89,7 @@ export default function UserStoryList() {
                     {/* Tên user story */}
                     <td
                       className="px-4 py-2 cursor-pointer text-emerald-700 font-medium hover:underline"
-                      onClick={() => navigate(`/user-stories/${s.id}/edit`)}
+                      onClick={() => navigate(`/user-stories/${s.id}`)}
                     >
                       {s.name || "(Không có tên)"}
                     </td>
