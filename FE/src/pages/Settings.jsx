@@ -9,7 +9,7 @@ export default function Settings() {
     <MainLayout>
       <div className="p-6 space-y-8">
         <h2 className="text-2xl font-bold text-green-700">
-          Cài đặt Project {currentProject?.name}
+          Setting project {currentProject?.name}
         </h2>
 
         {/* Quản lý Role Custom */}

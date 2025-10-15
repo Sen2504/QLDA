@@ -13,7 +13,7 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange, onTask
         setStatuses(res.data || []);
       })
       .catch((err) => {
-        console.error("Lỗi khi load trạng thái:", err);
+        console.error("Error while loading state:", err);
       });
   }, []);
 
@@ -46,12 +46,12 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange, onTask
   return (
     <div className="mt-6 bg-white rounded-2xl shadow p-5">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Danh sách Task</h2>
+        <h2 className="text-lg font-semibold text-gray-800">Task list</h2>
         <button
           onClick={onCreateClick}
           className="px-4 py-2 rounded-2xl bg-[var(--color-accent,#16a34a)] text-white hover:opacity-90"
         >
-          + Tạo task
+          + Create task
         </button>
       </div>
 
@@ -59,11 +59,11 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange, onTask
         <table className="w-full text-sm text-left text-gray-700">
           <thead className="text-xs uppercase bg-gray-100 text-gray-600">
             <tr>
-              <th className="px-4 py-2">Tên task</th>
-              <th className="px-4 py-2">Hạn chót</th>
-              <th className="px-4 py-2">Ưu tiên</th>
-              <th className="px-4 py-2">Người thực hiện</th>
-              <th className="px-4 py-2">Trạng thái</th>
+              <th className="px-4 py-2">Name</th>
+              <th className="px-4 py-2">Deadline</th>
+              <th className="px-4 py-2">Priority</th>
+              <th className="px-4 py-2">Implementer</th>
+              <th className="px-4 py-2">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -109,7 +109,7 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange, onTask
                       ))}
                     </div>
                   ) : (
-                    <span className="text-gray-400 text-xs">Chưa phân công</span>
+                    <span className="text-gray-400 text-xs">Not assigned yet</span>
                   )}
                 </td>
 
@@ -126,7 +126,7 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange, onTask
                     onChange={(e) => handleChange(t.id, e.target.value)}
                     className="border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-[var(--color-accent,#16a34a)]"
                   >
-                    <option value="">Chọn trạng thái</option>
+                    <option value="">Choose status</option>
                     {statuses.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name_status}
@@ -141,7 +141,7 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange, onTask
       </div>
 
       {tasks.length === 0 && (
-        <p className="text-gray-500 text-sm mt-2">Chưa có task nào.</p>
+        <p className="text-gray-500 text-sm mt-2">No task yet.</p>
       )}
     </div>
   );

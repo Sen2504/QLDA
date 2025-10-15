@@ -18,6 +18,8 @@ class User(db.Model, UserMixin):
 
     teams = db.relationship("Team", back_populates="user")
     task_comments = db.relationship("TaskComment", back_populates="user")
+    issue_comments = db.relationship("IssueComment", back_populates="user")
+
     
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)

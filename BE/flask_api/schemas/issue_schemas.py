@@ -1,6 +1,8 @@
 from marshmallow import Schema, fields
 from flask_api.models.issue_models import IssueStatus, Severity, Priority
 from flask_api.models.issue_resolve_models import IssueResolve
+from flask_api.schemas.issue_comment_schemas import IssueCommentSchema
+
 
 class IssueTypeSchema(Schema):
     id = fields.Int()
@@ -59,6 +61,9 @@ class IssueSchema(Schema):
         only=("id", "name", "role_name", "status"),
         dump_only=True
     )
+
+    comments = fields.Nested(IssueCommentSchema, many=True, dump_only=True)
+
 
     def get_status(self, obj):
         try:

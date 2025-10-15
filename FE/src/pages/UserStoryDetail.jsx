@@ -94,11 +94,15 @@ export default function UserStoryDetail() {
     return () => { mounted = false; };
   }, [userStoryId]);
 
+  // UserStoryDetail.jsx
   const handleCreateTask = async (formData) => {
-    const { data } = await TaskService.create(formData);
-    setTasks((prev) => [...prev, data]);
-    setShowForm(false);
+    const result = await TaskService.create(formData);
+    if (result.data) {
+      setTasks((prev) => [...prev, result.data]);
+    }
+    return result;
   };
+
 
   return (
     <MainLayout>
@@ -110,7 +114,7 @@ export default function UserStoryDetail() {
           ← Back
         </button>
         {loading && (
-          <div className="text-gray-500">Đang tải dữ liệu...</div>
+          <div className="text-gray-500">Loading data...</div>
         )}
 
         {story && (
@@ -119,7 +123,7 @@ export default function UserStoryDetail() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{story.name}</h1>
                 <p className="text-gray-700 mt-1 whitespace-pre-line">
-                  {story.description?.trim() || "(Chưa có mô tả)"}
+                  {story.description?.trim() || "(No description yet)"}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -149,10 +153,10 @@ export default function UserStoryDetail() {
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-gray-500">Sprint</p>
-                <p className="mt-1 text-base font-semibold text-gray-900">{story.sprint_id ? `#${story.sprint_id}` : "Chưa gán"}</p>
+                <p className="mt-1 text-base font-semibold text-gray-900">{story.sprint_id ? `#${story.sprint_id}` : "Not assigned yet"}</p>
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Số lượng tasks</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500">Number of tasks</p>
                 <p className="mt-1 text-base font-semibold text-gray-900">{tasks.length}</p>
               </div>
             </div>
@@ -170,7 +174,7 @@ export default function UserStoryDetail() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm italic text-gray-400">Chưa có hashtag</span>
+                  <span className="text-sm italic text-gray-400">No hashtag yet</span>
                 )}
               </div>
             </div>
@@ -190,12 +194,12 @@ export default function UserStoryDetail() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400">Chưa cấu hình điểm phức tạp.</p>
+                <p className="text-sm text-gray-400">Complex points have not been configured.</p>
               )}
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-2">Tài liệu đính kèm</h3>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-2">Attached documents</h3>
               {attachments.length ? (
                 <ul className="space-y-2">
                   {attachments.map((file) => (
@@ -210,13 +214,13 @@ export default function UserStoryDetail() {
                         rel="noopener noreferrer"
                         className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
                       >
-                        Xem
+                        Detail
                       </a>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-gray-400">Không có tệp đính kèm.</p>
+                <p className="text-sm text-gray-400">There are no attachments.</p>
               )}
             </div>
           </div>
@@ -238,10 +242,10 @@ export default function UserStoryDetail() {
                     : task
                 )
               );
-              toast.success("Cập nhật trạng thái thành công!");
+              toast.success("Status update successful!");
             } catch (err) {
               toast.error(
-                err.response?.data?.error || "Lỗi khi cập nhật trạng thái"
+                err.response?.data?.error || "Error updating status"
               );
             }
           }}

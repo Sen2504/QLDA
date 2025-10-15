@@ -20,8 +20,8 @@ export default function Tasks() {
     TaskStatusService.getAll()
       .then((res) => setStatuses(res.data || []))
       .catch((err) => {
-        console.error("Không tải được trạng thái task", err);
-        toast.error("Không tải được danh sách trạng thái task");
+        console.error("Can't loading status of task", err);
+        toast.error("Can't loading status task list");
       })
       .finally(() => setLoadingStatuses(false));
   }, []);
@@ -36,8 +36,8 @@ export default function Tasks() {
     TaskService.getByProject(currentProject.id)
       .then((res) => setTasks(res.data || []))
       .catch((err) => {
-        console.error("Không tải được task", err);
-        toast.error("Không tải được danh sách task");
+        console.error("Can't task", err);
+        toast.error("Can't loading task list");
       })
       .finally(() => setLoading(false));
   }, [currentProject?.id]);
@@ -64,9 +64,9 @@ export default function Tasks() {
             : task
         )
       );
-      toast.success("Đã cập nhật trạng thái task");
+      toast.success("Update task status");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Không thể cập nhật trạng thái task");
+      toast.error(err.response?.data?.error || "Can't update task status");
     }
   };
 
@@ -107,7 +107,7 @@ export default function Tasks() {
     <MainLayout>
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-semibold text-gray-900">Task Center</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Task list</h1>
           {currentProject && (
             <div className="text-sm text-gray-600">
               Project: <span className="font-medium">{currentProject.name}</span>
@@ -117,16 +117,16 @@ export default function Tasks() {
 
         {!currentProject && (
           <div className="text-gray-600 bg-white rounded-xl border p-6">
-            Hãy chọn một project ở thanh bên trái để xem danh sách task.
+            Select a project in the left bar to see the task list.
           </div>
         )}
 
         {currentProject && (
           <div className="bg-white rounded-2xl shadow p-5">
             {loading ? (
-              <div className="text-gray-500">Đang tải danh sách task...</div>
+              <div className="text-gray-500">Loading task list...</div>
             ) : tasks.length === 0 ? (
-              <div className="text-gray-500">Project này chưa có task nào.</div>
+              <div className="text-gray-500">This project does not have any tasks yet.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-700">
@@ -135,9 +135,9 @@ export default function Tasks() {
                       <th className="px-4 py-2">Task</th>
                       <th className="px-4 py-2">User Story</th>
                       <th className="px-4 py-2">Assignee</th>
-                      <th className="px-4 py-2">Hạn chót</th>
-                      <th className="px-4 py-2">Ưu tiên đề xuất</th>
-                      <th className="px-4 py-2">Trạng thái</th>
+                      <th className="px-4 py-2">Deadline</th>
+                      <th className="px-4 py-2">Prioritize </th>
+                      <th className="px-4 py-2">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -185,7 +185,7 @@ export default function Tasks() {
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-xs text-gray-400">Chưa phân công</span>
+                              <span className="text-xs text-gray-400">Not assigned</span>
                             )}
                           </td>
                           <td className="px-4 py-2">
@@ -217,7 +217,7 @@ export default function Tasks() {
                               className="border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-[var(--color-accent,#16a34a)]"
                             >
                               <option value="" disabled>
-                                {loadingStatuses ? "Đang tải..." : "Chọn trạng thái"}
+                                {loadingStatuses ? "Loading..." : "Choose status"}
                               </option>
                               {statuses.map((status) => (
                                 <option key={status.id} value={status.id}>

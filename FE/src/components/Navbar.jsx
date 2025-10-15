@@ -48,7 +48,7 @@ export default function Navbar() {
       })
       .catch((err) => {
         if (!ignore && err.response?.status !== 401) {
-          showPopup("Không thể tải lời mời!", "error");
+          showPopup("Unable to download invitation!", "error");
         }
       });
 
@@ -61,9 +61,9 @@ export default function Navbar() {
     try {
       await TeamService.acceptInvite(inviteId);
       setInvites(invites.filter((i) => i.id !== inviteId));
-      showPopup("Bạn đã tham gia project thành công!", "success");
+      showPopup("You have successfully joined the project!", "success");
     } catch (err) {
-      showPopup(err.response?.data?.error || "Lỗi accept invite", "error");
+      showPopup(err.response?.data?.error || "Error accept invite", "error");
     }
   };
 
@@ -71,9 +71,9 @@ export default function Navbar() {
     try {
       await TeamService.rejectInvite(inviteId);
       setInvites(invites.filter((i) => i.id !== inviteId));
-      showPopup("Bạn đã từ chối lời mời.", "warning");
+      showPopup("You have declined the invitation.", "warning");
     } catch (err) {
-      showPopup(err.response?.data?.error || "Lỗi reject invite", "error");
+      showPopup(err.response?.data?.error || "Error reject invite", "error");
     }
   };
 
@@ -100,7 +100,7 @@ export default function Navbar() {
 
             {open && (
               <div className="absolute right-0 mt-2 w-80 bg-white text-black rounded shadow-lg z-50">
-                <div className="p-3 border-b font-semibold">Lời mời của tôi</div>
+                <div className="p-3 border-b font-semibold">My invitation</div>
                 {invites.length > 0 ? (
                   <ul className="max-h-64 overflow-y-auto">
                     {invites.map((i) => (
@@ -132,7 +132,7 @@ export default function Navbar() {
                     ))}
                   </ul>
                 ) : (
-                  <div className="p-3 text-gray-500">Không có lời mời nào</div>
+                  <div className="p-3 text-gray-500">There are no invitations</div>
                 )}
               </div>
             )}
@@ -141,7 +141,7 @@ export default function Navbar() {
           {/* User info */}
           <div className="flex items-center space-x-3">
             <span className="font-medium">
-              {user ? `Xin chào, ${user.name}` : "Loading..."}
+              {user ? `Welcome, ${user.name}` : "Loading..."}
             </span>
             <UserCircle
               className="w-8 h-8 cursor-pointer hover:text-green-300"

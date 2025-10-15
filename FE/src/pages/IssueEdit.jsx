@@ -126,7 +126,7 @@ export default function IssueEdit() {
       .catch(() => {
         setPopup({
           show: true,
-          message: "Không thể tải dữ liệu issue!",
+          message: "Unable to load issue data!",
           type: "error",
         });
       });
@@ -170,8 +170,8 @@ export default function IssueEdit() {
   // ---- submit ----
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentProject) return alert("Chưa chọn project.");
-    if (!name.trim()) return alert("Vui lòng nhập tên issue.");
+    if (!currentProject) return alert("Project not selected yet.");
+    if (!name.trim()) return alert("Please enter an issue name.");
 
     const formData = new FormData();
     formData.append("project_id", currentProject.id);
@@ -195,13 +195,13 @@ export default function IssueEdit() {
 
     try {
       await IssueService.update(id, formData);
-      setPopup({ show: true, message: "Cập nhật thành công!", type: "success" });
+      setPopup({ show: true, message: "Updated successfully!", type: "success" });
       setTimeout(() => {
         setPopup({ ...popup, show: false });
         navigate("/issues/list");
       }, 1500);
     } catch {
-      setPopup({ show: true, message: "Có lỗi xảy ra khi cập nhật!", type: "error" });
+      setPopup({ show: true, message: "An error occurred while updating!", type: "error" });
     }
   };
 
@@ -307,7 +307,7 @@ export default function IssueEdit() {
                 setFiles={setFiles}
                 existingFiles={existingFiles}
                 setExistingFiles={setExistingFiles}
-                label="Manage Evidence Files"
+                label="Manage Attached Files"
               />
             </div>
           </div>
@@ -351,10 +351,10 @@ export default function IssueEdit() {
 
             {/* Người thực hiện */}
             <div>
-              <label className="text-gray-700 font-medium">Người thực hiện</label>
+              <label className="text-gray-700 font-medium">Handler</label>
               <div className="mt-2 border rounded-lg p-3 max-h-48 overflow-auto bg-gray-50">
                 {!teamMembers.length && (
-                  <p className="text-sm text-gray-500">Chưa có thành viên trong project này.</p>
+                  <p className="text-sm text-gray-500">There are no members in this project yet.</p>
                 )}
 
                 {teamMembers.map((m) => (

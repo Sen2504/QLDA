@@ -8,10 +8,10 @@ class TaskStatusService:
         name_status = (name_status or '').strip()
 
         if not name_status:
-            return None, "Tên trạng thái là bắt buộc."
+            return None, "Status name is required."
 
         if TaskStatus.query.filter_by(name_status=name_status).first():
-            return None, "Tên trạng thái đã tồn tại."
+            return None, "Status name already exists."
 
         new_status = TaskStatus(name_status=name_status)
         db.session.add(new_status)
@@ -30,14 +30,14 @@ class TaskStatusService:
     def update(status_id, name_status):
         status = TaskStatus.query.get(status_id)
         if not status:
-            return None, "Không tìm thấy trạng thái."
+            return None, "Status not found."
 
         name_status = (name_status or '').strip()
         if not name_status:
-            return None, "Tên trạng thái là bắt buộc."
+            return None, "Status name is required."
 
         if TaskStatus.query.filter(TaskStatus.name_status == name_status, TaskStatus.id != status_id).first():
-            return None, "Tên trạng thái đã tồn tại."
+            return None, "Status name already exists."
 
         status.name_status = name_status
         db.session.commit()
@@ -47,7 +47,7 @@ class TaskStatusService:
     def delete(status_id):
         status = TaskStatus.query.get(status_id)
         if not status:
-            return False, "Không tìm thấy trạng thái."
+            return False, "Status not found."
 
         db.session.delete(status)
         db.session.commit()

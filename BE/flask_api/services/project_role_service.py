@@ -25,7 +25,7 @@ class ProjectRoleService:
         """
         role = Role.query.get(role_id)
         if not role:
-            return None, "Không tìm thấy role."
+            return None, "Can not found role."
 
         new_proj_role = ProjectRole(
             project_id=project_id,
@@ -40,7 +40,7 @@ class ProjectRoleService:
     def delete(projrole_id):
         proj_role = ProjectRole.query.get(projrole_id)
         if not proj_role:
-            return False, "Không tìm thấy ProjectRole."
+            return False, "Can not found ProjectRole."
         
         db.session.delete(proj_role)
         db.session.commit()
@@ -52,7 +52,7 @@ class ProjectRoleService:
         Tạo ProjectRole custom (không cần tồn tại trong bảng Role).
         """
         if not name_role or not name_role.strip():
-            return None, "Tên role không được để trống."
+            return None, "Role name can not empty."
 
         new_proj_role = ProjectRole(
             project_id=project_id,

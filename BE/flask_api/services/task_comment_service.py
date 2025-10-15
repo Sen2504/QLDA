@@ -17,19 +17,19 @@ class TaskCommentService:
     def create(task_id, user_id, content, team_id=None):
         content = (content or "").strip()
         if not content:
-            return None, "Noi dung binh luan la bat buoc."
+            return None, "Content is required."
 
         task = Task.query.get(task_id)
         if not task:
-            return None, "Khong tim thay task."
+            return None, "Can not found task."
 
         team = None
         if team_id is not None:
             team = Team.query.get(team_id)
             if not team:
-                return None, "Khong tim thay thanh vien team."
+                return None, "Can not found member in team."
             if not team.projrole or team.projrole.project_id != task.user_story.project_id:
-                return None, "Thanh vien khong thuoc project cua task."
+                return None, "Member is not belong to this project."
 
         try:
             comment = TaskComment(
@@ -44,19 +44,19 @@ class TaskCommentService:
             return comment, None
         except Exception:
             db.session.rollback()
-            return None, "Khong the tao binh luan."
+            return None, "Can not create comment."
 
     @staticmethod
     def delete(task_id, comment_id, user_id):
         comment = TaskComment.query.get(comment_id)
         if not comment:
-            return False, "Khong tim thay binh luan."
+            return False, "Can not found comment."
 
         if comment.task_id != task_id:
-            return False, "Binh luan khong thuoc task nay."
+            return False, "Comment is not belong to this task."
 
         if comment.user_id != user_id:
-            return False, "Ban khong co quyen xoa binh luan nay."
+            return False, "You can not delete this comment."
 
         try:
             db.session.delete(comment)
@@ -64,4 +64,4 @@ class TaskCommentService:
             return True, None
         except Exception:
             db.session.rollback()
-            return False, "Khong the xoa binh luan."
+            return False, "Can not delete comment."

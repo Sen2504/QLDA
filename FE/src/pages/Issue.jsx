@@ -5,7 +5,8 @@ import { useProject } from "../store/ProjectContext";
 import HashtagService from "../services/hashtagService";
 import IssueService from "../services/issueService";
 import IssueTypeService from "../services/issueTypeService";
-import ComponentUpload from "../components/ComponentUpload"; // ✅ dùng component riêng
+import ComponentUpload from "../components/ComponentUpload";
+import PopupMessage from "../components/Popup_message";
 
 function useDebounce(value, delay = 250) {
   const [v, setV] = useState(value);
@@ -19,6 +20,7 @@ function useDebounce(value, delay = 250) {
 export default function IssueCreate() {
   const { currentProject } = useProject();
   const navigate = useNavigate();
+  const [popup, setPopup] = useState({ message: "", type: "success" });
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -94,13 +96,21 @@ export default function IssueCreate() {
     formData.append("priority", priority);
     formData.append("expire_date", expireDate);
 
-    // ✅ hỗ trợ nhiều file
+    // hỗ trợ nhiều file
     if (files.length > 0) {
       files.forEach((f) => formData.append("files", f));
     }
 
-    await IssueService.create(formData);
-    navigate("/issues");
+    try {
+      await IssueService.create(formData);
+      setPopup({ message: "Create issue success", type: "success" });
+      setTimeout(() => {
+        navigate("/issues/list");
+      }, 1500);
+    } catch (err) {
+      console.error("Error creating issue:", err);
+      setPopup({ message: "Unable to create issue. Please try again.", type: "error" });
+    }
   };
 
   return (
@@ -191,8 +201,8 @@ export default function IssueCreate() {
                 />
               </div>
 
-              {/* ✅ Upload file component */}
-              <ComponentUpload files={files} setFiles={setFiles} label="Evidence Files" />
+              {/* Upload file component */}
+              <ComponentUpload files={files} setFiles={setFiles} label="Attached Files" />
 
               <div className="pt-4 flex gap-3">
                 <button
@@ -212,6 +222,13 @@ export default function IssueCreate() {
             </div>
           </div>
         </form>
+        {popup.message && (
+          <PopupMessage
+            message={popup.message}
+            type={popup.type}
+            onClose={() => setPopup({ message: "", type: "success" })}
+          />
+        )}
     </MainLayout>
   );
 }

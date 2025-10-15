@@ -58,27 +58,27 @@ export default function IssueList() {
     <MainLayout>
       <div className="mt-6 bg-white rounded-2xl shadow p-5">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Danh sách Issue</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Issue list</h2>
           <button
             onClick={() => navigate("/issues/")}
             className="px-4 py-2 rounded-2xl bg-[var(--color-accent,#16a34a)] text-white hover:opacity-90"
           >
-            + Tạo issue
+            + Create issue
           </button>
         </div>
 
         {loading ? (
-          <p className="text-gray-500 text-sm">Đang tải dữ liệu...</p>
+          <p className="text-gray-500 text-sm">Loading data...</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-700">
               <thead className="text-xs uppercase bg-gray-100 text-gray-600">
                 <tr>
-                  <th className="px-4 py-2">Tên Issue</th>
-                  <th className="px-4 py-2">Hạn chót</th>
-                  <th className="px-4 py-2">Ưu tiên</th>
-                  <th className="px-4 py-2">Người xử lý</th>
-                  <th className="px-4 py-2">Trạng thái</th>
+                  <th className="px-4 py-2">Name</th>
+                  <th className="px-4 py-2">Deadline</th>
+                  <th className="px-4 py-2">Priority</th>
+                  <th className="px-4 py-2">Handler</th>
+                  <th className="px-4 py-2">Status</th>
                   <th className="px-4 py-2 text-center"></th>
                 </tr>
               </thead>
@@ -122,7 +122,7 @@ export default function IssueList() {
                           )}
                         </span>
                       ) : (
-                        <span className="text-gray-400 text-xs">Chưa phân công</span>
+                        <span className="text-gray-400 text-xs">Not assigned</span>
                       )}
                     </td>
 
@@ -150,7 +150,7 @@ export default function IssueList() {
                             onClick={() => navigate(`/issues/${issue.id}/edit`)}
                             className="px-3 py-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
                         >
-                            Chỉnh sửa
+                            Edit
                         </button>
                     </td>
                   </tr>
@@ -159,7 +159,7 @@ export default function IssueList() {
             </table>
 
             {issues.length === 0 && (
-              <p className="text-gray-500 text-sm mt-2">Chưa có issue nào.</p>
+              <p className="text-gray-500 text-sm mt-2">No issue yet.</p>
             )}
           </div>
         )}

@@ -75,7 +75,7 @@ function TaskCard({ task, index, onOpenTask }) {
             onClick={() => onOpenTask?.(task.id)}
             className="mt-3 inline-flex items-center text-[11px] text-emerald-600 hover:text-emerald-700"
           >
-            ↗ Chi tiết
+            ↗ Detail
           </button>
         </div>
       )}
@@ -105,7 +105,7 @@ export default function SprintBoard() {
         }
       })
       .catch(() => {
-        toast.warn("Không tải được danh sách trạng thái task, dùng mặc định");
+        toast.warn("Unable to load task status list, using default");
         setStatuses(FALLBACK_STATUSES);
       });
   }, []);
@@ -153,7 +153,7 @@ export default function SprintBoard() {
         const ids = new Set(usList.map((u) => u.id));
         setTasks(taskList.filter((t) => ids.has(t.user_story_id)));
       })
-      .catch(() => toast.error("Không tải được Sprint Taskboard"));
+      .catch(() => toast.error("Unable to load Sprint Taskboard"));
   }, [currentProject, projectId, sprintId]);
 
   const handleOpenUserStory = (userStoryId) => {
@@ -182,7 +182,7 @@ export default function SprintBoard() {
     const newUSId = Number(dstUS);
 
     if (!statusObj || payloadStatusId === null) {
-      toast.error("Không thể cập nhật trạng thái do thiếu cấu hình task status");
+      toast.error("Unable to update status due to missing task status configuration");
       return;
     }
 
@@ -214,14 +214,14 @@ export default function SprintBoard() {
       }
     } catch (e) {
       setTasks(previousTasks);
-      toast.error("Cập nhật task thất bại");
+      toast.error("Update task failed");
     }
   };
 
   if (!currentProject) {
     return (
       <MainLayout>
-        <div className="p-6">Chọn một project để tiếp tục.</div>
+        <div className="p-6">Select a project to continue.</div>
       </MainLayout>
     );
   }
@@ -312,7 +312,7 @@ export default function SprintBoard() {
 
         {userStories.length === 0 && (
           <div className="text-sm opacity-70 mt-6">
-            Sprint này chưa có User Story.
+            This Sprint does not have a User Story yet.
           </div>
         )}
       </div>

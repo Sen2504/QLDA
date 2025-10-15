@@ -46,14 +46,14 @@ export default function Team() {
           setPending(res.data.pending_invites);
         })
         .catch((err) => {
-          console.error("Lỗi load team:", err);
-          showPopup("Không thể tải team. Vui lòng thử lại!", "warning");
+          console.error("Error load team:", err);
+          showPopup("Unable to load team. Please try again!", "warning");
           if (err.response?.status === 401) navigate("/login");
         });
 
       TeamService.getProjectRoles(currentProject.id)
         .then((res) => setRoles(res.data))
-        .catch(() => showPopup("Không thể tải danh sách roles!", "warning"));
+        .catch(() => showPopup("Could not load roles list!", "warning"));
     }
   }, [currentProject, navigate]);
 
@@ -62,7 +62,7 @@ export default function Team() {
       // Thử xóa lần đầu (không force)
       await TeamService.removeUser(projectId, userId);
       setMembers(members.filter((m) => m.user_id !== userId));
-      showPopup("Xóa thành viên thành công!", "success");
+      showPopup("Member deleted successfully!", "success");
     } catch (err) {
       // Nếu lỗi 409 -> có task đang phân công
       if (err.response?.status === 409) {
@@ -79,14 +79,14 @@ export default function Team() {
             try {
               await TeamService.removeUser(projectId, userId, true);
               setMembers(members.filter((m) => m.user_id !== userId));
-              showPopup("Đã xóa thành viên và hủy phân công task!", "success");
+              showPopup("Deleted members and canceled task assignments!", "success");
             } catch (forceErr) {
-              showPopup(forceErr.response?.data?.error || "Lỗi khi xóa user", "error");
+              showPopup(forceErr.response?.data?.error || "Error while deleting user", "error");
             }
           },
         });
       } else {
-        showPopup(err.response?.data?.error || "Lỗi khi xóa user", "error");
+        showPopup(err.response?.data?.error || "Error while deleting user", "error");
       }
     }
   };
@@ -106,7 +106,7 @@ export default function Team() {
             roles={roles}
             onInvited={(invite) => {
               setPending([...pending, invite]);
-              showPopup("Đã gửi lời mời thành công!", "success");
+              showPopup("Invitation sent successfully!", "success");
             }}
             onError={(errorMsg) => {
               showPopup(errorMsg, "error");
@@ -115,7 +115,7 @@ export default function Team() {
 
           {/* Danh sách thành viên */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Danh sách thành viên</h3>
+            <h3 className="text-lg font-semibold mb-4">Member list</h3>
             {members.length > 0 ? (
               <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {members.map((m) => {
@@ -147,7 +147,7 @@ export default function Team() {
                           {m.user_name || "(Chưa có tên)"}
                           {isCurrentUser && (
                             <span className="ml-2 text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold">
-                              Bạn
+                              You
                             </span>
                           )}
                         </p>
@@ -166,7 +166,7 @@ export default function Team() {
                             onClick={() => handleRemove(m.user_id)}
                             className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 transition"
                           >
-                            Xóa
+                            Delete
                           </button>
                         )}
                     </li>
@@ -174,7 +174,7 @@ export default function Team() {
                 })}
               </ul>
             ) : (
-              <p className="text-gray-500">Chưa có thành viên nào.</p>
+              <p className="text-gray-500">There are no members yet.</p>
             )}
           </div>
 
@@ -183,7 +183,7 @@ export default function Team() {
             pending={pending}
             onRevoked={(inviteId) => {
               setPending(pending.filter((i) => i.id !== inviteId));
-              showPopup("Đã thu hồi lời mời!", "warning");
+              showPopup("Invitation has been revoked!", "warning");
             }}
           />
         </div>
@@ -201,7 +201,7 @@ export default function Team() {
       {confirmDialog.visible && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4">
-            <h3 className="text-lg font-bold text-red-600 mb-4">⚠️ Cảnh báo</h3>
+            <h3 className="text-lg font-bold text-red-600 mb-4"> Warning</h3>
             <p className="text-gray-700 mb-4">{confirmDialog.message}</p>
             
             <div className="mb-6 max-h-64 overflow-y-auto">
@@ -225,9 +225,9 @@ export default function Team() {
             </div>
 
             <p className="text-sm text-gray-600 mb-6">
-              Bạn có chắc chắn muốn xóa thành viên này? <br />
+              Are you sure you want to delete this member?? <br />
               <span className="font-semibold text-red-600">
-                Tất cả phân công task sẽ bị hủy!
+                All task assignments will be canceled!
               </span>
             </p>
 
@@ -243,13 +243,13 @@ export default function Team() {
                 }
                 className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition"
               >
-                Hủy
+                Cancle
               </button>
               <button
                 onClick={confirmDialog.onConfirm}
                 className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
               >
-                Xác nhận xóa
+                Confirm deletion
               </button>
             </div>
           </div>

@@ -3,7 +3,7 @@ import React from "react";
 export default function ScrumBoardColumn({
   title,
   items = [],
-  emptyText = "Trống",
+  emptyText = "Empty",
   accent = "emerald",
   renderItem,
 }) {

@@ -118,7 +118,7 @@ export default function ProjectDashboard() {
                   onClick={handleArchive}
                   className="bg-yellow-500 text-white px-4 py-1 rounded hover:bg-yellow-600"
                 >
-                  Lưu trữ
+                  Storage
                 </button>
               )}
               {currentProject.status === "archived" && (
@@ -126,7 +126,7 @@ export default function ProjectDashboard() {
                   onClick={handleRestore}
                   className="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600"
                 >
-                  Khôi phục
+                  Restore
                 </button>
               )}
             </div>
@@ -158,13 +158,13 @@ export default function ProjectDashboard() {
 
                   <div className="mt-2 flex justify-between text-sm text-gray-500">
                     <span>ID: {us.id}</span>
-                    <span className="hover:text-green-600 font-medium">Xem chi tiết →</span>
+                    <span className="hover:text-green-600 font-medium">See details →</span>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500">Chưa có user story nào.</p>
+            <p className="text-gray-500">There are no user stories yet.</p>
           )}
         </section>
         {/* Tasks */}
@@ -211,7 +211,7 @@ export default function ProjectDashboard() {
             ))}
           </div>
         ) : (
-          <p className="text-gray-500">Chưa có task nào.</p>
+          <p className="text-gray-500">There are no tasks yet.</p>
         )}
       </section>
 
@@ -231,7 +231,7 @@ export default function ProjectDashboard() {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500">Chưa có sprint nào.</p>
+            <p className="text-gray-500">There are no sprints yet.</p>
           )}
         </section>
       </div>

@@ -17,7 +17,7 @@ export default function ResetPassword() {
   // So sánh mật khẩu realtime
   useEffect(() => {
     if (confirmPassword && newPassword !== confirmPassword) {
-      setPasswordError("Mật khẩu xác nhận không khớp!");
+      setPasswordError("Confirmation password does not match!");
     } else {
       setPasswordError("");
     }
@@ -27,7 +27,7 @@ export default function ResetPassword() {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      setPasswordError("Mật khẩu xác nhận không khớp!");
+      setPasswordError("Confirmation password does not match!");
       return;
     }
 
@@ -36,10 +36,10 @@ export default function ResetPassword() {
         token,
         new_password: newPassword,
       });
-      setMessage(res.data.message || "Đặt lại mật khẩu thành công!");
+      setMessage(res.data.message || "Reset password successfully!");
       setShowPopup(true);
     } catch (err) {
-      setMessage(err.response?.data?.error || "Có lỗi xảy ra!");
+      setMessage(err.response?.data?.error || "An error occurred!");
       setShowPopup(true);
     }
   };

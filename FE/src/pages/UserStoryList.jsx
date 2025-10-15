@@ -28,19 +28,43 @@ export default function UserStoryList() {
         setStories(filtered);
         setStatuses(resStatuses || []);
       })
-      .catch((err) => console.error("Lỗi khi tải User Stories:", err))
+      .catch((err) => console.error("Error loading User Stories:", err))
       .finally(() => setLoading(false));
   }, [currentProject]);
 
   // ---- CẬP NHẬT TRẠNG THÁI ----
   const handleStatusChange = async (storyId, newStatusId) => {
     try {
-      await UserStoryService.update(storyId, { status_id: newStatusId });
+      // Gọi API update
+      const res = await UserStoryService.update(storyId, { Status_id: newStatusId });
+
+      // Nếu backend trả về lỗi
+      if (res.error) {
+        alert(res.error);
+        return;
+      }
+
+      // Cập nhật UI ngay
+      setStories((prev) =>
+        prev.map((story) =>
+          story.id === storyId ? { ...story, status_id: newStatusId } : story
+        )
+      );
+
+      // Cập nhật dropdown state
       setSelectedStatus((prev) => ({ ...prev, [storyId]: newStatusId }));
+
+      // Thông báo
+      console.log("Status updated successfully!");
     } catch (err) {
-      console.error("Lỗi khi cập nhật trạng thái:", err);
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Failed to update status.";
+      alert(msg);
     }
   };
+
 
   const formatDate = (d) => {
     if (!d) return "-";
@@ -58,28 +82,28 @@ export default function UserStoryList() {
       <div className="mt-6 bg-white rounded-2xl shadow p-5">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">
-            Danh sách User Story
+            User story list
           </h2>
           <button
             onClick={() => navigate("/user-stories/new")}
             className="px-4 py-2 rounded-2xl bg-[var(--color-accent,#16a34a)] text-white hover:opacity-90"
           >
-            + Tạo User Story
+            + Create User Story
           </button>
         </div>
 
         {loading ? (
-          <p className="text-gray-500 text-sm">Đang tải dữ liệu...</p>
+          <p className="text-gray-500 text-sm">Loading data...</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-700">
               <thead className="text-xs uppercase bg-gray-100 text-gray-600">
                 <tr>
-                  <th className="px-4 py-2">Tên User Story</th>
+                  <th className="px-4 py-2">Name</th>
                   <th className="px-4 py-2">Hashtag</th>
-                  <th className="px-4 py-2">Ngày hết hạn</th>
-                  <th className="px-4 py-2">Tổng điểm</th>
-                  <th className="px-4 py-2">Trạng thái</th>
+                  <th className="px-4 py-2">Expire date</th>
+                  <th className="px-4 py-2">Total point</th>
+                  <th className="px-4 py-2">Status</th>
                   <th className="px-4 py-2 text-center"></th>
                 </tr>
               </thead>
@@ -89,9 +113,9 @@ export default function UserStoryList() {
                     {/* Tên user story */}
                     <td
                       className="px-4 py-2 cursor-pointer text-emerald-700 font-medium hover:underline"
-                      onClick={() => navigate(`/user-stories/${s.id}/edit`)}
+                      onClick={() => navigate(`/user-stories/${s.id}/`)}
                     >
-                      {s.name || "(Không có tên)"}
+                      {s.name || "(No name)"}
                     </td>
 
                     {/* Hashtag */}
@@ -109,7 +133,7 @@ export default function UserStoryList() {
                         </div>
                       ) : (
                         <span className="text-gray-400 text-xs italic">
-                          Không có
+                          Do not have
                         </span>
                       )}
                     </td>
@@ -149,7 +173,7 @@ export default function UserStoryList() {
                         onClick={() => navigate(`/user-stories/${s.id}/edit`)}
                         className="px-3 py-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
                       >
-                        Chỉnh sửa
+                        Edit
                       </button>
                     </td>
                   </tr>
@@ -159,7 +183,7 @@ export default function UserStoryList() {
 
             {stories.length === 0 && (
               <p className="text-gray-500 text-sm mt-2">
-                Chưa có User Story nào.
+                No User Story yet.
               </p>
             )}
           </div>

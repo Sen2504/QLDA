@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Liên kết hết hạn</title>
+  <script>
+    // Tự động chuyển sang FE sau 2 giây
+    setTimeout(() => {
+      window.location.href = "http://localhost:5173/resend-confirm";
+    }, 5000);
+  </script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #fff1f2;
+      color: #991b1b;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 40px 60px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 480px;
+    }
+    h1 {
+      color: #dc2626;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+    .link {
+      color: #dc2626;
+      font-weight: 600;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>❌ The confirmation link has expired</h1>
+    <p>You will be redirected to a page to enter your email and receive a new confirmation link...</p>
+    <p>If not automatically transferred, <a class="link" href="http://localhost:5173/resend-confirm">click here</a>.</p>
+  </div>
+</body>
+</html>

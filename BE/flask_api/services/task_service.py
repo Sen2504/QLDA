@@ -71,33 +71,33 @@ class TaskService:
         due_date = data.get("due_date")
 
         if not name:
-            return None, "Ten task la bat buoc."
+            return None, "Task name is required."
         if not description:
-            return None, "Mo ta task la bat buoc."
+            return None, "Task describe is required."
 
         user_story = UserStory.query.get(user_story_id)
         if not user_story:
-            return None, "Khong tim thay User Story."
+            return None, "Can not found user story."
 
         status = TaskStatus.query.get(status_id)
         if not status:
-            return None, "Khong tim thay trang thai Task."
+            return None, "Can not found task status."
 
         # Nếu có truyền nhiều team_ids thì validate tất cả
         candidate_team_ids = team_ids if team_ids else ([team_id] if team_id else [])
         if not candidate_team_ids:
-            return None, "Can chon it nhat 1 thanh vien team."
+            return None, "Select at less 1 member in team."
 
         teams = Team.query.filter(Team.id.in_(candidate_team_ids)).all()
         found_ids = {t.id for t in teams}
         missing = [tid for tid in candidate_team_ids if tid not in found_ids]
         if missing:
-            return None, f"Khong tim thay thanh vien team: {missing}"
+            return None, f"Can not found member in team: {missing}"
 
         # Validate cùng project
         for t in teams:
             if not t.projrole or t.projrole.project_id != user_story.project_id:
-                return None, "Co thanh vien khong thuoc project cua User Story."
+                return None, "There are members who are not part of the user story's project."
 
         try:
             new_task = Task(
@@ -118,13 +118,13 @@ class TaskService:
             return refreshed or new_task, None
         except Exception:
             db.session.rollback()
-            return None, "Khong the tao task."
+            return None, "Can not create task."
 
     @staticmethod
     def update(task_id, data):
         task = Task.query.get(task_id)
         if not task:
-            return None, "Khong tim thay task."
+            return None, "Can not found task."
 
         name = data.get("name")
         description = data.get("description")
@@ -139,27 +139,27 @@ class TaskService:
             if name is not None:
                 name = name.strip()
                 if not name:
-                    return None, "Ten task la bat buoc."
+                    return None, "Task name is required."
                 task.name = name
 
             if description is not None:
                 description = description.strip()
                 if not description:
-                    return None, "Mo ta task la bat buoc."
+                    return None, "Task describe is required."
                 task.description = description
 
             target_story = task.user_story
             if user_story_id is not None and user_story_id != task.user_story_id:
                 new_story = UserStory.query.get(user_story_id)
                 if not new_story:
-                    return None, "Khong tim thay User Story."
+                    return None, "Can not found user story."
                 target_story = new_story
                 task.user_story_id = new_story.id
 
             if status_id is not None:
                 status = TaskStatus.query.get(status_id)
                 if not status:
-                    return None, "Khong tim thay trang thai Task."
+                    return None, "Can not found task status."
                 task.status_id = status.id
 
             if update_due_date:
@@ -171,10 +171,10 @@ class TaskService:
                 found = {t.id for t in teams}
                 missing = [tid for tid in team_ids if tid not in found]
                 if missing:
-                    return None, f"Khong tim thay thanh vien team: {missing}"
+                    return None, f"Can not found member team: {missing}"
                 for t in teams:
                     if not t.projrole or t.projrole.project_id != target_story.project_id:
-                        return None, "Co thanh vien khong thuoc project cua User Story."
+                        return None, "There are members who are not part of the user story's project."
                 # Xóa assignments cũ rồi tạo lại
                 for a in list(task.phan_cong or []):
                     db.session.delete(a)
@@ -183,9 +183,9 @@ class TaskService:
             elif team_id is not None:
                 team = Team.query.get(team_id)
                 if not team:
-                    return None, "Khong tim thay thanh vien team."
+                    return None, "Can not found member team."
                 if not team.projrole or team.projrole.project_id != target_story.project_id:
-                    return None, "Thanh vien khong thuoc project cua User Story."
+                    return None, "There are members who are not part of the user story's project."
                 assignment = PhanCong.query.filter_by(task_id=task.id).first()
                 if assignment:
                     assignment.team_id = team.id
@@ -197,13 +197,13 @@ class TaskService:
             return refreshed or task, None
         except Exception:
             db.session.rollback()
-            return None, "Khong the cap nhat task."
+            return None, "Can not update task."
 
     @staticmethod
     def delete(task_id):
         task = Task.query.get(task_id)
         if not task:
-            return False, "Khong tim thay task."
+            return False, "Can not found task."
 
         try:
             for assignment in list(task.phan_cong or []):
@@ -213,4 +213,4 @@ class TaskService:
             return True, None
         except Exception:
             db.session.rollback()
-            return False, "Khong the xoa task."
+            return False, "Can not delete task."

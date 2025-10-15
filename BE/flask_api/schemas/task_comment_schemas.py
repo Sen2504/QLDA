@@ -43,9 +43,9 @@ class TaskCommentSchema(Schema):
             user_obj = team.user
             if getattr(user_obj, "name", None):
                 return user_obj.name
-        return "Thành viên ẩn danh"
+        return "Anonymous member"
 
 
 class TaskCommentCreateSchema(Schema):
-    content = fields.Str(required=True, error_messages={"required": "Vui lòng nhập nội dung bình luận."})
+    content = fields.Str(required=True, error_messages={"required": "Please enter comment content."})
     team_id = fields.Int(allow_none=True)

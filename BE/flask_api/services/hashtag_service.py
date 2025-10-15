@@ -15,9 +15,9 @@ class HashtagService:
     def create(name: str):
         name = name.strip()
         if not name:
-            return None, "Tên hashtag không hợp lệ."
+            return None, "Invalid hashtag name."
         if Hashtag.query.filter_by(name=name).first():
-            return None, "Hashtag đã tồn tại."
+            return None, "Hashtags already exist."
         hashtag = Hashtag(name=name)
         db.session.add(hashtag)
         db.session.commit()
@@ -28,7 +28,7 @@ class HashtagService:
         """Nếu hashtag tồn tại thì trả về, nếu không thì tạo mới."""
         name = (name or "").strip()
         if not name:
-            return None, "Tên hashtag không hợp lệ."
+            return None, "Invalid hashtag name."
 
         hashtag = Hashtag.query.filter(func.lower(Hashtag.name) == name.lower()).first()
         if hashtag:

@@ -8,10 +8,10 @@ class ActionService:
         name_act = (name_act or "").strip()
 
         if not name_act:
-            return None, "Tên hành động là bắt buộc."
+            return None, "Action name is required."
 
         if Action.query.filter_by(Name_act=name_act).first():
-            return None, "Tên hành động đã tồn tại."
+            return None, "The action name already exists."
 
         new_action = Action(Name_act=name_act)
         db.session.add(new_action)
@@ -30,14 +30,14 @@ class ActionService:
     def update(action_id, name_act):
         action = Action.query.get(action_id)
         if not action:
-            return None, "Không tìm thấy hành động."
+            return None, "Action not found."
 
         name_act = (name_act or "").strip()
         if not name_act:
-            return None, "Tên hành động là bắt buộc."
+            return None, "Action name is required."
 
         if Action.query.filter(Action.Name_act == name_act, Action.ID_act != action_id).first():
-            return None, "Tên hành động đã tồn tại."
+            return None, "The action name already exists."
 
         action.Name_act = name_act
         db.session.commit()
@@ -47,7 +47,7 @@ class ActionService:
     def delete(action_id):
         action = Action.query.get(action_id)
         if not action:
-            return False, "Không tìm thấy hành động."
+            return False, "Action not found."
 
         db.session.delete(action)
         db.session.commit()

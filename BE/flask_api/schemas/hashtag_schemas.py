@@ -9,6 +9,6 @@ class HashtagSchema(Schema):
     @validates("Name")
     def validate_name(self, value):
         if not value or not value.strip():
-            raise ValidationError("Tên hashtag là bắt buộc.")
+            raise ValidationError("Hashtag name is required.")
         if not re.match(r"^[A-Za-z0-9_ ]+$", value.strip()):
-            raise ValidationError("Tên hashtag chỉ được chứa chữ, số, khoảng trắng và ký tự '_'.")
+            raise ValidationError("Hashtag names can only contain letters, numbers, spaces and the character '_'.")

@@ -18,12 +18,12 @@ class UserSchema(Schema):
     @validates("name")
     def validate_name(self, value, **kwargs):  # nhận **kwargs để compatible v4
         if not re.match(r"^[^\W\d_]+(?:\s[^\W\d_]+)*$", value.strip(), flags=re.UNICODE):
-            raise ValidationError("Tên chỉ được chứa chữ và khoảng trắng (không số, không ký tự đặc biệt).")
+            raise ValidationError("The name must contain only letters and spaces (no numbers, no special characters).")
 
     @validates("password")
     def validate_password(self, value, **kwargs):  
         if len(value or "") < 6:
-            raise ValidationError("Mật khẩu phải có ít nhất 6 ký tự.")
+            raise ValidationError("Password must have at least 6 characters.")
         
 class UpdateProfileSchema(Schema):
     name = fields.Str(required=True)

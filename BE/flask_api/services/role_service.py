@@ -8,10 +8,10 @@ class RoleService:
         name = (name or "").strip()
 
         if not name:
-            return None, "Tên role là bắt buộc."
+            return None, "Role name is required."
 
         if Role.query.filter_by(name=name).first():
-            return None, "Tên role đã tồn tại."
+            return None, "Role name has been existed."
 
         new_role = Role(name=name)
         db.session.add(new_role)
@@ -30,14 +30,14 @@ class RoleService:
     def update(role_id, name):
         role = Role.query.get(role_id)
         if not role:
-            return None, "Không tìm thấy role."
+            return None, "Can not found role."
 
         name = (name or "").strip()
         if not name:
-            return None, "Tên role là bắt buộc."
+            return None, "Role name is required."
 
         if Role.query.filter(Role.name == name, Role.id != role_id).first():
-            return None, "Tên role đã tồn tại."
+            return None, "Role name has been existed."
 
         role.name = name
         db.session.commit()
@@ -47,7 +47,7 @@ class RoleService:
     def delete(role_id):
         role = Role.query.get(role_id)
         if not role:
-            return False, "Không tìm thấy role."
+            return False, "No role found."
 
         db.session.delete(role)
         db.session.commit()

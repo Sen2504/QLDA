@@ -56,10 +56,9 @@ export default function Sidebar() {
   }, [navigate, setCurrentProject]);
 
   useEffect(() => {
-  if (!projectsLoaded) return;
+    if (!projectsLoaded) return;
 
-  // Ưu tiên project trong localStorage
-  const stored = localStorage.getItem("currentProject");
+    const stored = localStorage.getItem("currentProject");
     if (stored) {
       try {
         const saved = JSON.parse(stored);
@@ -69,16 +68,14 @@ export default function Sidebar() {
           return;
         }
       } catch (e) {
-        console.error("Lỗi đọc project từ localStorage:", e);
+        console.error("Error reading project from localStorage:", e);
       }
     }
 
-    // Nếu chưa có currentProject → chọn cái đầu tiên
     if (!currentProject && projects.length > 0) {
       setCurrentProject(projects[0]);
     }
   }, [projectsLoaded, projects]);
-
 
   useEffect(() => {
     if (!currentProject?.id) {
@@ -141,6 +138,9 @@ export default function Sidebar() {
     }
   };
 
+  // Helper để check route active
+  const isActive = (path) => location.pathname.startsWith(path);
+
   return (
     <aside className="bg-white border-r border-gray-200 w-64 min-h-screen p-6">
       {/* Sidebar Header */}
@@ -159,7 +159,7 @@ export default function Sidebar() {
           className="w-full flex items-center justify-between gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 shadow hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-400"
         >
           <span className="truncate text-left">
-            {currentProject ? currentProject.name : "Chọn project"}
+            {currentProject ? currentProject.name : "Select project"}
           </span>
           <ChevronDown
             className={`h-4 w-4 transition-transform ${
@@ -172,7 +172,7 @@ export default function Sidebar() {
           <ul className="mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-green-100 bg-white shadow-lg focus:outline-none">
             {projects.length === 0 && (
               <li className="px-4 py-3 text-sm text-gray-500">
-                Bạn chưa có project nào.
+                You don't have any projects yet.
               </li>
             )}
             {projects.map((proj) => {
@@ -205,13 +205,13 @@ export default function Sidebar() {
         <div className="mt-3">
           <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-500 mb-2">
             <span>Sprints</span>
-            {sprintsLoading && <span className="text-emerald-600">Đang tải...</span>}
+            {sprintsLoading && <span className="text-emerald-600">Loading...</span>}
           </div>
 
           <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
             {!sprintsLoading && sprintLinks.length === 0 && (
               <div className="text-xs text-gray-400 px-2 py-1">
-                Chưa có sprint nào.
+                No sprints yet.
               </div>
             )}
 
@@ -240,64 +240,88 @@ export default function Sidebar() {
       )}
 
       {/* Navigation */}
-      <ul className="space-y-3">
+      <ul className="space-y-3 mt-4">
         <li>
           <Link
             to="/"
-            className="flex items-center gap-3 p-2 rounded-md hover:bg-green-100 transition"
+            className={`flex items-center gap-3 p-2 rounded-md transition ${
+              isActive("/") && location.pathname === "/"
+                ? "bg-green-100 text-green-700 font-semibold"
+                : "hover:bg-green-50 text-gray-700"
+            }`}
           >
             <Home className="w-5 h-5 text-green-600" />
-            <span className="text-gray-700">Dashboard</span>
+            <span>Dashboard</span>
           </Link>
         </li>
 
         <li>
           <Link
             to="/projects"
-            className="flex items-center gap-3 p-2 rounded-md hover:bg-green-100 cursor-pointer transition"
+            className={`flex items-center gap-3 p-2 rounded-md transition ${
+              isActive("/projects") && !isActive("/projects/") // tránh team page highlight sai
+                ? "bg-green-100 text-green-700 font-semibold"
+                : "hover:bg-green-50 text-gray-700"
+            }`}
           >
             <FolderKanban className="w-5 h-5 text-green-600" />
-            <span className="text-gray-700">Projects</span>
+            <span>Projects</span>
           </Link>
         </li>
 
         <li>
           <Link
             to="/user-stories"
-            className="flex items-center gap-3 p-2 rounded-md hover:bg-green-100 transition"
+            className={`flex items-center gap-3 p-2 rounded-md transition ${
+              isActive("/user-stories")
+                ? "bg-emerald-100 text-emerald-700 font-semibold"
+                : "hover:bg-emerald-50 text-gray-700"
+            }`}
           >
             <BookMarked className="w-5 h-5 text-green-600" />
-            <span className="text-gray-700">User Story</span>
+            <span>User Story</span>
           </Link>
         </li>
 
         <li>
           <Link
             to="/issues/list"
-            className="flex items-center gap-3 p-2 rounded-md hover:bg-green-100 transition"
+            className={`flex items-center gap-3 p-2 rounded-md transition ${
+              isActive("/issues")
+                ? "bg-amber-100 text-amber-700 font-semibold"
+                : "hover:bg-amber-50 text-gray-700"
+            }`}
           >
-            <BadgeAlert className="w-5 h-5 text-green-600" />
-            <span className="text-gray-700">Issue</span>
+            <BadgeAlert className="w-5 h-5 text-amber-500" />
+            <span>Issue</span>
           </Link>
         </li>
 
         <li>
           <Link
             to="/tasks"
-            className="flex items-center gap-3 p-2 rounded-md hover:bg-green-100 transition"
+            className={`flex items-center gap-3 p-2 rounded-md transition ${
+              isActive("/tasks")
+                ? "bg-blue-100 text-blue-700 font-semibold"
+                : "hover:bg-blue-50 text-gray-700"
+            }`}
           >
-            <ClipboardList className="w-5 h-5 text-green-600" />
-            <span className="text-gray-700">Tasks</span>
+            <ClipboardList className="w-5 h-5 text-blue-600" />
+            <span>Tasks</span>
           </Link>
         </li>
 
         <li>
           <Link
             to="/settings"
-            className="flex items-center gap-3 p-2 rounded-md hover:bg-green-100 transition"
+            className={`flex items-center gap-3 p-2 rounded-md transition ${
+              isActive("/settings")
+                ? "bg-gray-200 text-gray-900 font-semibold"
+                : "hover:bg-gray-100 text-gray-700"
+            }`}
           >
-            <Settings className="w-5 h-5 text-green-600" />
-            <span className="text-gray-700">Settings</span>
+            <Settings className="w-5 h-5 text-gray-700" />
+            <span>Settings</span>
           </Link>
         </li>
 
@@ -305,10 +329,14 @@ export default function Sidebar() {
           <li>
             <Link
               to={`/projects/${currentProject.id}/team`}
-              className="flex items-center gap-3 p-2 rounded-md hover:bg-green-100 transition"
+              className={`flex items-center gap-3 p-2 rounded-md transition ${
+                isActive(`/projects/${currentProject.id}/team`)
+                  ? "bg-teal-100 text-teal-700 font-semibold"
+                  : "hover:bg-teal-50 text-gray-700"
+              }`}
             >
-              <Users className="w-5 h-5 text-green-600" />
-              <span className="text-gray-700">Team</span>
+              <Users className="w-5 h-5 text-teal-600" />
+              <span>Team</span>
             </Link>
           </li>
         )}

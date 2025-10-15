@@ -13,22 +13,58 @@ const TaskService = {
     return api.get(`/tasks/my-tasks`);
   },
 
-  create(data) {
-    // data should be a plain object; backend expects JSON
-    return api.post(`/tasks/`, data);
+  async create(data) {
+    try {
+      const res = await api.post(`/tasks/`, data);
+      // backend của bạn (TaskService.create) trả về dạng (task, error)
+      // Nếu backend trả về object { data, error } thì ta xử lý ở đây
+      if (res.data?.error) {
+        return { error: res.data.error };
+      }
+      return { data: res.data, message: "Task created successfully!" };
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Failed to create task.";
+      return { error: msg };
+    }
   },
 
-  // optional helpers
   getById(id) {
     return api.get(`/tasks/${id}`);
   },
 
-  update(id, data) {
-    return api.put(`/tasks/${id}`, data);
+  async update(id, data) {
+    try {
+      const res = await api.put(`/tasks/${id}`, data);
+      if (res.data?.error) {
+        return { error: res.data.error };
+      }
+      return { data: res.data, message: "Task updated successfully!" };
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Failed to update task.";
+      return { error: msg };
+    }
   },
 
-  delete(id) {
-    return api.delete(`/tasks/${id}`);
+  async delete(id) {
+    try {
+      const res = await api.delete(`/tasks/${id}`);
+      if (res.data?.error) {
+        return { error: res.data.error };
+      }
+      return { message: "Task deleted successfully!" };
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Failed to delete task.";
+      return { error: msg };
+    }
   },
 };
 

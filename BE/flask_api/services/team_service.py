@@ -131,11 +131,11 @@ class TeamService:
             .first()
         )
         if not owner_projrole:
-            return False, "Bạn không có quyền xóa thành viên."
+            return False, "You do not have the right to delete members."
 
         # Nếu user muốn xóa chính mình
         if user_id == current_user_id:
-            return False, "Owner không thể tự xóa mình. Hãy dùng chức năng lưu trữ project."
+            return False, "Owner cannot delete himself. Use the project archive function."
 
         # Kiểm tra role của user bị xóa
         team_member = (
@@ -147,7 +147,7 @@ class TeamService:
             .first()
         )
         if not team_member:
-            return False, "Không tìm thấy thành viên trong project."
+            return False, "No members found in the project."
 
         team, proj_role, user = team_member
         
@@ -156,7 +156,7 @@ class TeamService:
         role_name = (global_role.name if global_role else None) or proj_role.name
         
         if role_name == "Project Owner":
-            return False, "Không thể xóa một Owner khác."
+            return False, "Cannot delete another Owner."
 
         # Kiểm tra user có task đang phân công không
         assigned_tasks = (
@@ -177,7 +177,7 @@ class TeamService:
                 for _, task in assigned_tasks
             ]
             return False, {
-                "message": "Thành viên này đang được phân công thực hiện các task sau:",
+                "message": "This member is assigned to perform the following tasks:",
                 "tasks": task_list,
                 "require_confirmation": True
             }

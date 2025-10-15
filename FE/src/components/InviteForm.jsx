@@ -9,7 +9,7 @@ export default function InviteForm({ projectId, roles, onInvited, onError }) {
   const handleInvite = async (e) => {
     e.preventDefault();
     if (!projectId) {
-      onError?.("Không xác định được project hiện tại. Hãy chọn project trước khi mời.");
+      onError?.("Unable to identify current project. Please choose a project before inviting.");
       return;
     }
     try {
@@ -22,17 +22,17 @@ export default function InviteForm({ projectId, roles, onInvited, onError }) {
       setEmail("");
       setRoleId("");
     } catch (err) {
-      onError?.(err.response?.data?.error || "Lỗi khi mời thành viên");
+      onError?.(err.response?.data?.error || "Error when inviting members");
     }
   };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
-      <h3 className="text-lg font-semibold mb-4">Mời thành viên</h3>
+      <h3 className="text-lg font-semibold mb-4">Invite member</h3>
       <form onSubmit={handleInvite} className="space-y-4">
         <input
           type="email"
-          placeholder="Email người dùng"
+          placeholder="User email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"
@@ -45,7 +45,7 @@ export default function InviteForm({ projectId, roles, onInvited, onError }) {
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"
           required
         >
-          <option value="">-- Chọn vai trò --</option>
+          <option value="">-- Select role --</option>
           {roles.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name}
@@ -57,7 +57,7 @@ export default function InviteForm({ projectId, roles, onInvited, onError }) {
           type="submit"
           className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
         >
-          Mời
+          Invite
         </button>
       </form>
     </div>

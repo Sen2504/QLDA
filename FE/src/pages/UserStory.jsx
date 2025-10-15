@@ -5,9 +5,10 @@ import { useProject } from "../store/ProjectContext";
 import UserStoryService from "../services/userStoryService";
 import HashtagService from "../services/hashtagService";
 import WorkflowStatusService from "../services/workflowStatusService";
-import ComponentUpload from "../components/ComponentUpload"; // ✅ dùng component upload chung
+import ComponentUpload from "../components/ComponentUpload";
+import PopupMessage from "../components/Popup_message"; // ✅ popup thông báo
 
-// util nhỏ: debounce
+// === debounce nhỏ ===
 function useDebounce(value, delay = 250) {
   const [v, setV] = useState(value);
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function UserStory() {
   const [expireDate, setExpireDate] = useState("");
   const [description, setDescription] = useState("");
 
-  // hashtags + gợi ý
+  // hashtags
   const [tagInput, setTagInput] = useState("");
   const debouncedTagInput = useDebounce(tagInput, 200);
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -34,13 +35,12 @@ export default function UserStory() {
   const [showSuggest, setShowSuggest] = useState(false);
   const tagBoxRef = useRef(null);
 
-  // uploader (dùng component)
+  // uploader
   const [files, setFiles] = useState([]);
 
   // ---- right column
   const [statuses, setStatuses] = useState([{ id: 0, name: "New" }]);
   const [statusId, setStatusId] = useState(null);
-
   const [complexityOptions, setComplexityOptions] = useState([]);
   const [complexities, setComplexities] = useState({});
 
@@ -49,9 +49,16 @@ export default function UserStory() {
     [complexities]
   );
 
-  // ---- effects: load dropdown & options
+  // ✅ popup state
+  const [popup, setPopup] = useState({ message: "", type: "", visible: false });
+
+  const showPopup = (message, type = "success") => {
+    setPopup({ message, type, visible: true });
+    setTimeout(() => setPopup({ ...popup, visible: false }), 3000);
+  };
+
+  // ---- effects
   useEffect(() => {
-    // Load status workflow
     WorkflowStatusService.getAll().then((data) => {
       setStatuses(data);
       const def = data.find((s) => s.name?.toLowerCase() === "new") || data[0];
@@ -59,7 +66,6 @@ export default function UserStory() {
     });
   }, []);
 
-  // ✅ Load complexity options chỉ khi currentProject có giá trị
   useEffect(() => {
     if (!currentProject) return;
     UserStoryService.getComplexityOptions(currentProject.id).then((opts) => {
@@ -70,7 +76,6 @@ export default function UserStory() {
     });
   }, [currentProject]);
 
-  // gợi ý hashtag
   useEffect(() => {
     const q = debouncedTagInput.trim();
     if (!q) return setTagSuggestions([]);
@@ -79,7 +84,6 @@ export default function UserStory() {
       .catch(() => setTagSuggestions([]));
   }, [debouncedTagInput]);
 
-  // click ngoài để đóng suggestion
   useEffect(() => {
     const onDocClick = (e) => {
       if (!tagBoxRef.current) return;
@@ -99,6 +103,7 @@ export default function UserStory() {
     setTagInput("");
     setTagSuggestions([]);
   };
+
   const removeTag = (name) =>
     setSelectedTags((prev) => prev.filter((t) => t !== name));
 
@@ -107,9 +112,12 @@ export default function UserStory() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentProject) return alert("Chưa chọn Project.");
-    if (!name.trim()) return alert("Vui lòng nhập tên User Story.");
-    if (!expireDate) return alert("Vui lòng chọn ngày hết hạn.");
+    if (!currentProject)
+      return showPopup("Please select a project.", "error");
+    if (!name.trim())
+      return showPopup("Please enter the User Story name.", "error");
+    if (!expireDate)
+      return showPopup("Please select an expiration date.", "error");
 
     const formData = new FormData();
     formData.append("Name_story", name.trim());
@@ -126,13 +134,35 @@ export default function UserStory() {
 
     files.forEach((f) => formData.append("files", f));
 
-    await UserStoryService.create(formData);
-    navigate("/user-stories");
+    try {
+      const res = await UserStoryService.create(formData);
+
+      if (res?.error || res?.message) {
+        showPopup(res.error || res.message, "error");
+      } else {
+        showPopup("User Story created successfully!", "success");
+        setTimeout(() => navigate("/user-stories"), 1500);
+      }
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Failed to create user story.";
+      showPopup(msg, "error");
+    }
   };
 
   // ---- UI
   return (
     <MainLayout>
+      {popup.visible && (
+        <PopupMessage
+          message={popup.message}
+          type={popup.type}
+          onClose={() => setPopup({ ...popup, visible: false })}
+        />
+      )}
+
       <form
         onSubmit={handleSubmit}
         className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-200 my-8"
@@ -217,13 +247,16 @@ export default function UserStory() {
               />
             </div>
 
-            {/* Upload file (reusable component) */}
-            <ComponentUpload files={files} setFiles={setFiles} label="Attachments" />
+            {/* Upload file */}
+            <ComponentUpload
+              files={files}
+              setFiles={setFiles}
+              label="Attachments"
+            />
           </div>
 
-          {/* RIGHT: status + complexity + upload */}
+          {/* RIGHT: status + complexity */}
           <div className="space-y-6">
-            {/* Due date */}
             <div>
               <label className="text-gray-700 font-medium">Due Date</label>
               <input
@@ -234,7 +267,6 @@ export default function UserStory() {
               />
             </div>
 
-            {/* Status dropdown */}
             <div>
               <label className="text-gray-700 font-medium">Status</label>
               <select
@@ -250,7 +282,7 @@ export default function UserStory() {
               </select>
             </div>
 
-            {/* Complexity points */}
+            {/* Complexity */}
             <div className="border rounded-lg shadow-sm">
               <div className="px-4 py-2 bg-gray-50 border-b font-medium text-gray-700">
                 Complexity Points

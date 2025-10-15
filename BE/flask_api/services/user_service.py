@@ -42,10 +42,10 @@ class UserService:
         """
         email = (payload.get("email") or "").strip().lower()
         if not email:
-            return None, "Email là bắt buộc."
+            return None, "Email is required."
 
         if User.query.filter_by(email=email).first():
-            return None, "Email đã tồn tại."
+            return None, "Email has been existed."
 
         user = User(
             name=payload.get("name"),
@@ -77,16 +77,16 @@ class UserService:
         """
         user = User.query.get(user_id)
         if not user:
-            return None, "Không tìm thấy user."
+            return None, "User not found."
 
         email = (payload.get("email") or "").strip().lower()
         if not email:
-            return None, "Email là bắt buộc."
+            return None, "Email is required."
 
         # Kiểm tra trùng email (trừ chính user đó)
         exists = User.query.filter(User.email == email, User.id != user_id).first()
         if exists:
-            return None, "Email đã được sử dụng."
+            return None, "Email is already in use."
 
         user.name = payload.get("name")
         user.email = email
@@ -102,7 +102,7 @@ class UserService:
     def delete(user_id: int):
         user = User.query.get(user_id)
         if not user:
-            return False, "Không tìm thấy user."
+            return False, "User not found."
 
         db.session.delete(user)
         db.session.commit()
@@ -118,7 +118,7 @@ class UserService:
     def update_profile(name, skillset):
         """Cập nhật thông tin profile user đang login"""
         if not name or not skillset:
-            return None, "Name và skillset là bắt buộc."
+            return None, "Name and skillset are required."
 
         current_user.name = name
         current_user.skillset = skillset
@@ -131,17 +131,17 @@ class UserService:
         """Upload avatar: xóa cũ → lưu mới → cập nhật DB"""
 
         if not file or file.filename == "":
-            return None, "Không có file được chọn."
+            return None, "No files selected."
 
         if not allowed_file(file.filename):
-            return None, "Định dạng file không hợp lệ. Chỉ chấp nhận png, jpg, jpeg, gif."
+            return None, "Invalid file format. Only png, jpg, jpeg, gif are accepted."
 
         # Kiểm tra dung lượng
         file.seek(0, os.SEEK_END)
         size = file.tell()
         file.seek(0)
         if size > MAX_FILE_SIZE:
-            return None, "File vượt quá giới hạn 1GB."
+            return None, "File over 1GB."
 
         # Chuẩn bị thư mục lưu avatar
         filename = secure_filename(file.filename)
@@ -157,9 +157,8 @@ class UserService:
                 old_path = os.path.join(save_dir, old_file)
                 if os.path.isfile(old_path):
                     os.remove(old_path)
-                    print(f"🗑️ Đã xóa avatar cũ: {old_path}")
             except Exception as e:
-                print(f"⚠️ Lỗi khi xóa file cũ {old_path}: {e}")
+                print(f" Lỗi khi xóa file cũ {old_path}: {e}")
 
         # Lưu file mới
         save_path = os.path.join(save_dir, filename)
@@ -176,13 +175,13 @@ class UserService:
     def change_password(old_password, new_password, confirm_password):
         """Đổi mật khẩu của user hiện tại"""
         if not current_user.check_password(old_password):
-            return None, "Mật khẩu cũ không đúng."
+            return None, "The old password is incorrect."
         if new_password != confirm_password:
-            return None, "Mật khẩu xác nhận không khớp."
+            return None, "Confirmation password does not match."
         if len(new_password) < 6:
-            return None, "Mật khẩu phải có ít nhất 6 ký tự."
+            return None, "Password must have at least 6 characters."
         if not re.search(r"[A-Za-z]", new_password):
-            return None, "Mật khẩu phải chứa ít nhất 1 chữ cái."
+            return None, "Password must contain at least 1 letter."
 
         current_user.set_password(new_password)
         db.session.commit()

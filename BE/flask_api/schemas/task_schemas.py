@@ -127,13 +127,13 @@ class TaskUpdateSchema(Schema):
         if value is None:
             return
         if not value.strip():
-            raise ValidationError("Tên task không được để trống.")
+            raise ValidationError("Task name cannot be empty.")
         if len(value.strip()) > 200:
-            raise ValidationError("Tên task không được dài hơn 200 ký tự.")
+            raise ValidationError("Task names cannot be longer than 200 characters.")
 
     @validates("description")
     def validate_description(self, value, **kwargs):
         if value is None:
             return
         if not value.strip():
-            raise ValidationError("Mô tả task không được để trống.")
+            raise ValidationError("Task description cannot be empty.")
