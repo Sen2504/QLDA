@@ -26,12 +26,20 @@ export default function UserStoryDetail() {
     return parsed.isValid() ? parsed.format("DD/MM/YYYY") : "—";
   };
 
+  // 🔍 Tìm tên trạng thái hiện tại
   const statusName = useMemo(() => {
     if (!story?.status_id) return "";
     const found = statuses.find((s) => s.id === story.status_id);
     return found?.name ?? "";
   }, [story, statuses]);
 
+  // ✅ Kiểm tra nếu status là Done → khóa nút Edit
+  const isDone = useMemo(() => {
+    const name = statusName?.toLowerCase?.() || "";
+    return name === "done" || name === "completed";
+  }, [statusName]);
+
+  // 📎 Xử lý file đính kèm
   const attachments = useMemo(() => {
     if (!story) return [];
     const raw = story.evidence_file;
@@ -61,6 +69,7 @@ export default function UserStoryDetail() {
     }));
   }, [story]);
 
+  // 📦 Load toàn bộ dữ liệu
   useEffect(() => {
     let mounted = true;
 
@@ -94,7 +103,7 @@ export default function UserStoryDetail() {
     return () => { mounted = false; };
   }, [userStoryId]);
 
-  // UserStoryDetail.jsx
+  // 🧩 Tạo task mới
   const handleCreateTask = async (formData) => {
     const result = await TaskService.create(formData);
     if (result.data) {
@@ -102,7 +111,6 @@ export default function UserStoryDetail() {
     }
     return result;
   };
-
 
   return (
     <MainLayout>
@@ -113,6 +121,7 @@ export default function UserStoryDetail() {
         >
           ← Back
         </button>
+
         {loading && (
           <div className="text-gray-500">Loading data...</div>
         )}
@@ -132,10 +141,17 @@ export default function UserStoryDetail() {
                     {statusName}
                   </span>
                 )}
+
+                {/* ✅ Disable nút Edit nếu user story đã Done */}
                 <button
                   type="button"
                   onClick={() => navigate(`/user-stories/${story.id}/edit`)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition"
+                  disabled={isDone}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                    isDone
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100"
+                      : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  }`}
                 >
                   ✏️ Edit Story
                 </button>
@@ -235,22 +251,19 @@ export default function UserStoryDetail() {
               setTasks((prev) =>
                 prev.map((task) =>
                   task.id === taskId
-                    ? {
-                        ...task,
-                        status_id: Number(newStatusId),
-                      }
+                    ? { ...task, status_id: Number(newStatusId) }
                     : task
                 )
               );
               toast.success("Status update successful!");
             } catch (err) {
-              toast.error(
-                err.response?.data?.error || "Error updating status"
-              );
+              toast.error(err.response?.data?.error || "Error updating status");
             }
           }}
           onTaskClick={(id) => navigate(`/tasks/${id}`)}
+          isUserStoryDone={isDone}
         />
+
         {showForm && (
           <TaskFormModal
             onClose={() => setShowForm(false)}
