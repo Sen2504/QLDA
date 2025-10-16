@@ -35,9 +35,21 @@ export default function Tasks() {
     setLoading(true);
     TaskService.getByProject(currentProject.id)
       .then((res) => setTasks(res.data || []))
-      .catch((err) => {
+      .catch(async (err) => {
+        const status = err?.response?.status;
+        if (status === 403) {
+          try {
+            const mine = await TaskService.getMineByProject(currentProject.id);
+            setTasks(mine.data || []);
+            return;
+          } catch (e2) {
+            // fall through
+          }
+        }
         console.error("Không tải được task", err);
-        toast.error("Không tải được danh sách task");
+        if (status !== 403) {
+          toast.error("Không tải được danh sách task");
+        }
       })
       .finally(() => setLoading(false));
   }, [currentProject?.id]);

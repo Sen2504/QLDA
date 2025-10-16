@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from flask_api.services.team_invite_service import TeamInviteService
 from flask_api.services.team_service import TeamService
 from flask_api.schemas.team_invite_schemas import TeamInviteSchema
+from flask_api.services.permission_service import PermissionService
 
 team_invite_bp = Blueprint("team_invite", __name__, url_prefix="/api/team_invites")
 
@@ -35,6 +36,9 @@ def project_team_summary(project_id):
     """
     Trả về cả danh sách thành viên chính thức và invite pending.
     """
+    # Only allow project members to view project team summary
+    if PermissionService._projrole_for_user_project(current_user.id, project_id) is None:
+        return jsonify({"error": "Bạn không thuộc project này."}), 403
     # Thành viên chính thức
     members = TeamService.get_team_by_project(project_id)
 

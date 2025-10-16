@@ -104,6 +104,7 @@ def create_app():
     from flask_api.routes.issue_routes import issue_bp
     from flask_api.routes.issue_resolve_routes import issue_resolve_bp
     from flask_api.routes.sprint_routes import sprint_bp
+    from flask_api.routes.permission_routes import permission_bp
 
     app.register_blueprint(task_status_bp)
     app.register_blueprint(user_bp)
@@ -120,6 +121,7 @@ def create_app():
     app.register_blueprint(complexity_point_bp)
     app.register_blueprint(task_bp)
     app.register_blueprint(sprint_bp)
+    app.register_blueprint(permission_bp)
     app.register_blueprint(issue_type_bp)
     app.register_blueprint(issue_bp)
     app.register_blueprint(issue_resolve_bp)

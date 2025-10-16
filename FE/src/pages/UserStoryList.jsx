@@ -18,14 +18,11 @@ export default function UserStoryList() {
     if (!currentProject) return;
     setLoading(true);
     Promise.all([
-      UserStoryService.getAll(),
+      UserStoryService.getByProject(currentProject.id),
       UserStoryService.getStatuses(),
     ])
       .then(([resStories, resStatuses]) => {
-        const filtered = (resStories.data || []).filter(
-          (s) => s.project_id === currentProject.id
-        );
-        setStories(filtered);
+        setStories(resStories.data || []);
         setStatuses(resStatuses || []);
       })
       .catch((err) => console.error("Lỗi khi tải User Stories:", err))

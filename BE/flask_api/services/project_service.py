@@ -4,6 +4,10 @@ from flask_api.models.project_models import Project
 from flask_api.models.role_models import Role
 from flask_api.models.project_role_models import ProjectRole
 from flask_api.models.team_models import Team
+from flask_api.models.permission_models import Permission
+from flask_api.models.resource_models import Resource
+from flask_api.models.action_models import Action
+from flask_api.services.permission_service import PermissionService
 
 class ProjectService:
     @staticmethod
@@ -43,7 +47,21 @@ class ProjectService:
 
         db.session.flush()  # để có ID_ProjRole
 
-        # 3. Thêm người tạo vào Team với role Owner
+        # 3. Seed mặc định: tất cả roles có toàn quyền trên các resource/action hợp lệ
+        resources = Resource.query.all()
+        actions = Action.query.all()
+        action_names = [a.name for a in actions]
+        action_map = {a.name: a for a in actions}
+        for pr in project_roles:
+            for res in resources:
+                allowed_actions = PermissionService._allowed_actions_for_resource(res.name, action_names)
+                for act_name in allowed_actions:
+                    act = action_map.get(act_name)
+                    if not act:
+                        continue
+                    db.session.add(Permission(projrole_id=pr.id, resource_id=res.id, action_id=act.id, is_allowed=True))
+
+        # 4. Thêm người tạo vào Team với role Owner
         owner_role = next((pr for pr in project_roles if pr.role_id == 1), None)  # giả sử id_role=1 là Owner
         if not owner_role:
             db.session.rollback()
@@ -55,7 +73,7 @@ class ProjectService:
         )
         db.session.add(new_team_member)
 
-        # 4. Commit tất cả
+        # 5. Commit tất cả
         try:
             db.session.commit()
             return new_project, None

@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -8,6 +10,7 @@ import Projects from "./pages/Projects";
 import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
 import ProjectDashboard from "./pages/ProjectDashboard";
+import ProjectPermissions from "./pages/ProjectPermissions";
 import MyInvites from "./pages/MyInvites";
 import UserStoryList from "./pages/UserStoryList";
 import UserStory from "./pages/UserStory";
@@ -24,6 +27,7 @@ import TaskDetail from "./pages/TaskDetail";
 export default function App() {
   return (
     <BrowserRouter>
+      <ToastContainer position="top-right" autoClose={3000} newestOnTop theme="colored" />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -35,6 +39,7 @@ export default function App() {
         <Route path="/tasks/:taskId" element={<TaskDetail />} />
         <Route path="/projects/:projectId/team" element={<Team />} />
         <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />
+  <Route path="/projects/:projectId/permissions" element={<ProjectPermissions />} />
         <Route path="/my-invites" element={<MyInvites />} />
         <Route path="/user-stories" element={<UserStoryList />} />
         <Route path="/user-stories/new" element={<UserStory />} />

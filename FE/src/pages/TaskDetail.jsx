@@ -23,6 +23,7 @@ export default function TaskDetail() {
   const [saving, setSaving] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -30,7 +31,7 @@ export default function TaskDetail() {
     async function fetchData() {
       setLoading(true);
       try {
-        const [taskRes, statusRes, profileRes] = await Promise.all([
+        const [taskRes, statusRes, profileRes] = await Promise.allSettled([
           TaskService.getById(taskId),
           TaskStatusService.getAll(),
           UserService.getProfile().catch(() => ({ data: null })),
@@ -38,17 +39,38 @@ export default function TaskDetail() {
 
         if (!mounted) return;
 
-        const taskData = taskRes?.data;
-        setTask(taskData || null);
-        setComments(taskData?.comments || []);
-        setForm({
-          name: taskData?.name || "",
-          description: taskData?.description || "",
-          status_id: taskData?.status_id ? String(taskData.status_id) : "",
-          due_date: taskData?.due_date ? dayjs(taskData.due_date).format("YYYY-MM-DD") : "",
-        });
-        setStatuses(statusRes?.data || []);
-        setCurrentUser(profileRes?.data || null);
+        // Task detail can be forbidden for non-assignees when Task.View = false
+        if (taskRes.status === "fulfilled") {
+          const taskData = taskRes.value?.data;
+          setTask(taskData || null);
+          setComments(taskData?.comments || []);
+          setForm({
+            name: taskData?.name || "",
+            description: taskData?.description || "",
+            status_id: taskData?.status_id ? String(taskData.status_id) : "",
+            due_date: taskData?.due_date ? dayjs(taskData.due_date).format("YYYY-MM-DD") : "",
+          });
+          setForbidden(false);
+        } else {
+          setTask(null);
+          setComments([]);
+          const status = taskRes?.reason?.response?.status;
+          if (status === 403) {
+            setForbidden(true);
+          } else if (status === 404) {
+            setForbidden(false);
+          } else {
+            toast.error("Không thể tải thông tin task");
+          }
+        }
+
+        // Status list
+        const statusesData = statusRes.status === "fulfilled" ? statusRes.value?.data : [];
+        setStatuses(statusesData || []);
+
+        // Current user
+        const profileData = profileRes.status === "fulfilled" ? profileRes.value?.data : null;
+        setCurrentUser(profileData || null);
       } catch (error) {
         console.error("Failed to load task detail", error);
         toast.error(error.response?.data?.error || "Không thể tải thông tin task");
@@ -105,7 +127,10 @@ export default function TaskDetail() {
       setEditMode(false);
       toast.success("Đã cập nhật task");
     } catch (error) {
-      toast.error(error.response?.data?.error || "Không thể cập nhật task");
+      const status = error?.response?.status;
+      if (status !== 403) {
+        toast.error(error.response?.data?.error || "Không thể cập nhật task");
+      }
     } finally {
       setSaving(false);
     }
@@ -126,7 +151,10 @@ export default function TaskDetail() {
       setCommentInput("");
       toast.success("Đã thêm bình luận");
     } catch (error) {
-      toast.error(error.response?.data?.error || "Không thể thêm bình luận");
+      const status = error?.response?.status;
+      if (status !== 403) {
+        toast.error(error.response?.data?.error || "Không thể thêm bình luận");
+      }
     } finally {
       setCommentSubmitting(false);
     }
@@ -140,13 +168,16 @@ export default function TaskDetail() {
       setComments((prev) => prev.filter((comment) => comment.id !== commentId));
       toast.success("Đã xóa bình luận");
     } catch (error) {
-      toast.error(error.response?.data?.error || "Không thể xóa bình luận");
+      const status = error?.response?.status;
+      if (status !== 403) {
+        toast.error(error.response?.data?.error || "Không thể xóa bình luận");
+      }
     } finally {
       setCommentSubmitting(false);
     }
   };
 
-  if (!task && !loading) {
+  if (!task && !loading && !forbidden) {
     return (
       <MainLayout>
         <div className="p-6">
@@ -190,6 +221,13 @@ export default function TaskDetail() {
         {loading && (
           <div className="bg-white rounded-2xl shadow p-6 text-gray-500">
             Đang tải thông tin task...
+          </div>
+        )}
+
+        {forbidden && !loading && (
+          <div className="bg-white rounded-2xl shadow p-6 border border-red-200">
+            <div className="text-red-600 font-semibold mb-1">Không có quyền truy cập</div>
+            <div className="text-gray-700">Bạn không có quyền xem Task này.</div>
           </div>
         )}
 

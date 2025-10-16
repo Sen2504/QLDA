@@ -5,6 +5,10 @@ const TaskService = {
     return api.get(`/tasks/project/${projectId}`);
   },
 
+  getMineByProject(projectId) {
+    return api.get(`/tasks/project/${projectId}/mine`);
+  },
+
   getByUserStory(userStoryId) {
     return api.get(`/tasks/user-story/${userStoryId}`);
   },

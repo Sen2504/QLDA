@@ -4,6 +4,9 @@ from datetime import date
 from werkzeug.utils import secure_filename
 from flask_api.extensions import db
 from flask_api.models.user_story_models import UserStory
+from flask_api.models.task_models import Task
+from flask_api.models.phan_cong_models import PhanCong
+from flask_api.models.team_models import Team
 from flask_api.models.complexity_point_models import ComplexityPoint
 from flask_api.models.hashtag_models import Hashtag
 from flask_api.models.user_story_hashtag_models import UserStoryHashtag
@@ -182,6 +185,44 @@ class UserStoryService:
                 "evidence_file": UserStoryService._list_files(story.id),
                 "complexity_points": complexities,
                 "total_points": total_points,  # đưa ra FE
+                "hashtags": [
+                    {"hashtag": {"id": h.hashtag.id, "name": h.hashtag.name}}
+                    for h in story.hashtags
+                ],
+            }
+            result.append(story_data)
+        return result
+
+    @staticmethod
+    def get_by_project_involved(project_id: int, user_id: int):
+        """Return user stories in a project where the given user is assigned to any task."""
+        q = (
+            UserStory.query
+            .join(Task, Task.user_story_id == UserStory.id)
+            .join(PhanCong, PhanCong.task_id == Task.id)
+            .join(Team, Team.id == PhanCong.team_id)
+            .filter(UserStory.project_id == project_id, Team.user_id == user_id)
+            .distinct(UserStory.id)
+        )
+        stories = q.all()
+        result = []
+        for story in stories:
+            complexities = [
+                {"id": c.id, "name": c.name, "point": c.point, "user_story_id": c.user_story_id}
+                for c in story.complexity_points
+            ]
+            total_points = sum(c["point"] if isinstance(c, dict) else getattr(c, "point", 0) for c in complexities)
+            story_data = {
+                "id": story.id,
+                "name": story.name,
+                "description": story.description,
+                "expire_date": story.expire_date,
+                "status_id": story.status_id,
+                "project_id": story.project_id,
+                "sprint_id": story.sprint_id,
+                "evidence_file": UserStoryService._list_files(story.id),
+                "complexity_points": complexities,
+                "total_points": total_points,
                 "hashtags": [
                     {"hashtag": {"id": h.hashtag.id, "name": h.hashtag.name}}
                     for h in story.hashtags

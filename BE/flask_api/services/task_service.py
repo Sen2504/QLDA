@@ -61,6 +61,17 @@ class TaskService:
         )
 
     @staticmethod
+    def get_by_project_and_user(project_id, user_id):
+        return (
+            Task.query
+            .join(UserStory, Task.user_story_id == UserStory.id)
+            .join(PhanCong, Task.id == PhanCong.task_id)
+            .join(Team, PhanCong.team_id == Team.id)
+            .filter(UserStory.project_id == project_id, Team.user_id == user_id)
+            .all()
+        )
+
+    @staticmethod
     def create(data):
         name = (data.get("name") or "").strip()
         description = (data.get("description") or "").strip()

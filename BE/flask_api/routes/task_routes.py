@@ -6,6 +6,12 @@ from flask_api.schemas.task_schemas import TaskCreateSchema, TaskSchema, TaskUpd
 from flask_api.schemas.task_comment_schemas import TaskCommentSchema, TaskCommentCreateSchema
 from flask_api.services.task_service import TaskService
 from flask_api.services.task_comment_service import TaskCommentService
+from flask_api.utils.permissions import (
+    require_permission,
+    get_project_id_from_task,
+    get_project_id_from_user_story,
+    is_user_assigned_to_task,
+)
 
 
 task_bp = Blueprint("task_bp", __name__, url_prefix="/api/tasks")
@@ -33,9 +39,21 @@ def my_tasks():
     tasks = TaskService.get_by_user(current_user.id)
     return jsonify(tasks_schema.dump(tasks)), 200
 
+# Optional: endpoint to list tasks created by current user in a project (view-own)
+@task_bp.route("/project/<int:project_id>/mine", methods=["GET"])
+@login_required
+def my_tasks_in_project(project_id):
+    # Accessible to project members even without Task.View global, to support view-own policy
+    from flask_api.services.permission_service import PermissionService as _PS
+    if _PS._projrole_for_user_project(current_user.id, project_id) is None:
+        return jsonify({"error": "Bạn không thuộc project này."}), 403
+    tasks = TaskService.get_by_project_and_user(project_id, current_user.id)
+    return jsonify(tasks_schema.dump(tasks)), 200
+
 
 @task_bp.route("/project/<int:project_id>", methods=["GET"])
 @login_required
+@require_permission("Task", "View", project_id_getter=lambda project_id: project_id)
 def tasks_by_project(project_id):
     tasks = TaskService.get_by_project(project_id)
     return jsonify(tasks_schema.dump(tasks)), 200
@@ -43,6 +61,7 @@ def tasks_by_project(project_id):
 
 @task_bp.route("/user-story/<int:user_story_id>", methods=["GET"])
 @login_required
+@require_permission("Task", "View", project_id_getter=lambda user_story_id: get_project_id_from_user_story(user_story_id))
 def tasks_by_user_story(user_story_id):
     tasks = TaskService.get_by_user_story(user_story_id)
     return jsonify(tasks_schema.dump(tasks)), 200
@@ -50,6 +69,14 @@ def tasks_by_user_story(user_story_id):
 
 @task_bp.route("/<int:task_id>", methods=["GET"])
 @login_required
+@require_permission(
+    "Task",
+    "View",
+    project_id_getter=lambda task_id: get_project_id_from_task(task_id),
+    fallback_allow=lambda user_id, project_id, task_id=None, **kwargs: is_user_assigned_to_task(
+        user_id, task_id or kwargs.get("task_id")
+    ),
+)
 def get_task(task_id):
     task = TaskService.get_by_id(task_id)
     if not task:
@@ -59,6 +86,14 @@ def get_task(task_id):
 
 @task_bp.route("/<int:task_id>/comments", methods=["GET"])
 @login_required
+@require_permission(
+    "Task",
+    "View",
+    project_id_getter=lambda task_id: get_project_id_from_task(task_id),
+    fallback_allow=lambda user_id, project_id, task_id=None, **kwargs: is_user_assigned_to_task(
+        user_id, task_id or kwargs.get("task_id")
+    ),
+)
 def list_task_comments(task_id):
     task = TaskService.get_by_id(task_id)
     if not task:
@@ -69,6 +104,7 @@ def list_task_comments(task_id):
 
 @task_bp.route("/<int:task_id>/comments", methods=["POST"])
 @login_required
+@require_permission("Task", "Comment", project_id_getter=lambda task_id: get_project_id_from_task(task_id))
 def create_task_comment(task_id):
     payload = request.get_json() or {}
     try:
@@ -95,6 +131,7 @@ def create_task_comment(task_id):
 
 @task_bp.route("/<int:task_id>/comments/<int:comment_id>", methods=["DELETE"])
 @login_required
+@require_permission("Task", "Delete", project_id_getter=lambda task_id, comment_id: get_project_id_from_task(task_id))
 def delete_task_comment(task_id, comment_id):
     success, error = TaskCommentService.delete(task_id, comment_id, current_user.id)
     if not success:
@@ -105,6 +142,7 @@ def delete_task_comment(task_id, comment_id):
 
 @task_bp.route("/", methods=["POST"])
 @login_required
+@require_permission("Task", "Create", project_id_getter=lambda: get_project_id_from_user_story((request.get_json() or {}).get("user_story_id")))
 def create_task():
     payload = request.get_json() or {}
     try:
@@ -120,6 +158,7 @@ def create_task():
 
 @task_bp.route("/<int:task_id>", methods=["PUT"])
 @login_required
+@require_permission("Task", "Edit", project_id_getter=lambda task_id: get_project_id_from_task(task_id))
 def update_task(task_id):
     payload = request.get_json() or {}
     try:
@@ -139,6 +178,7 @@ def update_task(task_id):
 
 @task_bp.route("/<int:task_id>", methods=["DELETE"])
 @login_required
+@require_permission("Task", "Delete", project_id_getter=lambda task_id: get_project_id_from_task(task_id))
 def delete_task(task_id):
     success, error = TaskService.delete(task_id)
     if not success:

@@ -66,7 +66,7 @@ export default function UserStoryDetail() {
 
     async function fetchAll() {
       try {
-        const [statusList, storyRes, taskRes] = await Promise.all([
+        const results = await Promise.allSettled([
           WorkflowStatusService.getAll(),
           api.get(`/user_stories/${userStoryId}`),
           TaskService.getByUserStory(userStoryId),
@@ -74,14 +74,39 @@ export default function UserStoryDetail() {
 
         if (!mounted) return;
 
-        setStatuses(statusList || []);
-        setStory(storyRes.data);
-        setTasks(taskRes.data);
+        // statuses
+        if (results[0].status === "fulfilled") {
+          setStatuses(results[0].value || []);
+        } else {
+          setStatuses([]);
+        }
 
-        if (storyRes.data?.project_id) {
-          const teamRes = await TeamService.getTeamSummary(storyRes.data.project_id);
-          if (!mounted) return;
-          setTeamMembers(teamRes.data?.members ?? []);
+        // user story detail
+        let storyData = null;
+        if (results[1].status === "fulfilled") {
+          storyData = results[1].value?.data;
+          setStory(storyData);
+        } else {
+          setStory(null);
+        }
+
+        // tasks under story (may be 403 if lacking Task.View)
+        if (results[2].status === "fulfilled") {
+          setTasks(results[2].value?.data || []);
+        } else {
+          setTasks([]);
+        }
+
+        // load team members separately if we have project_id
+        if (storyData?.project_id) {
+          try {
+            const teamRes = await TeamService.getTeamSummary(storyData.project_id);
+            if (!mounted) return;
+            setTeamMembers(teamRes.data?.members ?? []);
+          } catch (e2) {
+            // ignore, interceptor will toast if needed
+            setTeamMembers([]);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -240,9 +265,10 @@ export default function UserStoryDetail() {
               );
               toast.success("Cập nhật trạng thái thành công!");
             } catch (err) {
-              toast.error(
-                err.response?.data?.error || "Lỗi khi cập nhật trạng thái"
-              );
+              const status = err?.response?.status;
+              if (status !== 403) {
+                toast.error(err.response?.data?.error || "Lỗi khi cập nhật trạng thái");
+              }
             }
           }}
           onTaskClick={(id) => navigate(`/tasks/${id}`)}

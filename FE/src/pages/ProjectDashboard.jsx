@@ -33,30 +33,8 @@ export default function ProjectDashboard() {
       // User stories: run project-specific + fallback all in parallel, pick fastest valid
       const userStoriesJob = (async () => {
         try {
-          const [byProjectRes, allRes] = await Promise.allSettled([
-            UserStoryService.getByProject(projectId),
-            UserStoryService.getAll(),
-          ]);
-
-            // helper parse
-          const extractList = (raw) => {
-            if (!raw) return null;
-            const data = raw.data ?? raw;
-            if (Array.isArray(data)) return data;
-            if (data && Array.isArray(data.user_stories)) return data.user_stories;
-            return null;
-          };
-
-          let picked = null;
-          if (byProjectRes.status === 'fulfilled') {
-            picked = extractList(byProjectRes.value);
-          }
-          if ((!picked || !picked.length) && allRes.status === 'fulfilled') {
-            const allList = extractList(allRes.value) || [];
-            picked = allList.filter((s) => String(s.project_id) === String(projectId));
-          }
-          if (!picked) picked = [];
-          if (!cancelled) setUserStories(picked);
+          const byProjectRes = await UserStoryService.getByProject(projectId);
+          if (!cancelled) setUserStories(byProjectRes.data || []);
         } catch (e) {
           console.error('User stories load error:', e);
           if (!cancelled) setUserStories([]);

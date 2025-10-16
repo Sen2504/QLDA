@@ -153,7 +153,12 @@ export default function SprintBoard() {
         const ids = new Set(usList.map((u) => u.id));
         setTasks(taskList.filter((t) => ids.has(t.user_story_id)));
       })
-      .catch(() => toast.error("Không tải được Sprint Taskboard"));
+      .catch((err) => {
+        const status = err?.response?.status;
+        if (status !== 403) {
+          toast.error("Không tải được Sprint Taskboard");
+        }
+      });
   }, [currentProject, projectId, sprintId]);
 
   const handleOpenUserStory = (userStoryId) => {
@@ -214,7 +219,10 @@ export default function SprintBoard() {
       }
     } catch (e) {
       setTasks(previousTasks);
-      toast.error("Cập nhật task thất bại");
+      const status = e?.response?.status;
+      if (status !== 403) {
+        toast.error("Cập nhật task thất bại");
+      }
     }
   };
 

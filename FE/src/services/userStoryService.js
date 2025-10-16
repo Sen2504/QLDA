@@ -7,6 +7,7 @@ const UserStoryService = {
     });
   },
   getAll() {
+    // Prefer project-specific fetch; if needed, supply project_id as query to satisfy permission
     return api.get("/user_stories/");
   },
   getByProject(projectId) {

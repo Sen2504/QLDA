@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from flask_api.services.team_service import TeamService
 from flask_api.schemas.team_schemas import TeamSchema
+from flask_api.services.permission_service import PermissionService
 
 team_bp = Blueprint("team_bp", __name__, url_prefix="/api/teams")
 
@@ -13,6 +14,9 @@ teams_schema = TeamSchema(many=True)
 @team_bp.route("/<int:project_id>", methods=["GET"])
 @login_required
 def get_team(project_id):
+    # Only allow project members to view team list
+    if PermissionService._projrole_for_user_project(current_user.id, project_id) is None:
+        return jsonify({"error": "Bạn không thuộc project này."}), 403
     members = TeamService.get_team_by_project(project_id)
     return jsonify(teams_schema.dump(members)), 200
 
@@ -53,5 +57,8 @@ def remove_member(project_id, user_id):
 @team_bp.route("/<int:project_id>/summary", methods=["GET"])
 @login_required
 def team_summary(project_id):
+    # Only allow project members to view team summary
+    if PermissionService._projrole_for_user_project(current_user.id, project_id) is None:
+        return jsonify({"error": "Bạn không thuộc project này."}), 403
     data = TeamService.get_team_summary(project_id)
     return jsonify(data), 200
