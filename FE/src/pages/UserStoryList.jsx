@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
@@ -17,10 +17,7 @@ export default function UserStoryList() {
   useEffect(() => {
     if (!currentProject) return;
     setLoading(true);
-    Promise.all([
-      UserStoryService.getAll(),
-      UserStoryService.getStatuses(),
-    ])
+    Promise.all([UserStoryService.getAll(), UserStoryService.getStatuses()])
       .then(([resStories, resStatuses]) => {
         const filtered = (resStories.data || []).filter(
           (s) => s.project_id === currentProject.id
@@ -35,26 +32,22 @@ export default function UserStoryList() {
   // ---- CẬP NHẬT TRẠNG THÁI ----
   const handleStatusChange = async (storyId, newStatusId) => {
     try {
-      // Gọi API update
-      const res = await UserStoryService.update(storyId, { Status_id: newStatusId });
+      const res = await UserStoryService.update(storyId, {
+        Status_id: newStatusId,
+      });
 
-      // Nếu backend trả về lỗi
       if (res.error) {
         alert(res.error);
         return;
       }
 
-      // Cập nhật UI ngay
       setStories((prev) =>
         prev.map((story) =>
           story.id === storyId ? { ...story, status_id: newStatusId } : story
         )
       );
 
-      // Cập nhật dropdown state
       setSelectedStatus((prev) => ({ ...prev, [storyId]: newStatusId }));
-
-      // Thông báo
       console.log("Status updated successfully!");
     } catch (err) {
       const msg =
@@ -65,18 +58,11 @@ export default function UserStoryList() {
     }
   };
 
-
   const formatDate = (d) => {
     if (!d) return "-";
     return new Date(d).toLocaleDateString("vi-VN");
   };
 
-  const getStatusName = (id) => {
-    const st = statuses.find((s) => s.id === id);
-    return st ? st.name : "Unknown";
-  };
-
-  // ---- UI ----
   return (
     <MainLayout>
       <div className="mt-6 bg-white rounded-2xl shadow p-5">
@@ -108,76 +94,98 @@ export default function UserStoryList() {
                 </tr>
               </thead>
               <tbody>
-                {stories.map((s) => (
-                  <tr key={s.id} className="border-t hover:bg-gray-50">
-                    {/* Tên user story */}
-                    <td
-                      className="px-4 py-2 cursor-pointer text-emerald-700 font-medium hover:underline"
-                      onClick={() => navigate(`/user-stories/${s.id}/`)}
-                    >
-                      {s.name || "(No name)"}
-                    </td>
+                {stories.map((s) => {
+                  // Lấy tên status hiện tại từ status_id
+                  const currentStatus = statuses.find(
+                    (st) => st.id === s.status_id
+                  );
+                  const isDone =
+                    ["DONE"].includes(
+                      (
+                        currentStatus?.name ||
+                        currentStatus?.name_status ||
+                        ""
+                      ).toUpperCase()
+                    );
 
-                    {/* Hashtag */}
-                    <td className="px-4 py-2">
-                      {s.hashtags?.length ? (
-                        <div className="flex flex-wrap gap-1">
-                          {s.hashtags.map((h) => (
-                            <span
-                              key={h.hashtag.id}
-                              className="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded"
-                            >
-                              #{h.hashtag.name}
-                            </span>
+                  return (
+                    <tr key={s.id} className="border-t hover:bg-gray-50">
+                      {/* Tên user story */}
+                      <td
+                        className="px-4 py-2 cursor-pointer text-emerald-700 font-medium hover:underline flex items-center gap-2"
+                        onClick={() => navigate(`/user-stories/${s.id}/`)}
+                      >
+                        {s.name || "(No name)"}
+                      </td>
+
+                      {/* Hashtag */}
+                      <td className="px-4 py-2">
+                        {s.hashtags?.length ? (
+                          <div className="flex flex-wrap gap-1">
+                            {s.hashtags.map((h) => (
+                              <span
+                                key={h.hashtag.id}
+                                className="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded"
+                              >
+                                #{h.hashtag.name}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs italic">
+                            Do not have
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Ngày hết hạn */}
+                      <td className="px-4 py-2">{formatDate(s.expire_date)}</td>
+
+                      {/* Tổng điểm */}
+                      <td className="px-4 py-2 font-semibold text-gray-800">
+                        {s.total_points ?? 0} pts
+                      </td>
+
+                      {/* Trạng thái */}
+                      <td className="px-4 py-2">
+                        <select
+                          value={
+                            selectedStatus[s.id] !== undefined
+                              ? selectedStatus[s.id]
+                              : s.status_id || ""
+                          }
+                          onChange={(e) =>
+                            handleStatusChange(s.id, Number(e.target.value))
+                          }
+                          disabled={isDone} // ✅ Khóa dropdown nếu DONE hoặc CLOSED
+                          className={`border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-[var(--color-accent,#16a34a)] ${
+                            isDone
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : ""
+                          }`}
+                        >
+                          {statuses.map((st) => (
+                            <option key={st.id} value={st.id}>
+                              {st.name}
+                            </option>
                           ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-xs italic">
-                          Do not have
-                        </span>
-                      )}
-                    </td>
+                        </select>
+                      </td>
 
-                    {/* Ngày hết hạn */}
-                    <td className="px-4 py-2">{formatDate(s.expire_date)}</td>
-
-                    {/* Tổng điểm */}
-                    <td className="px-4 py-2 font-semibold text-gray-800">
-                      {s.total_points ?? 0} pts
-                    </td>
-
-                    {/* Trạng thái */}
-                    <td className="px-4 py-2">
-                      <select
-                        value={
-                          selectedStatus[s.id] !== undefined
-                            ? selectedStatus[s.id]
-                            : s.status_id || ""
-                        }
-                        onChange={(e) =>
-                          handleStatusChange(s.id, Number(e.target.value))
-                        }
-                        className="border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-[var(--color-accent,#16a34a)]"
-                      >
-                        {statuses.map((st) => (
-                          <option key={st.id} value={st.id}>
-                            {st.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* Action */}
-                    <td className="px-4 py-2 text-center">
-                      <button
-                        onClick={() => navigate(`/user-stories/${s.id}/edit`)}
-                        className="px-3 py-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      {/* Action */}
+                      <td className="px-4 py-2 text-center">
+                        <button
+                          onClick={() =>
+                            navigate(`/user-stories/${s.id}/edit`)
+                          }
+                          className="px-3 py-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 

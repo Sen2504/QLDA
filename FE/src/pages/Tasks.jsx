@@ -213,8 +213,15 @@ export default function Tasks() {
                                 if (Number.isNaN(parsed)) return;
                                 handleStatusChange(task.id, parsed);
                               }}
-                              disabled={loadingStatuses}
-                              className="border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-[var(--color-accent,#16a34a)]"
+                              disabled={
+                                loadingStatuses ||
+                                (task.status || "").toUpperCase() === "DONE" // KHÓA NẾU DONE
+                              }
+                              className={`border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-[var(--color-accent,#16a34a)] ${
+                                (task.status || "").toUpperCase() === "DONE"
+                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                  : ""
+                              }`}
                             >
                               <option value="" disabled>
                                 {loadingStatuses ? "Loading..." : "Choose status"}

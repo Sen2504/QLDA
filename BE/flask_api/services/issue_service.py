@@ -179,19 +179,27 @@ class IssueService:
                     enum_map = {s.value.lower(): s for s in Priority}
                     issue.priority = enum_map.get(val.lower(), issue.priority)
 
-            # ==== Cập nhật team_id (nếu có) ====
-            team_id = data.get("team_id")
-            if team_id not in [None, "", "null"]:
-                try:
-                    team_id = int(team_id)
-                except ValueError:
-                    return None, "Invalid team_id value."
+            # ==== Cập nhật team_ids (nhiều người thực hiện) ====
+            team_ids_raw = data.get("team_ids")
 
-                resolve = IssueResolve.query.filter_by(issue_id=issue_id).first()
-                if not resolve:
-                    db.session.add(IssueResolve(issue_id=issue_id, team_id=team_id))
+            if team_ids_raw:
+                try:
+                    team_ids = json.loads(team_ids_raw)
+                    if not isinstance(team_ids, list):
+                        raise ValueError
+                except Exception:
+                    return None, "Invalid team_ids format. Expect JSON list."
+
+                # Xóa hết bản ghi cũ (kể cả bản ghi null)
+                IssueResolve.query.filter_by(issue_id=issue_id).delete()
+
+                # Nếu có người được chọn thì thêm từng người
+                if team_ids:
+                    for tid in team_ids:
+                        db.session.add(IssueResolve(issue_id=issue_id, team_id=int(tid)))
                 else:
-                    resolve.team_id = team_id
+                    # nếu chưa chọn ai -> tạo lại bản ghi null
+                    db.session.add(IssueResolve(issue_id=issue_id, team_id=None))
 
             # ==== Quản lý file upload ====
             issue_folder = IssueService._issue_folder(issue.id)

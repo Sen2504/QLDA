@@ -35,13 +35,26 @@ export default function IssueList() {
 
 
   // ---- HANDLE CHANGE STATUS ----
-  const handleStatusChange = (issueId, value) => {
-    const newStatus = value;
-    setSelectedStatus((prev) => ({ ...prev, [issueId]: newStatus }));
-    IssueService.update(issueId, { status: newStatus })
-      .then(() => console.log("Cập nhật trạng thái thành công"))
-      .catch((err) => console.error("Lỗi khi cập nhật trạng thái:", err));
-  };
+const handleStatusChange = (issueId, value) => {
+  const newStatus = value;
+  setSelectedStatus((prev) => ({ ...prev, [issueId]: newStatus }));
+
+  const formData = new FormData();
+  formData.append("status", newStatus);
+
+  IssueService.update(issueId, formData)
+    .then(() => {
+      console.log("Cập nhật trạng thái thành công");
+      // cập nhật lại state để phản ánh thay đổi
+      setIssues((prev) =>
+        prev.map((i) =>
+          i.id === issueId ? { ...i, status: newStatus } : i
+        )
+      );
+    })
+    .catch((err) => console.error(" Lỗi khi cập nhật trạng thái:", err));
+};
+
 
   // ---- DECORATE DATA ----
   const decoratedIssues = useMemo(
@@ -110,21 +123,24 @@ export default function IssueList() {
                       </div>
                     </td>
 
-                    {/* Người xử lý */}
+                    {/* Người thực hiện */}
                     <td className="px-4 py-2">
-                      {issue.assignee ? (
-                        <span className="text-xs text-gray-700">
-                          {issue.assignee.user_email || "Ẩn danh"}{" "}
-                          {issue.assignee.role_name && (
-                            <span className="text-gray-400">
-                              ({issue.assignee.role_name})
+                      {issue.handlers && issue.handlers.length > 0 ? (
+                        <div className="flex flex-col gap-0.5">
+                          {issue.handlers.map((h, idx) => (
+                            <span key={idx} className="text-xs text-gray-700">
+                              {h.user_email}
+                              {h.role_name && (
+                                <span className="text-gray-400"> ({h.role_name})</span>
+                              )}
                             </span>
-                          )}
-                        </span>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-gray-400 text-xs">Not assigned</span>
                       )}
                     </td>
+
 
                     {/* Trạng thái */}
                     <td className="px-4 py-2">

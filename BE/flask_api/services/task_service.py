@@ -7,6 +7,7 @@ from flask_api.models.user_story_models import UserStory
 from flask_api.models.team_models import Team
 from flask_api.models.phan_cong_models import PhanCong
 from flask_api.models.task_comment_models import TaskComment
+from flask_api.models.workflow_status_models import WorkflowStatus
 
 
 class TaskService:
@@ -120,7 +121,6 @@ class TaskService:
             db.session.rollback()
             return None, "Can not create task."
 
-    @staticmethod
     def update(task_id, data):
         task = Task.query.get(task_id)
         if not task:
@@ -192,12 +192,63 @@ class TaskService:
                 else:
                     db.session.add(PhanCong(team_id=team.id, task_id=task.id))
 
+            # Commit task thay đổi
             db.session.commit()
+
+            # Auto update trạng thái User Story sau khi Task đổi trạng thái
+            if task.user_story_id:
+                TaskService._auto_update_user_story_status(task.user_story_id)
+
             refreshed = TaskService.get_by_id(task.id)
             return refreshed or task, None
-        except Exception:
+
+        except Exception as e:
             db.session.rollback()
             return None, "Can not update task."
+
+    # ==========================================
+    # HÀM PHỤ: Tự động cập nhật trạng thái User Story
+    # ==========================================
+    @staticmethod
+    def _auto_update_user_story_status(user_story_id):
+
+        tasks = Task.query.filter_by(user_story_id=user_story_id).all()
+        if not tasks:
+            return
+
+        # Lấy trạng thái "Done" trong bảng task_status
+        done_task_status = TaskStatus.query.filter(
+            db.func.lower(TaskStatus.name_status) == "done"
+        ).first()
+        if not done_task_status:
+            print("⚠️ TaskStatus 'Done' not found.")
+            return
+
+        # Kiểm tra tất cả task có Done chưa
+        all_done = all(
+            (t.status_id == done_task_status.id)
+            or (t.status and t.status.strip().lower() == "done")
+            for t in tasks
+        )
+
+        if not all_done:
+            return  # nếu chưa done hết thì thôi
+
+        # Lấy trạng thái 'Done' trong bảng workflow_status (cho User Story)
+        done_workflow_status = WorkflowStatus.query.filter(
+            db.func.lower(WorkflowStatus.name) == "done"
+        ).first()
+        if not done_workflow_status:
+            return
+
+        user_story = UserStory.query.get(user_story_id)
+        if not user_story:
+            return
+
+        # Nếu tất cả task đã Done → chuyển User Story sang Done
+        if user_story.status_id != done_workflow_status.id:
+            user_story.status_id = done_workflow_status.id
+            db.session.commit()
 
     @staticmethod
     def delete(task_id):
