@@ -40,8 +40,9 @@ class Issue(db.Model):
 
     project = db.relationship("Project", back_populates="issues")
     type = db.relationship("IssueType", back_populates="issues")
-
     issues_resolved = db.relationship("IssueResolve", back_populates="issue", cascade="all, delete-orphan")
+    comments = db.relationship("IssueComment", back_populates="issue", cascade="all, delete-orphan", passive_deletes=True, order_by="IssueComment.created_at",)
+
 
     def __repr__(self):
         return f"<Issue id={self.id} name={self.name} status={self.status.value}>"

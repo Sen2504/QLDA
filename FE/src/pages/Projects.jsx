@@ -10,7 +10,7 @@ export default function Projects() {
   const [description, setDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
-  const { setCurrentProject } = useProject(); // 👈 dùng context để chọn project trong sidebar
+  const { setCurrentProject } = useProject(); // dùng context để chọn project trong sidebar
 
   useEffect(() => {
     ProjectService.getMyProjects()
@@ -124,7 +124,7 @@ export default function Projects() {
         {/* Danh sách project */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Dự án của tôi
+            My projects
           </h2>
           {projects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -139,7 +139,7 @@ export default function Projects() {
                     {proj.description || "Không có mô tả"}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Trạng thái:{" "}
+                    Status:{" "}
                     <span
                       className={`${
                         proj.status === "archived"
@@ -163,7 +163,7 @@ export default function Projects() {
                             }}
                             className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
                           >
-                            Lưu trữ
+                            Storage
                           </button>
                         )}
                         {proj.status === "archived" && (
@@ -174,7 +174,7 @@ export default function Projects() {
                             }}
                             className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
                           >
-                            Khôi phục
+                            Restore
                           </button>
                         )}
                       </>
@@ -184,7 +184,7 @@ export default function Projects() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">Bạn chưa tham gia project nào.</p>
+            <p className="text-gray-500">You have not participated in any projects yet.</p>
           )}
         </div>
       </div>

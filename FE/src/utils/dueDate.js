@@ -3,28 +3,28 @@ import dayjs from "dayjs";
 const PRIORITY_META = {
   overdue: {
     key: "overdue",
-    label: "Quá hạn",
+    label: "Overdue",
     badgeClass: "bg-red-100 text-red-700 border border-red-200",
     rowClass: "bg-red-50/80",
     level: 0,
   },
   soon: {
     key: "soon",
-    label: "Ưu tiên cao",
+    label: "High priority",
     badgeClass: "bg-amber-100 text-amber-700 border border-amber-200",
     rowClass: "bg-amber-50/80",
     level: 1,
   },
   later: {
     key: "later",
-    label: "Sắp tới",
+    label: "Upcoming",
     badgeClass: "bg-sky-100 text-sky-700 border border-sky-200",
     rowClass: "bg-sky-50/80",
     level: 2,
   },
   none: {
     key: "none",
-    label: "Chưa đặt hạn",
+    label: "No deadline set",
     badgeClass: "bg-gray-100 text-gray-600 border border-gray-200",
     rowClass: "",
     level: 3,
@@ -82,14 +82,14 @@ export function describeDiffDays(diffDays) {
   if (diffDays < 0) {
     const daysLate = Math.abs(diffDays);
     return daysLate === 1
-      ? "Trễ 1 ngày"
-      : `Trễ ${daysLate} ngày`;
+      ? "1 day late"
+      : `${daysLate} date late`;
   }
   if (diffDays === 0) {
-    return "Hạn hôm nay";
+    return "Due today";
   }
   if (diffDays === 1) {
-    return "Còn 1 ngày";
+    return "1 day left";
   }
-  return `Còn ${diffDays} ngày`;
+  return `${diffDays} date left`;
 }

@@ -1,11 +1,13 @@
 # file: flask_api/routes/auth_routes.py
-from flask import Blueprint, request, jsonify, url_for
+from flask import Blueprint, request, jsonify, url_for, render_template
 from flask_login import login_user, logout_user, login_required, current_user
 
 from flask_api.services.auth_service import AuthService
 from flask_api.utils.mail import send_email
 from flask import current_app
 from flask import redirect
+from flask_api.models.user_models import User
+
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -46,42 +48,49 @@ def register():
 
 @auth_bp.route("/confirm", methods=["GET"])
 def confirm_email():
-    token = request.args.get("token", type=str)
-    ok, error = AuthService.confirm_email_by_token(token)
-    if not ok:
-        # Phân loại lỗi hợp lý
-        if error == "token is required":
-            return jsonify({"error": error}), 400
+    token = request.args.get("token")
+    success, error = AuthService.confirm_email_by_token(token)
+
+    if not success:
+        # Nếu token hết hạn → hiện template redirect sang FE để nhập email gửi lại
         if error == "invalid or expired token":
-            return jsonify({"error": error}), 400
-        if error == "user not found":
-            return jsonify({"error": error}), 404
-        return jsonify({"error": error}), 400
+            return render_template("auth/email_confirm_expired.html"), 400
+        return render_template("auth/email_confirm_failed.html", error=error), 400
 
-    # Nếu user đã confirmed trước đó, trả message phù hợp
-    if error is None and token:
-        # không có error => hoặc vừa xác nhận thành công, hoặc đã xác nhận trước đó (service coi là ok)
-        return redirect("http://localhost:5173/login?status=success&message=email_confirmed")
+    # Nếu xác nhận thành công → hiện trang HTML đẹp
+    return render_template("auth/email_confirm_success.html"), 200
 
-    return redirect("http://localhost:5173/login?status=success&message=email_confirmed")
 
 
 @auth_bp.route("/resend-confirm", methods=["POST"])
-@login_required
 def resend_confirm():
-    token, error = AuthService.generate_resend_token(current_user)
-    if error:
-        # đã confirmed rồi
-        if error == "already confirmed":
-            return jsonify({"message": "already confirmed"}), 200
-        return jsonify({"error": error}), 400
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
 
+    if not email:
+        return jsonify({"error": "email is required"}), 400
+
+    # Tìm user theo email
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+
+    # Nếu đã xác nhận rồi → không cần gửi lại
+    if user.confirmed:
+        return jsonify({"message": "already confirmed"}), 200
+
+    # Tạo token xác nhận mới
+    token, error = AuthService.generate_resend_token(user)
     confirm_url = url_for("auth.confirm_email", token=token, _external=True)
+
     html = f"""
-        <p>Liên kết xác nhận email mới của bạn:</p>
+        <p>Xin chào {user.name or ''},</p>
+        <p>Đây là liên kết xác nhận email mới của bạn:</p>
         <p><a href="{confirm_url}">{confirm_url}</a></p>
+        <p>Liên kết hết hạn sau 5 phút.</p>
     """
-    send_email("Xác nhận email (gửi lại)", [current_user.email], html)
+
+    send_email("Xác nhận email (gửi lại)", [user.email], html)
     return jsonify({"message": "confirmation email resent"}), 200
 
 
@@ -130,7 +139,7 @@ def forgot_password():
         <p>Xin chào,</p>
         <p>Nhấn vào liên kết sau để đặt lại mật khẩu của bạn:</p>
         <p><a href="{reset_url}">{reset_url}</a></p>
-        <p>Liên kết hết hạn sau 24 giờ.</p>
+        <p>Liên kết hết hạn sau 5 phút.</p>
     """
     send_email("Đặt lại mật khẩu", [email], html)
     return jsonify({"message": "Password reset link has been sent to your email."}), 200

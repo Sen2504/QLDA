@@ -9,14 +9,14 @@ export default function MyInvites() {
   useEffect(() => {
     TeamService.getMyInvites()
       .then((res) => setInvites(res.data))
-      .catch((err) => console.error("Lỗi load my invites:", err));
+      .catch((err) => console.error("Error loading my invites:", err));
   }, []);
 
   const handleAccept = async (inviteId) => {
     try {
       await TeamService.acceptInvite(inviteId);
       setInvites(invites.filter((i) => i.id !== inviteId));
-      alert("Bạn đã tham gia project thành công!");
+      alert("You have successfully joined the project!");
     } catch (err) {
       alert(err.response?.data?.error || "Error accepting invite");
     }
@@ -34,7 +34,7 @@ export default function MyInvites() {
   return (
     <MainLayout>
       <div className="p-6 space-y-6">
-        <h2 className="text-2xl font-bold text-green-700">Lời mời của tôi</h2>
+        <h2 className="text-2xl font-bold text-green-700">My invitation</h2>
         {invites.length > 0 ? (
           <ul className="space-y-3">
             {invites.map((i) => (
@@ -44,7 +44,7 @@ export default function MyInvites() {
               >
                 <div>
                   <p className="font-medium">
-                    Project #{i.project_id} - Vai trò: {i.role_name}
+                    Project #{i.project_id} - Role: {i.role_name}
                   </p>
                   <p className="text-sm text-gray-500">Email: {i.email}</p>
                 </div>
@@ -53,20 +53,20 @@ export default function MyInvites() {
                     onClick={() => handleAccept(i.id)}
                     className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
                   >
-                    Đồng ý
+                    Acceot
                   </button>
                   <button
                     onClick={() => handleReject(i.id)}
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
                   >
-                    Xóa
+                    Delete
                   </button>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">Bạn không có lời mời nào.</p>
+          <p className="text-gray-500">You don't have any invitations.</p>
         )}
       </div>
     </MainLayout>

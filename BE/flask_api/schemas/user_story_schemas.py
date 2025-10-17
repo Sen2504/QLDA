@@ -36,16 +36,16 @@ class UserStorySchema(Schema):
     @validates("name")
     def validate_name(self, value):
         if not value or not value.strip():
-            raise ValidationError("Tên User Story là bắt buộc.")
+            raise ValidationError("User Story name is required.")
         if not re.match(r"^[A-Za-z0-9_ ]+$", value.strip()):
-            raise ValidationError("Tên User Story chỉ được chứa chữ, số, khoảng trắng và ký tự '_'.")
+            raise ValidationError("User Story names must only contain letters, numbers, spaces and the character '_'.")
 
     @validates("expire_date")
     def validate_expire_date(self, value):
         if value < date.today():
-            raise ValidationError("Ngày hết hạn không được nhỏ hơn ngày hiện tại.")
+            raise ValidationError("The expiration date cannot be less than the current date.")
 
     @validates("evidence_file")
     def validate_evidence_file(self, value):
         if value and len(value) > 255:
-            raise ValidationError("Tên file quá dài, không hợp lệ.")
+            raise ValidationError("File name is too long and invalid.")

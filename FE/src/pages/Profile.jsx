@@ -27,7 +27,7 @@ export default function ProfilePage() {
     newPassword: "",
     confirmPassword: "",
   });
-  const [passwordMatchError, setPasswordMatchError] = useState(""); // 👈 lỗi khi confirm sai
+  const [passwordMatchError, setPasswordMatchError] = useState(""); // lỗi khi confirm sai
 
   const [showPass, setShowPass] = useState({
     old: false,
@@ -80,7 +80,7 @@ export default function ProfilePage() {
           skillset: res.data.skillset || "",
         });
       })
-      .catch(() => showPopup("Lỗi khi tải thông tin người dùng", "error"));
+      .catch(() => showPopup("Error loading user information", "error"));
   }, []);
 
   const handleChange = (e) => {
@@ -109,7 +109,7 @@ export default function ProfilePage() {
       ) {
         setPasswordMatchError("");
       } else {
-        setPasswordMatchError("Mật khẩu mới và xác nhận không khớp!");
+        setPasswordMatchError("New password and confirmation do not match!");
       }
     } else {
       setPasswordMatchError("");
@@ -118,7 +118,7 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (passwordMatchError) {
-      showPopup("Vui lòng kiểm tra lại mật khẩu xác nhận!", "error");
+      showPopup("Please check your password again to confirm!", "error");
       return;
     }
 
@@ -129,28 +129,28 @@ export default function ProfilePage() {
         passwords.confirmPassword
       ) {
         if (passwords.newPassword !== passwords.confirmPassword) {
-          showPopup("Xác nhận mật khẩu không khớp!", "error");
+          showPopup("Confirm passwords do not match!", "error");
           return;
         }
 
         await UserService.changePassword(passwords);
-        showPopup("Đổi mật khẩu thành công!", "success");
+        showPopup("Password changed successfully!", "success");
       }
 
       await UserService.updateProfile(formData);
       setUser({ ...user, ...formData });
-      showPopup("Cập nhật thông tin thành công!", "success");
+      showPopup("Updated information successfully!", "success");
 
       setPasswords({ oldPassword: "", newPassword: "", confirmPassword: "" });
       setEditMode(false);
     } catch (err) {
       const errMsg =
-        err.response?.data?.error || "Có lỗi xảy ra khi lưu thay đổi.";
+        err.response?.data?.error || "An error occurred while saving changes.";
       showPopup(errMsg, "error");
     }
   };
 
-  if (!user) return <p className="p-5 text-center">Đang tải...</p>;
+  if (!user) return <p className="p-5 text-center">Loading...</p>;
 
   return (
     <MainLayout>
@@ -191,7 +191,7 @@ export default function ProfilePage() {
                   <h5 className="my-3">{user.name}</h5>
                   <p className="text-muted mb-1">{user.email}</p>
                   <p className="text-muted mb-2">
-                    Tạo ngày:{" "}
+                    Created at:{" "}
                     {user.created_at
                       ? new Date(user.created_at).toLocaleDateString("vi-VN")
                       : "-"}
@@ -208,10 +208,10 @@ export default function ProfilePage() {
                         try {
                           const res = await UserService.uploadAvatar(file);
                           setUser((prev) => ({ ...prev, avatar: res.data.avatar }));
-                          showPopup("Cập nhật avatar thành công!", "success");
+                          showPopup("Updated avatar successfully!", "success");
                         } catch (err) {
                           showPopup(
-                            err.response?.data?.error || "Lỗi khi upload avatar.",
+                            err.response?.data?.error || "Error uploading avatar.",
                             "error"
                           );
                         }
@@ -275,29 +275,28 @@ export default function ProfilePage() {
                     </MDBCol>
                     <MDBCol sm="9">
                       {editMode ? (
-  <CreatableSelect
-    isMulti
-    options={skillOptions}
-    value={
-      formData.skillset
-        ? formData.skillset.split(",").map((s) => ({ value: s, label: s }))
-        : []
-    }
-    onChange={(selected) => {
-      const newSkills = selected.map((s) => s.value).join(",");
-      setFormData((prev) => ({ ...prev, skillset: newSkills }));
-    }}
-    placeholder="Nhập hoặc chọn kỹ năng..."
-    classNamePrefix="select"
-  />
-) : (
-  <MDBCardText className="text-muted">
-    {user.skillset
-      ? user.skillset.split(",").join(", ")
-      : "-"}
-  </MDBCardText>
-)}
-
+                      <CreatableSelect
+                        isMulti
+                        options={skillOptions}
+                        value={
+                          formData.skillset
+                            ? formData.skillset.split(",").map((s) => ({ value: s, label: s }))
+                            : []
+                        }
+                        onChange={(selected) => {
+                          const newSkills = selected.map((s) => s.value).join(",");
+                          setFormData((prev) => ({ ...prev, skillset: newSkills }));
+                        }}
+                        placeholder="Enter or select a skill..."
+                        classNamePrefix="select"
+                      />
+                    ) : (
+                      <MDBCardText className="text-muted">
+                        {user.skillset
+                          ? user.skillset.split(",").join(", ")
+                          : "-"}
+                      </MDBCardText>
+                    )}
                     </MDBCol>
                   </MDBRow>
 
@@ -305,12 +304,12 @@ export default function ProfilePage() {
                   {editMode && (
                     <>
                       <hr />
-                      <h6 className="fw-bold mb-3 mt-4">Đổi mật khẩu</h6>
+                      <h6 className="fw-bold mb-3 mt-4">Change password</h6>
 
                       {/* old password */}
                       <MDBRow className="mb-3 align-items-center">
                         <MDBCol sm="4">
-                          <MDBCardText>Mật khẩu hiện tại</MDBCardText>
+                          <MDBCardText>Current password</MDBCardText>
                         </MDBCol>
                         <MDBCol sm="8">
                           <div className="position-relative">
@@ -344,7 +343,7 @@ export default function ProfilePage() {
                       {/* new password */}
                       <MDBRow className="mb-3 align-items-center">
                         <MDBCol sm="4">
-                          <MDBCardText>Mật khẩu mới</MDBCardText>
+                          <MDBCardText>New password</MDBCardText>
                         </MDBCol>
                         <MDBCol sm="8">
                           <div className="position-relative">
@@ -378,7 +377,7 @@ export default function ProfilePage() {
                       {/* confirm password */}
                       <MDBRow className="mb-4 align-items-center">
                         <MDBCol sm="4">
-                          <MDBCardText>Xác nhận mật khẩu mới</MDBCardText>
+                          <MDBCardText>Confirm new password</MDBCardText>
                         </MDBCol>
                         <MDBCol sm="8">
                           <div className="position-relative">
@@ -407,7 +406,7 @@ export default function ProfilePage() {
                             </button>
                           </div>
 
-                          {/* 👇 Thông báo lỗi trùng mật khẩu */}
+                          {/* Thông báo lỗi trùng mật khẩu */}
                           {passwordMatchError && (
                             <small className="text-danger mt-1 d-block">
                               {passwordMatchError}
@@ -420,7 +419,7 @@ export default function ProfilePage() {
                         <MDBBtn
                           color="success"
                           onClick={handleSave}
-                          disabled={Boolean(passwordMatchError)} // 👈 disable khi lỗi
+                          disabled={Boolean(passwordMatchError)} // disable khi lỗi
                         >
                           Save
                         </MDBBtn>

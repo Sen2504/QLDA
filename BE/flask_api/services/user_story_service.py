@@ -41,7 +41,7 @@ class UserStoryService:
         size = file.tell()
         file.seek(0)
         if size > MAX_FILE_SIZE:
-            return None, "File vượt quá 500MB."
+            return None, "File over 500MB."
 
         file.save(file_path)
         return file_path, None
@@ -82,11 +82,11 @@ class UserStoryService:
 
         # Validate
         if not name:
-            return None, "Tên User Story là bắt buộc."
+            return None, "User Story name is required."
         if not project_id:
-            return None, "User Story phải thuộc một project."
+            return None, "User Story must belong to a project."
         if not expire_date or expire_date < str(date.today()):
-            return None, "Ngày hết hạn không hợp lệ."
+            return None, "Invalid expiration date."
         
         # Kiểm tra trùng tên trong cùng project
         existing_story = UserStory.query.filter(
@@ -94,13 +94,13 @@ class UserStoryService:
             UserStory.project_id == project_id
         ).first()
         if existing_story:
-            return None, "Tên User Story đã tồn tại trong project này."
+            return None, "The name User Story already exists in this project."
 
         # Nếu không truyền trạng thái -> mặc định "New"
         if not status_id:
             default_status = WorkflowStatus.query.filter_by(name="New").first()
             if not default_status:
-                return None, "Không tìm thấy trạng thái mặc định 'New'."
+                return None, "Default status 'New' not found."
             status_id = default_status.id
 
         # Tạo user story
@@ -158,7 +158,6 @@ class UserStoryService:
             return new_story, None
         except Exception as e:
             db.session.rollback()
-            print("DEBUG create() exception:", str(e))
             return None, str(e)
 
     @staticmethod
@@ -286,14 +285,14 @@ class UserStoryService:
     def update(story_id, data, new_files=None, deleted_files=None):
         story = UserStory.query.get(story_id)
         if not story:
-            return None, "Không tìm thấy User Story."
+            return None, "User Story not found."
 
         try:
             # ==== Validate & update name ====
             if "Name_story" in data:
                 new_name = (data["Name_story"] or "").strip()
                 if not new_name:
-                    return None, "Tên User Story là bắt buộc."
+                    return None, "User Story name is required."
 
                 existing_story = UserStory.query.filter(
                     db.func.lower(UserStory.name) == new_name.lower(),
@@ -301,7 +300,7 @@ class UserStoryService:
                     UserStory.id != story.id
                 ).first()
                 if existing_story:
-                    return None, "Tên User Story đã tồn tại trong project này."
+                    return None, "The name User Story already exists in this project."
 
                 story.name = new_name
 
@@ -313,7 +312,7 @@ class UserStoryService:
             if "Expire_date" in data:
                 expire_date = data["Expire_date"]
                 if expire_date < str(date.today()):
-                    return None, "Ngày hết hạn không hợp lệ."
+                    return None, "Invalid expiration date."
                 story.expire_date = expire_date
 
             # ==== Update status ====
@@ -370,7 +369,6 @@ class UserStoryService:
                     path = os.path.join(story_folder, filename)
                     if os.path.exists(path):
                         os.remove(path)
-                        print(f"🗑️ Đã xóa file: {path}")
 
             # 2️⃣ Thêm file mới (FE gửi formData 'files')
             if new_files:
@@ -402,7 +400,7 @@ class UserStoryService:
     def delete(story_id):
         story = UserStory.query.get(story_id)
         if not story:
-            return False, "Không tìm thấy User Story."
+            return False, "User Story not found."
         try:
             db.session.delete(story)
             db.session.commit()

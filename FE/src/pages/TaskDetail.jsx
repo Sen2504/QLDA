@@ -25,6 +25,12 @@ export default function TaskDetail() {
   const [editMode, setEditMode] = useState(false);
   const [forbidden, setForbidden] = useState(false);
 
+  // ✅ Kiểm tra nếu task đã Done thì khóa hành động
+  const isDone = useMemo(() => {
+    const statusName = task?.status?.toLowerCase?.() || "";
+    return statusName === "done" || statusName === "completed";
+  }, [task?.status]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -105,40 +111,45 @@ export default function TaskDetail() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.description.trim()) {
-      toast.warn("Vui lòng nhập đầy đủ tên và mô tả task");
-      return;
+  if (!form.name.trim() || !form.description.trim()) {
+    toast.warn("Please enter the full name and description of the task");
+    return;
+  }
+
+  setSaving(true);
+  try {
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      due_date: form.due_date || null,
+    };
+    if (form.status_id) {
+      payload.status_id = Number(form.status_id);
     }
 
-    setSaving(true);
-    try {
-      const payload = {
-        name: form.name.trim(),
-        description: form.description.trim(),
-        due_date: form.due_date || null,
-      };
-      if (form.status_id) {
-        payload.status_id = Number(form.status_id);
-      }
-      const { data } = await TaskService.update(taskId, payload);
-      setTask(data);
-      setComments(data?.comments || []);
-      resetForm(data);
-      setEditMode(false);
-      toast.success("Đã cập nhật task");
-    } catch (error) {
-      const status = error?.response?.status;
-      if (status !== 403) {
-        toast.error(error.response?.data?.error || "Không thể cập nhật task");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
+    await TaskService.update(taskId, payload);
+
+    // 🔁 Sau khi update, load lại dữ liệu từ server
+    const refreshed = await TaskService.getById(taskId);
+    const data = refreshed.data;
+
+    setTask(data);
+    setComments(data?.comments || []);
+    resetForm(data);
+    setEditMode(false);
+    toast.success("Task updated successfully");
+  } catch (error) {
+    toast.error(error.response?.data?.error || "Unable to update task");
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   const handleSubmitComment = async () => {
+    if (isDone) return; // ✅ Không cho gửi comment nếu Done
     if (!commentInput.trim()) {
-      toast.warn("Hãy nhập nội dung bình luận");
+      toast.warn("Please enter comment content");
       return;
     }
 
@@ -149,7 +160,7 @@ export default function TaskDetail() {
       });
       setComments((prev) => [...prev, data]);
       setCommentInput("");
-      toast.success("Đã thêm bình luận");
+      toast.success("Comment added");
     } catch (error) {
       const status = error?.response?.status;
       if (status !== 403) {
@@ -161,12 +172,13 @@ export default function TaskDetail() {
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("Bạn có chắc muốn xóa bình luận này?")) return;
+    if (isDone) return; // ✅ Không cho xóa comment nếu Done
+    if (!window.confirm("Are you sure you want to delete this comment??")) return;
     setCommentSubmitting(true);
     try {
       await TaskCommentService.delete(taskId, commentId);
       setComments((prev) => prev.filter((comment) => comment.id !== commentId));
-      toast.success("Đã xóa bình luận");
+      toast.success("Comment deleted");
     } catch (error) {
       const status = error?.response?.status;
       if (status !== 403) {
@@ -189,7 +201,7 @@ export default function TaskDetail() {
             ← Back
           </button>
           <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-600">
-            Không tìm thấy task.
+            Tasks not found.
           </div>
         </div>
       </MainLayout>
@@ -213,7 +225,7 @@ export default function TaskDetail() {
               className="px-3 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
               type="button"
             >
-              ↗ Mở user story
+              ↗ Open user story
             </button>
           )}
         </div>
@@ -272,7 +284,7 @@ export default function TaskDetail() {
                   <>
                     <button
                       onClick={handleSave}
-                      disabled={saving}
+                      disabled={saving || isDone}
                       className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
                       type="button"
                     >
@@ -285,17 +297,21 @@ export default function TaskDetail() {
                       }}
                       className="px-4 py-2 rounded-lg border"
                       type="button"
+                      disabled={isDone}
                     >
-                      Hủy
+                      Cancel
                     </button>
                   </>
                 ) : (
                   <button
                     onClick={() => setEditMode(true)}
-                    className="px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                    disabled={isDone}
+                    className={`px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 ${
+                      isDone ? "opacity-60 cursor-not-allowed" : ""
+                    }`}
                     type="button"
                   >
-                    ✏️ Chỉnh sửa
+                    ✏️ Edit
                   </button>
                 )}
               </div>
@@ -304,7 +320,7 @@ export default function TaskDetail() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Mô tả</h2>
+                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Describe</h2>
                   {editMode ? (
                     <textarea
                       value={form.description}
@@ -314,13 +330,13 @@ export default function TaskDetail() {
                     />
                   ) : (
                     <p className="text-gray-700 whitespace-pre-line">
-                      {task.description?.trim() || "(Chưa có mô tả)"}
+                      {task.description?.trim() || "(No description yet)"}
                     </p>
                   )}
                 </section>
 
                 <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Ngày hết hạn</h2>
+                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Expiration date</h2>
                   {editMode ? (
                     <input
                       type="date"
@@ -341,14 +357,14 @@ export default function TaskDetail() {
                 </section>
 
                 <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Trạng thái</h2>
+                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Status</h2>
                   {editMode ? (
                     <select
                       value={form.status_id}
                       onChange={(e) => handleChange("status_id", e.target.value)}
                       className="border rounded-lg px-3 py-2"
                     >
-                      <option value="">Chọn trạng thái</option>
+                      <option value="">Choose status</option>
                       {statuses.map((status) => (
                         <option key={status.id} value={status.id}>
                           {status.name_status || status.name}
@@ -365,7 +381,7 @@ export default function TaskDetail() {
 
               <div className="space-y-4">
                 <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Người thực hiện</h2>
+                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Implement</h2>
                   {task.assignees?.length ? (
                     <ul className="space-y-2">
                       {task.assignees.map((assignee) => (
@@ -385,16 +401,16 @@ export default function TaskDetail() {
                       ))}
                     </ul>
                   ) : (
-                    <div className="text-sm text-gray-500">Chưa phân công</div>
+                    <div className="text-sm text-gray-500">Not assigned yet</div>
                   )}
                 </section>
 
                 <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3">Bình luận</h2>
+                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3">Comment</h2>
                   <div className="space-y-4">
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 max-h-72 overflow-y-auto space-y-3">
                       {comments.length === 0 && (
-                        <div className="text-sm text-gray-500 text-center">Chưa có bình luận nào.</div>
+                        <div className="text-sm text-gray-500 text-center">There are no comments yet.</div>
                       )}
                       {comments.map((comment) => {
                         const created = comment.created_at ? dayjs(comment.created_at) : null;
@@ -415,7 +431,7 @@ export default function TaskDetail() {
                             <p className="text-sm text-gray-800 whitespace-pre-line">
                               {comment.content}
                             </p>
-                            {isOwner && (
+                            {isOwner && !isDone && (
                               <div className="text-right mt-2">
                                 <button
                                   onClick={() => handleDeleteComment(comment.id)}
@@ -432,22 +448,31 @@ export default function TaskDetail() {
                       })}
                     </div>
 
-                    <div className="border border-emerald-100 rounded-xl p-3 bg-emerald-50">
+                    <div
+                      className={`border border-emerald-100 rounded-xl p-3 ${
+                        isDone ? "bg-gray-100 opacity-70" : "bg-emerald-50"
+                      }`}
+                    >
                       <textarea
                         value={commentInput}
                         onChange={(e) => setCommentInput(e.target.value)}
                         rows={3}
-                        placeholder="Chia sẻ cập nhật hoặc thảo luận..."
+                        placeholder={
+                          isDone
+                            ? "Task đã hoàn thành — không thể thêm bình luận."
+                            : "Share updates or discuss..."
+                        }
                         className="w-full border border-emerald-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        disabled={isDone}
                       />
                       <div className="flex justify-end mt-2">
                         <button
                           onClick={handleSubmitComment}
-                          disabled={commentSubmitting}
+                          disabled={commentSubmitting || isDone}
                           className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
                           type="button"
                         >
-                          {commentSubmitting ? "Đang gửi..." : "Đăng bình luận"}
+                          {commentSubmitting ? "Sending..." : "Post a comment"}
                         </button>
                       </div>
                     </div>

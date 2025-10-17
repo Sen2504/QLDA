@@ -23,6 +23,8 @@ import UserStoryDetail from "./pages/UserStoryDetail";
 import SprintBoard from "./pages/SprintBoard";
 import IssueList from "./pages/IssueList";
 import TaskDetail from "./pages/TaskDetail";
+import IssueDetail from "./pages/IssueDetail";
+import ResendConfirm from "./pages/ResendConfirm";
 
 export default function App() {
   return (
@@ -52,6 +54,8 @@ export default function App() {
         <Route path="/issues" element={<Issue />} />
         <Route path="/issues/:id/edit" element={<IssueEdit />} />
         <Route path="/issues/list" element={<IssueList />} />
+        <Route path="/issues/:id" element={<IssueDetail />} />
+        <Route path="/resend-confirm" element={<ResendConfirm />} />
       </Routes>
     </BrowserRouter>
   );

@@ -3,7 +3,7 @@ import TeamService from "../services/teamService";
 
 export default function PendingInvites({ pending, onRevoked }) {
   const handleRevoke = async (inviteId) => {
-    if (!window.confirm("Bạn có chắc muốn thu hồi lời mời này?")) return;
+    if (!window.confirm("Are you sure you want to revoke this invitation??")) return;
     try {
       await TeamService.revokeInvite(inviteId);
       onRevoked(inviteId);
@@ -14,7 +14,7 @@ export default function PendingInvites({ pending, onRevoked }) {
 
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4">Lời mời đang chờ</h3>
+      <h3 className="text-lg font-semibold mb-4">Invitation awaits</h3>
       {pending.length > 0 ? (
         <ul className="space-y-3">
           {pending.map((i) => (
@@ -24,7 +24,7 @@ export default function PendingInvites({ pending, onRevoked }) {
             >
               <div>
                 <p className="font-medium">{i.email}</p>
-                <p className="text-sm text-gray-500">Vai trò: {i.role_name}</p>
+                <p className="text-sm text-gray-500">Role: {i.role_name}</p>
               </div>
               <button
                 onClick={() => handleRevoke(i.id)}
@@ -36,7 +36,7 @@ export default function PendingInvites({ pending, onRevoked }) {
           ))}
         </ul>
       ) : (
-        <p className="text-gray-500">Không có lời mời nào đang chờ.</p>
+        <p className="text-gray-500">There are no invitations pending.</p>
       )}
     </div>
   );

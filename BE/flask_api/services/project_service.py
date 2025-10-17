@@ -22,7 +22,7 @@ class ProjectService:
     def create(name_project, description, user_id):
         # Validate input
         if not name_project or not name_project.strip():
-            return None, "Tên project là bắt buộc không được bỏ trống."
+            return None, "Project name is required and cannot be left blank."
 
         # 1. Tạo project mới
         new_project = Project(
@@ -65,7 +65,7 @@ class ProjectService:
         owner_role = next((pr for pr in project_roles if pr.role_id == 1), None)  # giả sử id_role=1 là Owner
         if not owner_role:
             db.session.rollback()
-            return None, "Không tìm thấy role Project Owner."
+            return None, "Project Owner role not found."
 
         new_team_member = Team(
             user_id=user_id,
@@ -79,21 +79,21 @@ class ProjectService:
             return new_project, None
         except Exception as e:
             db.session.rollback()
-            return None, f"Lỗi khi tạo project: {str(e)}"
+            return None, f"Error while create project: {str(e)}"
     
     @staticmethod
     def update(project_id, name, description):
         project = Project.query.get(project_id)
         if not project:
-            return None, "Không tìm thấy project."
+            return None, "Project not found."
 
         name = (name or "").strip()
         description = (description or "").strip()
 
         if not name:
-            return None, "Tên project là bắt buộc."
+            return None, "Name project is required."
         if not description:
-            return None, "Mô tả project là bắt buộc."
+            return None, "Project description is required."
 
         project.name = name
         project.description = description
@@ -133,7 +133,7 @@ class ProjectService:
         """
         project = Project.query.get(project_id)
         if not project:
-            return None, "Không tìm thấy project."
+            return None, "Project not found."
 
         # Kiểm tra user có phải Owner không
         owner_projrole = (
@@ -148,11 +148,11 @@ class ProjectService:
             .first()
         )
         if not owner_projrole:
-            return None, "Bạn không có quyền thay đổi trạng thái project."
+            return None, "You do not have permission to change project status."
 
         # Cập nhật trạng thái
         if new_status not in ["active", "archived", "deleted"]:
-            return None, "Trạng thái không hợp lệ."
+            return None, "Invalid status."
 
         project.status = new_status
         db.session.commit()

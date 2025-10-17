@@ -21,27 +21,27 @@ class TeamInviteService:
         # 1) Kiểm tra ProjectRole hợp lệ (bằng projrole_id)
         proj_role = ProjectRole.query.filter_by(project_id=project_id, id=projrole_id).first()
         if not proj_role:
-            return None, "Vai trò này chưa được khởi tạo trong project."
+            return None, "This role has not been initialized in the project."
 
         project_name = proj_role.project.name
-        role_name = proj_role.name  # 👈 lấy trực tiếp NAME_ROLE từ ProjectRole
+        role_name = proj_role.name  # lấy trực tiếp NAME_ROLE từ ProjectRole
 
         # 2) Kiểm tra user đã đăng ký chưa
         user = User.query.filter_by(email=email).first()
         if not user:
             register_url = f"{current_app.config.get('FRONTEND_URL')}/register?invite_project={project_id}&projrole={projrole_id}"
             html = f"""
-                <p>Bạn được mời tham gia dự án <b>{project_name}</b>.</p>
-                <p>Vai trò được mời: <b>{role_name}</b>.</p>
-                <p>Vui lòng <a href="{register_url}">đăng ký tài khoản</a> để tham gia.</p>
+                <p>You are invited to join the project <b>{project_name}</b>.</p>
+                <p>Invited roles: <b>{role_name}</b>.</p>
+                <p>Please <a href="{register_url}">register</a> to participate.</p>
             """
-            send_email("Mời đăng ký tham gia dự án", [email], html)
-            return None, "Email chưa đăng ký. Đã gửi email mời đăng ký tài khoản."
+            send_email("Please register to participate in the project", [email], html)
+            return None, "Email is not registered. Email has been sent inviting you to register an account."
 
         # 3) Nếu user đã ở team với đúng projrole -> không mời
         already_in_team = Team.query.filter_by(user_id=user.id, projrole_id=proj_role.id).first()
         if already_in_team:
-            return None, "User đã là thành viên của project."
+            return None, "User is already a member of the project."
 
         # 4) Kiểm tra các invite trước đó (theo project_id + email)
         existing_invites = TeamInvite.query.filter_by(
@@ -51,7 +51,7 @@ class TeamInviteService:
 
         # 4a) Chặn nếu đang có pending
         if any(inv.status == "pending" for inv in existing_invites):
-            return None, "Đã tồn tại một lời mời đang chờ xử lý."
+            return None, "A pending invitation already exists."
 
         # 4b) Không cần kiểm tra accepted/rejected/removed vì đã xóa khi accept/reject
 
@@ -69,10 +69,10 @@ class TeamInviteService:
         frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:5173")
         invite_page = f"{frontend_url.rstrip('/')}/my-invites?invite={invite.id}"
         html = f"""
-            <p>Bạn được mời tham gia dự án <b>{project_name}</b> với vai trò <b>{role_name}</b>.</p>
-            <p>Vui lòng truy cập trang <a href="{invite_page}">Lời mời của tôi</a> để chấp nhận hoặc từ chối.</p>
+            <p>You are invited to join project <b>{project_name}</b> as a role <b>{role_name}</b>.</p>
+            <p>Please visit the <a href="{invite_page}">My Invitations</a> page to accept or decline.</p>
         """
-        send_email("Lời mời tham gia dự án", [email], html)
+        send_email("Invitation to join the project", [email], html)
 
         return invite, None
     # ------------------- Lấy danh sách -------------------
@@ -95,13 +95,13 @@ class TeamInviteService:
     def accept_invite(invite_id, user_id):
         invite = TeamInvite.query.get(invite_id)
         if not invite or invite.status != "pending":
-            return None, "Lời mời không hợp lệ."
+            return None, "Invitation is not valid."
 
         proj_role = ProjectRole.query.filter_by(
             project_id=invite.project_id, id=invite.projrole_id
         ).first()
         if not proj_role:
-            return None, "Vai trò chưa tồn tại trong project."
+            return None, "The role does not exist in the project."
 
         # Tạo Team record
         new_team = Team(user_id=user_id, projrole_id=proj_role.id)
@@ -116,7 +116,7 @@ class TeamInviteService:
     def reject_invite(invite_id):
         invite = TeamInvite.query.get(invite_id)
         if not invite or invite.status != "pending":
-            return False, "Lời mời không hợp lệ."
+            return False, "Invitation is not valid."
 
         # Xóa invite thay vì update status
         db.session.delete(invite)
@@ -127,9 +127,9 @@ class TeamInviteService:
     def revoke_invite(invite_id):
         invite = TeamInvite.query.get(invite_id)
         if not invite:
-            return False, "Không tìm thấy lời mời."
+            return False, "Invitation not found."
         if invite.status != "pending":
-            return False, "Chỉ có thể thu hồi lời mời đang ở trạng thái pending."
+            return False, "Invitations that are in pending status can only be revoked."
 
         db.session.delete(invite)
         db.session.commit()

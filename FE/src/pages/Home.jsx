@@ -36,7 +36,7 @@ function SmallUSCard({ us, index, onOpen }) {
             <div className="font-semibold">
               #{us.id} {us.title || us.name || "(no title)"}
             </div>
-            <div className="text-xs opacity-70">{us.points ?? 0} pts</div>
+            <div className="text-xs opacity-70">{us.total_points ?? 0} pts</div>
           </div>
           <span className="text-xs px-2 py-1 bg-gray-100 rounded">
             {us.status_label || "Backlog"}
@@ -161,14 +161,14 @@ export default function Home() {
       }
     } catch (e) {
       setUserStories(previousStories);
-      toast.error("Cập nhật sprint cho User Story thất bại");
+      toast.error("Update sprint for User Story failed");
     }
   };
 
   if (!currentProject) {
     return (
       <MainLayout>
-        <div className="p-6">Chọn một project để tiếp tục.</div>
+        <div className="p-6">Select a project to continue.</div>
       </MainLayout>
     );
   }
@@ -219,7 +219,7 @@ export default function Home() {
                 <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
                   {myTasks.length === 0 ? (
                     <p className="text-sm text-blue-600 text-center py-4">
-                      Chưa có task nào được phân công
+                      No tasks have been assigned yet
                     </p>
                   ) : (
                     myTasks.map((task) => {

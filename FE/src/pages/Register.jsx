@@ -3,7 +3,7 @@ import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import Popup_message from "../components/Popup_message";
 import CreatableSelect from "react-select/creatable";
-import { EyeIcon, EyeOffIcon } from "lucide-react"; // 👈 icon mắt
+import { EyeIcon, EyeOffIcon } from "lucide-react"; // icon mắt
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -14,8 +14,10 @@ export default function Register() {
   const [message, setMessage] = useState("");
   const [type, setType] = useState("success");
   const [showPopup, setShowPopup] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // 👈 toggle pass
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // 👈 toggle confirm pass
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
   const navigate = useNavigate();
 
   const skillOptions = [
@@ -29,8 +31,21 @@ export default function Register() {
     { value: "Java", label: "Java" },
   ];
 
+  // ⚙️ check realtime khi người dùng nhập
+  const handleConfirmPasswordChange = (e) => {
+    const value = e.target.value;
+    setConfirmPassword(value);
+
+    if (password && value && password !== value) {
+      setPasswordError("Passwords do not match");
+    } else {
+      setPasswordError("");
+    }
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
+
     if (password !== confirmPassword) {
       setMessage("Passwords do not match");
       setType("error");
@@ -135,11 +150,7 @@ export default function Register() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-emerald-600 focus:outline-none"
               >
-                {showPassword ? (
-                  <EyeOffIcon size={20} />
-                ) : (
-                  <EyeIcon size={20} />
-                )}
+                {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
               </button>
             </div>
           </div>
@@ -153,16 +164,18 @@ export default function Register() {
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none pr-10"
+                onChange={handleConfirmPasswordChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none pr-10 ${
+                  passwordError
+                    ? "border-red-400 focus:ring-red-300"
+                    : "focus:ring-emerald-400"
+                }`}
                 placeholder="••••••••"
                 required
               />
               <button
                 type="button"
-                onClick={() =>
-                  setShowConfirmPassword(!showConfirmPassword)
-                }
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-emerald-600 focus:outline-none"
               >
                 {showConfirmPassword ? (
@@ -172,12 +185,16 @@ export default function Register() {
                 )}
               </button>
             </div>
+            {passwordError && (
+              <p className="text-sm text-red-500 mt-1">{passwordError}</p>
+            )}
           </div>
 
           {/* ===== Register Button ===== */}
           <button
             type="submit"
-            className="w-full bg-emerald-600 text-white py-2 rounded-lg font-semibold hover:bg-emerald-700 transition"
+            className="w-full bg-emerald-600 text-white py-2 rounded-lg font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
+            disabled={!!passwordError}
           >
             Register
           </button>
@@ -195,11 +212,7 @@ export default function Register() {
       </div>
 
       {showPopup && (
-        <Popup_message
-          message={message}
-          type={type}
-          onConfirm={handleConfirm}
-        />
+        <Popup_message message={message} type={type} onClose={handleConfirm} />
       )}
     </div>
   );

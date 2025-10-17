@@ -9,7 +9,7 @@ export default function CustomRoleManager({ projectId }) {
     if (projectId) {
       TeamService.getProjectRoles(projectId)
         .then((res) => setRoles(res.data))
-        .catch(() => alert("Không thể tải danh sách roles"));
+        .catch(() => alert("Could not load roles list"));
     }
   }, [projectId]);
 
@@ -22,7 +22,7 @@ export default function CustomRoleManager({ projectId }) {
       setRoles([...roles, res.data]);
       setNewRole("");
     } catch (err) {
-      alert(err.response?.data?.error || "Lỗi khi tạo role mới");
+      alert(err.response?.data?.error || "Error when creating new role");
     }
   };
 
@@ -39,13 +39,13 @@ export default function CustomRoleManager({ projectId }) {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
-      <h3 className="text-lg font-semibold mb-4">Vai trò trong Project</h3>
+      <h3 className="text-lg font-semibold mb-4">Role in Project</h3>
 
       {/* Form thêm role */}
       <form onSubmit={handleAddRole} className="flex gap-2 mb-4">
         <input
           type="text"
-          placeholder="Tên vai trò mới"
+          placeholder="New role name"
           value={newRole}
           onChange={(e) => setNewRole(e.target.value)}
           className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"

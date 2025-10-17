@@ -5,6 +5,8 @@ from flask_api.extensions import db
 from flask_api.models.issue_models import Issue, IssueStatus, Severity, Priority
 from flask_api.models.issue_resolve_models import IssueResolve
 from flask_api.models.issue_type_models import IssueType
+from flask_api.models.issue_comment_models import IssueComment
+from sqlalchemy.orm import joinedload
 
 # ================== Cấu hình upload ==================
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "..", "uploads", "issues")
@@ -35,7 +37,7 @@ class IssueService:
         size = file.tell()
         file.seek(0)
         if size > MAX_FILE_SIZE:
-            return None, "File vượt quá 500MB."
+            return None, "File over 500MB."
 
         file.save(file_path)
         return file_path, None
@@ -63,7 +65,17 @@ class IssueService:
 
     @staticmethod
     def get_by_id(issue_id):
-        issue = Issue.query.get(issue_id)
+        issue = (
+            Issue.query
+            .options(
+                joinedload(Issue.comments)
+                .joinedload(IssueComment.user),     # load user
+                joinedload(Issue.comments)
+                .joinedload(IssueComment.team)      # load team
+            )
+            .filter(Issue.id == issue_id)
+            .first()
+        )
         return issue
 
     @staticmethod
@@ -74,15 +86,15 @@ class IssueService:
     def create(data, files=None):
         issue_type = IssueType.query.get(data.get("type_id"))
         if not issue_type:
-            return None, "Loại issue không tồn tại."
+            return None, "The issue type does not exist."
 
         name = (data.get("name") or "").strip()
         if not name:
-            return None, "Tên issue là bắt buộc."
+            return None, "Issue name is required."
 
         expire_date = data.get("expire_date")
         if not expire_date or expire_date < str(date.today()):
-            return None, "Ngày hết hạn không hợp lệ."
+            return None, "Invalid expiration date."
 
         # Tạo issue
         new_issue = Issue(
@@ -130,7 +142,7 @@ class IssueService:
     def update(issue_id, data, new_files=None, deleted_files=None):
         issue = Issue.query.get(issue_id)
         if not issue:
-            return None, "Không tìm thấy Issue."
+            return None, "Issue not found."
 
         try:
             # ==== Cập nhật field cơ bản ====
@@ -167,19 +179,27 @@ class IssueService:
                     enum_map = {s.value.lower(): s for s in Priority}
                     issue.priority = enum_map.get(val.lower(), issue.priority)
 
-            # ==== Cập nhật team_id (nếu có) ====
-            team_id = data.get("team_id")
-            if team_id not in [None, "", "null"]:
-                try:
-                    team_id = int(team_id)
-                except ValueError:
-                    return None, "Giá trị team_id không hợp lệ."
+            # ==== Cập nhật team_ids (nhiều người thực hiện) ====
+            team_ids_raw = data.get("team_ids")
 
-                resolve = IssueResolve.query.filter_by(issue_id=issue_id).first()
-                if not resolve:
-                    db.session.add(IssueResolve(issue_id=issue_id, team_id=team_id))
+            if team_ids_raw:
+                try:
+                    team_ids = json.loads(team_ids_raw)
+                    if not isinstance(team_ids, list):
+                        raise ValueError
+                except Exception:
+                    return None, "Invalid team_ids format. Expect JSON list."
+
+                # Xóa hết bản ghi cũ (kể cả bản ghi null)
+                IssueResolve.query.filter_by(issue_id=issue_id).delete()
+
+                # Nếu có người được chọn thì thêm từng người
+                if team_ids:
+                    for tid in team_ids:
+                        db.session.add(IssueResolve(issue_id=issue_id, team_id=int(tid)))
                 else:
-                    resolve.team_id = team_id
+                    # nếu chưa chọn ai -> tạo lại bản ghi null
+                    db.session.add(IssueResolve(issue_id=issue_id, team_id=None))
 
             # ==== Quản lý file upload ====
             issue_folder = IssueService._issue_folder(issue.id)

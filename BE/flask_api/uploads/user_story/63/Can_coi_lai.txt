@@ -1,0 +1,17 @@
+confirm password - rồi
+check logic hiển thị password khi login - rồi
+verify mail trong vòng 5 phút - rồi
+1 trình duyệt đăng nhập dc nhìu tài khoản - rồi
+lời mời ko hợp lệ thì refresh lại trang liền
+form đăng ký cho điền đầy đủ họ tên luôn - rồi
+tự remove mình ra khỏi project - rồi
+project owner tự remove mình dc là mất lun project, vậy thành viên trong team của project đó thì sao ? - rồi
+còn 1 cái logic chỗ thg team ní xem lại thử nha tui chưa xử lý. Là thằng A (FE) đã accept lời mời vào project, sau đó nó tự động xóa nó khỏi project được lun. 
+Ngoài ra khi nó xóa thì chỉ mất dòng dữ liệu trong bảng team thôi, bảng team_invite vẫn lưu cái email của thg đó đã từng join vào project và nó ko tự động xóa, 
+dẫn đến khi mời lại cái email thằng vừa xóa ko dc - rồi
+==================================================
+SKILLSET lúc regist nên hiển thị cả 1 danh sách để chọn chứ ko cho nhập (trang profile cũng vậy) - rồi
+viết js ko trùng password - rồi
+reset lại trang sau khi tạo project mới liền - rồi
+NEW -> Ready -> In progress -> Test -> Done
+thêm chỗ upload avatar - rồi

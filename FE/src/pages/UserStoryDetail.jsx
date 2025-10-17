@@ -26,12 +26,20 @@ export default function UserStoryDetail() {
     return parsed.isValid() ? parsed.format("DD/MM/YYYY") : "—";
   };
 
+  // 🔍 Tìm tên trạng thái hiện tại
   const statusName = useMemo(() => {
     if (!story?.status_id) return "";
     const found = statuses.find((s) => s.id === story.status_id);
     return found?.name ?? "";
   }, [story, statuses]);
 
+  // ✅ Kiểm tra nếu status là Done → khóa nút Edit
+  const isDone = useMemo(() => {
+    const name = statusName?.toLowerCase?.() || "";
+    return name === "done" || name === "completed";
+  }, [statusName]);
+
+  // 📎 Xử lý file đính kèm
   const attachments = useMemo(() => {
     if (!story) return [];
     const raw = story.evidence_file;
@@ -61,6 +69,7 @@ export default function UserStoryDetail() {
     }));
   }, [story]);
 
+  // 📦 Load toàn bộ dữ liệu
   useEffect(() => {
     let mounted = true;
 
@@ -119,10 +128,13 @@ export default function UserStoryDetail() {
     return () => { mounted = false; };
   }, [userStoryId]);
 
+  // 🧩 Tạo task mới
   const handleCreateTask = async (formData) => {
-    const { data } = await TaskService.create(formData);
-    setTasks((prev) => [...prev, data]);
-    setShowForm(false);
+    const result = await TaskService.create(formData);
+    if (result.data) {
+      setTasks((prev) => [...prev, result.data]);
+    }
+    return result;
   };
 
   return (
@@ -134,8 +146,9 @@ export default function UserStoryDetail() {
         >
           ← Back
         </button>
+
         {loading && (
-          <div className="text-gray-500">Đang tải dữ liệu...</div>
+          <div className="text-gray-500">Loading data...</div>
         )}
 
         {story && (
@@ -144,7 +157,7 @@ export default function UserStoryDetail() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{story.name}</h1>
                 <p className="text-gray-700 mt-1 whitespace-pre-line">
-                  {story.description?.trim() || "(Chưa có mô tả)"}
+                  {story.description?.trim() || "(No description yet)"}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -153,10 +166,17 @@ export default function UserStoryDetail() {
                     {statusName}
                   </span>
                 )}
+
+                {/* ✅ Disable nút Edit nếu user story đã Done */}
                 <button
                   type="button"
                   onClick={() => navigate(`/user-stories/${story.id}/edit`)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition"
+                  disabled={isDone}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                    isDone
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100"
+                      : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  }`}
                 >
                   ✏️ Edit Story
                 </button>
@@ -174,10 +194,10 @@ export default function UserStoryDetail() {
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-gray-500">Sprint</p>
-                <p className="mt-1 text-base font-semibold text-gray-900">{story.sprint_id ? `#${story.sprint_id}` : "Chưa gán"}</p>
+                <p className="mt-1 text-base font-semibold text-gray-900">{story.sprint_id ? `#${story.sprint_id}` : "Not assigned yet"}</p>
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Số lượng tasks</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500">Number of tasks</p>
                 <p className="mt-1 text-base font-semibold text-gray-900">{tasks.length}</p>
               </div>
             </div>
@@ -195,7 +215,7 @@ export default function UserStoryDetail() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm italic text-gray-400">Chưa có hashtag</span>
+                  <span className="text-sm italic text-gray-400">No hashtag yet</span>
                 )}
               </div>
             </div>
@@ -215,12 +235,12 @@ export default function UserStoryDetail() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400">Chưa cấu hình điểm phức tạp.</p>
+                <p className="text-sm text-gray-400">Complex points have not been configured.</p>
               )}
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-2">Tài liệu đính kèm</h3>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-2">Attached documents</h3>
               {attachments.length ? (
                 <ul className="space-y-2">
                   {attachments.map((file) => (
@@ -235,13 +255,13 @@ export default function UserStoryDetail() {
                         rel="noopener noreferrer"
                         className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
                       >
-                        Xem
+                        Detail
                       </a>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-gray-400">Không có tệp đính kèm.</p>
+                <p className="text-sm text-gray-400">There are no attachments.</p>
               )}
             </div>
           </div>
@@ -256,14 +276,11 @@ export default function UserStoryDetail() {
               setTasks((prev) =>
                 prev.map((task) =>
                   task.id === taskId
-                    ? {
-                        ...task,
-                        status_id: Number(newStatusId),
-                      }
+                    ? { ...task, status_id: Number(newStatusId) }
                     : task
                 )
               );
-              toast.success("Cập nhật trạng thái thành công!");
+              toast.success("Status update successful!");
             } catch (err) {
               const status = err?.response?.status;
               if (status !== 403) {
@@ -272,7 +289,9 @@ export default function UserStoryDetail() {
             }
           }}
           onTaskClick={(id) => navigate(`/tasks/${id}`)}
+          isUserStoryDone={isDone}
         />
+
         {showForm && (
           <TaskFormModal
             onClose={() => setShowForm(false)}
