@@ -10,7 +10,11 @@ class ProjectRole(db.Model):
 
     # relationships
     role = db.relationship("Role", back_populates="project_roles")
-    permissions = db.relationship("Permission", back_populates="projrole")
+    permissions = db.relationship(
+        "Permission",
+        back_populates="projrole",
+        cascade="all, delete-orphan"
+    )
     teams = db.relationship("Team", back_populates="projrole", cascade="all, delete-orphan")
     project = db.relationship("Project", back_populates="project_roles")
 

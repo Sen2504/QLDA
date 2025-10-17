@@ -1,8 +1,9 @@
 # file: routes/project_role_routes.py
 from flask import Blueprint, request, jsonify
-from flask_login import login_required
+from flask_login import login_required, current_user
 from flask_api.services.project_role_service import ProjectRoleService
 from flask_api.schemas.project_role_schemas import ProjectRoleSchema
+from flask_api.models import ProjectRole as PRModel, Role as RoleModel, Team as TeamModel
 
 project_role_bp = Blueprint("project_role_bp", __name__, url_prefix="/api/project_roles")
 
@@ -53,9 +54,30 @@ def create_project_role():
 @project_role_bp.route("/<int:projrole_id>", methods=["DELETE"])
 @login_required
 def delete_project_role(projrole_id):
+    # Resolve project_id for the role
+    pr = ProjectRoleService.get_by_id(projrole_id)
+    if not pr:
+        return jsonify({"error": "Không tìm thấy ProjectRole."}), 404
+
+    # Only Project Owner can delete project roles
+    owner = (
+        PRModel.query.join(RoleModel, PRModel.role_id == RoleModel.id)
+        .join(TeamModel, TeamModel.projrole_id == PRModel.id)
+        .filter(
+            PRModel.project_id == pr.project_id,
+            RoleModel.name == "Project Owner",
+            TeamModel.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not owner:
+        return jsonify({"error": "Bạn không có quyền xóa vai trò trong project."}), 403
+
     success, error = ProjectRoleService.delete(projrole_id)
     if not success:
-        return jsonify({"error": error}), 404
+        # Map business error to 400 by default
+        status = 404 if error == "Không tìm thấy ProjectRole." else 400
+        return jsonify({"error": error}), status
     return jsonify({"message": "Đã xóa ProjectRole."}), 200
 
 # ----------------- CREATE CUSTOM ROLE -----------------
