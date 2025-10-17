@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import HashtagService from "../services/hashtagService";
 import IssueService from "../services/issueService";
 import IssueTypeService from "../services/issueTypeService";
 import ComponentUpload from "../components/ComponentUpload";
-import PopupMessage from "../components/Popup_message";
 
 function useDebounce(value, delay = 250) {
   const [v, setV] = useState(value);
@@ -20,7 +20,6 @@ function useDebounce(value, delay = 250) {
 export default function IssueCreate() {
   const { currentProject } = useProject();
   const navigate = useNavigate();
-  const [popup, setPopup] = useState({ message: "", type: "success" });
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -103,13 +102,13 @@ export default function IssueCreate() {
 
     try {
       await IssueService.create(formData);
-      setPopup({ message: "Create issue success", type: "success" });
+      toast.success("Create issue success");
       setTimeout(() => {
         navigate("/issues/list");
       }, 1500);
     } catch (err) {
+      // Lỗi đã được xử lý bởi api.js interceptor
       console.error("Error creating issue:", err);
-      setPopup({ message: "Unable to create issue. Please try again.", type: "error" });
     }
   };
 
@@ -222,13 +221,6 @@ export default function IssueCreate() {
             </div>
           </div>
         </form>
-        {popup.message && (
-          <PopupMessage
-            message={popup.message}
-            type={popup.type}
-            onClose={() => setPopup({ message: "", type: "success" })}
-          />
-        )}
     </MainLayout>
   );
 }
