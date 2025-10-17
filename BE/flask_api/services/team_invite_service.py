@@ -38,9 +38,15 @@ class TeamInviteService:
             send_email("Please register to participate in the project", [email], html)
             return None, "Email is not registered. Email has been sent inviting you to register an account."
 
-        # 3) Nếu user đã ở team với đúng projrole -> không mời
-        already_in_team = Team.query.filter_by(user_id=user.id, projrole_id=proj_role.id).first()
-        if already_in_team:
+        # 3) Nếu user đã ở trong project (bất kỳ role nào) -> không mời
+        # Kiểm tra xem user có Team record nào với projrole thuộc cùng project không
+        already_in_project = (
+            db.session.query(Team)
+            .join(ProjectRole, Team.projrole_id == ProjectRole.id)
+            .filter(Team.user_id == user.id, ProjectRole.project_id == project_id)
+            .first()
+        )
+        if already_in_project:
             return None, "User is already a member of the project."
 
         # 4) Kiểm tra các invite trước đó (theo project_id + email)
