@@ -282,10 +282,8 @@ export default function UserStoryDetail() {
               );
               toast.success("Status update successful!");
             } catch (err) {
-              const status = err?.response?.status;
-              if (status !== 403) {
-                toast.error(err.response?.data?.error || "Lỗi khi cập nhật trạng thái");
-              }
+              // Lỗi đã được xử lý bởi api.js interceptor
+              console.error("Failed to update status:", err);
             }
           }}
           onTaskClick={(id) => navigate(`/tasks/${id}`)}
