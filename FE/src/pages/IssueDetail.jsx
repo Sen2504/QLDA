@@ -73,7 +73,10 @@ export default function IssueDetail() {
       setCommentInput("");
       toast.success("Comment added");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Cannot add comments");
+      const status = err?.response?.status;
+      if (status !== 403) {
+        toast.error(err.response?.data?.error || "Cannot add comments");
+      }
     } finally {
       setCommentSubmitting(false);
     }
@@ -87,7 +90,10 @@ export default function IssueDetail() {
       setComments((prev) => prev.filter((c) => c.id !== commentId));
       toast.success("Comment deleted");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Comments cannot be deleted");
+      const status = err?.response?.status;
+      if (status !== 403) {
+        toast.error(err.response?.data?.error || "Comments cannot be deleted");
+      }
     } finally {
       setCommentSubmitting(false);
     }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import TaskStatusService from "../services/taskStatusService";
-import PopupMessage from "../components/Popup_message"; // thêm popup
 
 export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStoryId }) {
   const [form, setForm] = useState({
@@ -14,14 +14,6 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
   const [statuses, setStatuses] = useState([]);
   const [loadingStatuses, setLoadingStatuses] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
-  // popup state
-  const [popup, setPopup] = useState({ visible: false, message: "", type: "success" });
-
-  const showPopup = (message, type = "success") => {
-    setPopup({ visible: true, message, type });
-    setTimeout(() => setPopup((p) => ({ ...p, visible: false })), 2500);
-  };
 
   // ===== Load status =====
   useEffect(() => {
@@ -62,7 +54,7 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
   // ===== Submit =====
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.description.trim() || !form.status_id || !form.team_ids.length) {
-      showPopup("Please fill in all required fields.", "error");
+      toast.error("Please fill in all required fields.");
       return;
     }
 
@@ -79,18 +71,17 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
 
       const result = await onSubmit(payload);
 
+      // Nếu có lỗi, dừng lại (lỗi đã được hiển thị bởi api.js interceptor)
       if (result?.error) {
-        showPopup(result.error, "error");
-      } else {
-        showPopup(" Task created successfully!", "success");
-        setTimeout(() => onClose(), 1800);
+        return;
       }
+
+      // Chỉ hiển thị success khi thực sự thành công
+      toast.success("Task created successfully!");
+      setTimeout(() => onClose(), 1800);
     } catch (err) {
-      const msg =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        " Failed to create task.";
-      showPopup(msg, "error");
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Failed to create task:", err);
     } finally {
       setSubmitting(false);
     }
@@ -98,14 +89,6 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
 
   return (
     <>
-      {popup.visible && (
-        <PopupMessage
-          message={popup.message}
-          type={popup.type}
-          onClose={() => setPopup({ ...popup, visible: false })}
-        />
-      )}
-
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
         <div className="bg-white rounded-2xl shadow-xl w-[520px] max-w-[92vw] p-6">
           <div className="flex justify-between items-center mb-4">

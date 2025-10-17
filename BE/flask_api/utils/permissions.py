@@ -169,7 +169,7 @@ def require_permission(resource_name, action_name, project_id_getter=None, fallb
                             return f(*args, **kwargs)
                     except Exception:
                         pass
-                return jsonify({"error": "Bạn không có quyền thực hiện hành động này."}), 403
+                return jsonify({"error": "Your role is not allowed for this action."}), 403
             return f(*args, **kwargs)
 
         return wrapped

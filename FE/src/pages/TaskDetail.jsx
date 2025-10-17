@@ -121,13 +121,21 @@ export default function TaskDetail() {
     const payload = {
       name: form.name.trim(),
       description: form.description.trim(),
-      due_date: form.due_date || null,
     };
-    if (form.status_id) {
+    
+    // Luôn gửi due_date (null nếu rỗng)
+    payload.due_date = form.due_date && form.due_date.trim() ? form.due_date.trim() : null;
+    
+    if (form.status_id && form.status_id !== "") {
       payload.status_id = Number(form.status_id);
     }
 
-    await TaskService.update(taskId, payload);
+    const updateResult = await TaskService.update(taskId, payload);
+    
+    // Kiểm tra nếu có lỗi thì dừng lại (lỗi đã được hiển thị bởi api.js interceptor)
+    if (updateResult?.error) {
+      return;
+    }
 
     // 🔁 Sau khi update, load lại dữ liệu từ server
     const refreshed = await TaskService.getById(taskId);
@@ -139,7 +147,8 @@ export default function TaskDetail() {
     setEditMode(false);
     toast.success("Task updated successfully");
   } catch (error) {
-    toast.error(error.response?.data?.error || "Unable to update task");
+    // Lỗi đã được xử lý bởi api.js interceptor
+    console.error("Failed to update task:", error);
   } finally {
     setSaving(false);
   }
@@ -162,10 +171,8 @@ export default function TaskDetail() {
       setCommentInput("");
       toast.success("Comment added");
     } catch (error) {
-      const status = error?.response?.status;
-      if (status !== 403) {
-        toast.error(error.response?.data?.error || "Không thể thêm bình luận");
-      }
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Failed to add comment:", error);
     } finally {
       setCommentSubmitting(false);
     }
@@ -180,10 +187,8 @@ export default function TaskDetail() {
       setComments((prev) => prev.filter((comment) => comment.id !== commentId));
       toast.success("Comment deleted");
     } catch (error) {
-      const status = error?.response?.status;
-      if (status !== 403) {
-        toast.error(error.response?.data?.error || "Không thể xóa bình luận");
-      }
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Failed to delete comment:", error);
     } finally {
       setCommentSubmitting(false);
     }
@@ -288,7 +293,7 @@ export default function TaskDetail() {
                       className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
                       type="button"
                     >
-                      {saving ? "Đang lưu..." : "Lưu thay đổi"}
+                      {saving ? "Saving..." : "Save changes"}
                     </button>
                     <button
                       onClick={() => {

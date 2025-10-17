@@ -78,7 +78,10 @@ export default function Tasks() {
       );
       toast.success("Update task status");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Can't update task status");
+      const status = err?.response?.status;
+      if (status !== 403) {
+        toast.error(err.response?.data?.error || "Can't update task status");
+      }
     }
   };
 
