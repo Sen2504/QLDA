@@ -48,6 +48,10 @@ export default function UserStory() {
     () => Object.values(complexities).reduce((a, b) => a + (Number(b) || 0), 0),
     [complexities]
   );
+  const isDone = useMemo(() => {
+    const cur = statuses.find((s) => s.id === statusId);
+    return (cur?.name || "").trim().toLowerCase() === "done";
+  }, [statuses, statusId]);
 
   // ✅ popup state
   const [popup, setPopup] = useState({ message: "", type: "", visible: false });
@@ -275,7 +279,11 @@ export default function UserStory() {
                 onChange={(e) => setStatusId(Number(e.target.value))}
               >
                 {statuses.map((s) => (
-                  <option key={s.id} value={s.id}>
+                  <option
+                    key={s.id}
+                    value={s.id}
+                    disabled={!isDone && ((s.name || "").trim().toLowerCase() === "done")}
+                  >
                     {s.name}
                   </option>
                 ))}

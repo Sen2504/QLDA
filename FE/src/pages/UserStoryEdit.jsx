@@ -49,6 +49,12 @@ export default function UserStoryEdit() {
     [complexities]
   );
 
+  // Lock selecting Done manually unless already Done
+  const isDone = useMemo(() => {
+    const cur = statuses.find((s) => s.id === statusId);
+    return (cur?.name || "").trim().toLowerCase() === "done";
+  }, [statuses, statusId]);
+
   // ----- Load dữ liệu ban đầu -----
   useEffect(() => {
     if (!id) return;
@@ -296,7 +302,11 @@ export default function UserStoryEdit() {
                 onChange={(e) => setStatusId(Number(e.target.value))}
               >
                 {statuses.map((s) => (
-                  <option key={s.id} value={s.id}>
+                  <option
+                    key={s.id}
+                    value={s.id}
+                    disabled={!isDone && ((s.name || "").trim().toLowerCase() === "done")}
+                  >
                     {s.name}
                   </option>
                 ))}

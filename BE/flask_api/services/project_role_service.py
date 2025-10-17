@@ -41,19 +41,19 @@ class ProjectRoleService:
     def delete(projrole_id):
         proj_role = ProjectRole.query.get(projrole_id)
         if not proj_role:
-            return False, "Không tìm thấy ProjectRole."
+            return False, "ProjectRole not found."
 
         # Only custom roles (no global role link) can be deleted via this flow
         if proj_role.role_id is not None:
-            return False, "Chỉ được xóa vai trò Custom."
+            return False, "Only custom roles can be deleted."
 
         # Safety: never delete Project Owner by name (defense-in-depth)
         if (getattr(proj_role.role, "name", None) == "Project Owner") or (proj_role.name == "Project Owner"):
-            return False, "Không thể xóa vai trò Project Owner."
+            return False, "Project Owner role can not be deleted."
 
         # Prevent deletion if any team members are assigned to this role
         if proj_role.teams and len(proj_role.teams) > 0:
-            return False, f"Không thể xóa: còn {len(proj_role.teams)} thành viên đang dùng vai trò này."
+            return False, f"Cannot delete: {len(proj_role.teams)} members are still using this role."
 
         try:
             # Explicitly delete permissions for this role to avoid setting FK to NULL
@@ -71,7 +71,7 @@ class ProjectRoleService:
             return True, None
         except Exception as e:
             db.session.rollback()
-            return False, "Lỗi khi xóa vai trò."
+            return False, "Error when deleting."
     
     @staticmethod
     def create_custom(project_id, name_role):

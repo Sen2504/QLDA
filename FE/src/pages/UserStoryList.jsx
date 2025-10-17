@@ -32,8 +32,13 @@ export default function UserStoryList() {
   // ---- CẬP NHẬT TRẠNG THÁI ----
   const handleStatusChange = async (storyId, newStatusId) => {
     try {
-      await UserStoryService.update(storyId, { status_id: newStatusId });
+      const fd = new FormData();
+      // Backend expects "Status_id" (multipart/form-data)
+      fd.append("Status_id", String(newStatusId));
+      await UserStoryService.update(storyId, fd);
+      // Update both selection and stories list for consistency
       setSelectedStatus((prev) => ({ ...prev, [storyId]: newStatusId }));
+      setStories((prev) => prev.map((s) => (s.id === storyId ? { ...s, status_id: newStatusId } : s)));
     } catch (err) {
       console.error("Lỗi khi cập nhật trạng thái:", err);
     }
@@ -55,40 +60,43 @@ export default function UserStoryList() {
       <div className="mt-6 bg-white rounded-2xl shadow p-5">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">
-            Danh sách User Story
+            User Story List
           </h2>
           <button
             onClick={() => navigate("/user-stories/new")}
             className="px-4 py-2 rounded-2xl bg-[var(--color-accent,#16a34a)] text-white hover:opacity-90"
           >
-            + Tạo User Story
+            + Create User Story
           </button>
         </div>
 
         {loading ? (
-          <p className="text-gray-500 text-sm">Đang tải dữ liệu...</p>
+          <p className="text-gray-500 text-sm">Loading...</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-700">
               <thead className="text-xs uppercase bg-gray-100 text-gray-600">
                 <tr>
-                  <th className="px-4 py-2">Tên User Story</th>
+                  <th className="px-4 py-2">User Story Name</th>
                   <th className="px-4 py-2">Hashtag</th>
-                  <th className="px-4 py-2">Ngày hết hạn</th>
-                  <th className="px-4 py-2">Tổng điểm</th>
-                  <th className="px-4 py-2">Trạng thái</th>
+                  <th className="px-4 py-2">Due Date</th>
+                  <th className="px-4 py-2">Total Points</th>
+                  <th className="px-4 py-2">Status</th>
                   <th className="px-4 py-2 text-center"></th>
                 </tr>
               </thead>
               <tbody>
-                {stories.map((s) => (
+                {stories.map((s) => {
+                  const currentStatus = statuses.find((st) => st.id === (selectedStatus[s.id] ?? s.status_id));
+                  const isDone = (currentStatus?.name || "").trim().toLowerCase() === "done";
+                  return (
                   <tr key={s.id} className="border-t hover:bg-gray-50">
                     {/* Tên user story */}
                     <td
                       className="px-4 py-2 cursor-pointer text-emerald-700 font-medium hover:underline"
                       onClick={() => navigate(`/user-stories/${s.id}`)}
                     >
-                      {s.name || "(Không có tên)"}
+                      {s.name || "(No name)"}
                     </td>
 
                     {/* Hashtag */}
@@ -106,7 +114,7 @@ export default function UserStoryList() {
                         </div>
                       ) : (
                         <span className="text-gray-400 text-xs italic">
-                          Không có
+                          No hashtags
                         </span>
                       )}
                     </td>
@@ -130,13 +138,17 @@ export default function UserStoryList() {
                         onChange={(e) =>
                           handleStatusChange(s.id, Number(e.target.value))
                         }
-                        className="border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-[var(--color-accent,#16a34a)]"
+                        disabled={isDone}
+                        className={`border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-[var(--color-accent,#16a34a)] ${isDone ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
                       >
-                        {statuses.map((st) => (
-                          <option key={st.id} value={st.id}>
-                            {st.name}
-                          </option>
-                        ))}
+                        {statuses.map((st) => {
+                          const isDoneOption = (st.name || "").trim().toLowerCase() === "done";
+                          return (
+                            <option key={st.id} value={st.id} disabled={!isDone && isDoneOption}>
+                              {st.name}
+                            </option>
+                          );
+                        })}
                       </select>
                     </td>
 
@@ -144,19 +156,25 @@ export default function UserStoryList() {
                     <td className="px-4 py-2 text-center">
                       <button
                         onClick={() => navigate(`/user-stories/${s.id}/edit`)}
-                        className="px-3 py-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
+                        disabled={isDone}
+                        className={`px-3 py-1 text-xs rounded-lg transition ${
+                          isDone
+                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                            : "bg-emerald-500 hover:bg-emerald-600 text-white"
+                        }`}
+                        title={isDone ? "This User Story is Done." : "Edit User Story"}
                       >
-                        Chỉnh sửa
+                        Edit
                       </button>
                     </td>
                   </tr>
-                ))}
+                );})}
               </tbody>
             </table>
 
             {stories.length === 0 && (
               <p className="text-gray-500 text-sm mt-2">
-                Chưa có User Story nào.
+                No user stories found.
               </p>
             )}
           </div>

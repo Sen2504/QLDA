@@ -11,6 +11,7 @@ from flask_api.models.complexity_point_models import ComplexityPoint
 from flask_api.models.hashtag_models import Hashtag
 from flask_api.models.user_story_hashtag_models import UserStoryHashtag
 from flask_api.models.workflow_status_models import WorkflowStatus
+from flask_api.models.task_status_models import TaskStatus
 from flask_api.services.hashtag_service import HashtagService
 from flask import send_from_directory
 
@@ -317,7 +318,24 @@ class UserStoryService:
 
             # ==== Update status ====
             if "Status_id" in data:
-                story.status_id = data["Status_id"]
+                new_status_id = data["Status_id"]
+                # Prevent manual set to Done unless all tasks are Done
+                try:
+                    done_flow = WorkflowStatus.query.filter(db.func.lower(WorkflowStatus.name) == "done").first()
+                except Exception:
+                    done_flow = None
+                if done_flow and int(new_status_id) == int(done_flow.id):
+                    # Check all tasks under this story are Done
+                    tasks = Task.query.filter_by(user_story_id=story.id).all()
+                    if tasks:
+                        done_task_status = TaskStatus.query.filter(db.func.lower(TaskStatus.name_status) == "done").first()
+                        all_done = done_task_status and all(
+                            (t.status_id == done_task_status.id) or (getattr(t, "status", None) and str(t.status).strip().lower() == "done")
+                            for t in tasks
+                        )
+                        if not all_done:
+                            return None, "Cannot set User Story to Done manually. All tasks must be Done."
+                story.status_id = new_status_id
 
             # ==== Update sprint ====
             if "Sprint_id" in data:
