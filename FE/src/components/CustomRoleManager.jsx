@@ -26,6 +26,17 @@ export default function CustomRoleManager({ projectId }) {
     }
   };
 
+  const handleDeleteRole = async (role) => {
+    const confirmMsg = `Xóa vai trò "${role.name}"? Hành động này không thể hoàn tác.`;
+    if (!window.confirm(confirmMsg)) return;
+    try {
+      await TeamService.deleteProjectRole(role.id);
+      setRoles((prev) => prev.filter((r) => r.id !== role.id));
+    } catch (err) {
+      alert(err.response?.data?.error || "Lỗi khi xóa vai trò");
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <h3 className="text-lg font-semibold mb-4">Vai trò trong Project</h3>
@@ -59,9 +70,20 @@ export default function CustomRoleManager({ projectId }) {
               className="flex justify-between items-center p-3 border rounded-md"
             >
               <span>{r.name}</span>
-              <span className="text-sm text-gray-500">
-                {isCustom ? "Custom" : ""}
-              </span>
+              <div className="flex items-center gap-3">
+                {isCustom && (
+                  <button
+                    onClick={() => handleDeleteRole(r)}
+                    className="text-red-600 hover:text-red-700 text-sm"
+                    title="Xóa vai trò"
+                  >
+                    Xóa
+                  </button>
+                )}
+                <span className="text-sm text-gray-500">
+                  {isCustom ? "Custom" : ""}
+                </span>
+              </div>
             </li>
           );
         })}

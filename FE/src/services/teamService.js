@@ -48,6 +48,9 @@ const TeamService = {
   createCustomRole(projectId, name_role) {
     return api.post("/project_roles/custom", {project_id: projectId,name_role,});
   },
+  deleteProjectRole(projroleId) {
+    return api.delete(`/project_roles/${projroleId}`);
+  },
   
 
 };
