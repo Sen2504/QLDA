@@ -41,7 +41,7 @@ export default function App() {
         <Route path="/tasks/:taskId" element={<TaskDetail />} />
         <Route path="/projects/:projectId/team" element={<Team />} />
         <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />
-  <Route path="/projects/:projectId/permissions" element={<ProjectPermissions />} />
+        <Route path="/projects/:projectId/permissions" element={<ProjectPermissions />} />
         <Route path="/my-invites" element={<MyInvites />} />
         <Route path="/user-stories" element={<UserStoryList />} />
         <Route path="/user-stories/new" element={<UserStory />} />

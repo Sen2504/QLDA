@@ -61,7 +61,7 @@ export default function PermissionsPanel() {
   const save = async () => {
     try {
       await PermissionService.updateRole(currentProject.id, selectedRole, localMatrix);
-      setMessage({ text: "Cập nhật quyền thành công.", type: "success" });
+      setMessage({ text: "Update successful", type: "success" });
       setMatrixData((prev) => {
         if (!prev) return prev;
         const next = { ...prev, matrix: { ...prev.matrix } };
