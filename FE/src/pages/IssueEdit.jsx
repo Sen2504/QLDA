@@ -197,15 +197,28 @@ export default function IssueEdit() {
     formData.append("deleted_files", JSON.stringify(deleted));
 
     try {
-      await IssueService.update(id, formData);
-      setPopup({ show: true, message: "Updated successfully!", type: "success" });
-      setTimeout(() => {
-        setPopup({ ...popup, show: false });
-        navigate("/issues/list");
-      }, 1500);
-    } catch {
-      setPopup({ show: true, message: "An error occurred while updating!", type: "error" });
-    }
+  await IssueService.update(id, formData);
+  setPopup({ show: true, message: "Updated successfully!", type: "success" });
+  setTimeout(() => {
+    setPopup({ ...popup, show: false });
+    navigate("/issues/list");
+  }, 1500);
+} catch (err) {
+  console.error("Update issue error:", err);
+
+  // lấy message từ BE nếu có
+  let msg = "An error occurred while updating!";
+  if (err.response?.data?.message) {
+    msg = err.response.data.message;
+  } else if (err.response?.data?.error) {
+    msg = err.response.data.error;
+  } else if (typeof err === "string") {
+    msg = err;
+  }
+
+  setPopup({ show: true, message: msg, type: "error" });
+}
+
   };
 
   // ---- UI ----

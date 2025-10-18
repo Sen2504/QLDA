@@ -54,7 +54,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [sprints, setSprints] = useState([]);
   const [userStories, setUserStories] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [myTasks, setMyTasks] = useState([]);
+  const [progress, setProgress] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -77,27 +79,63 @@ export default function Home() {
     return m;
   }, [userStories, sprints]);
 
+  // -------------------- LOAD DATA --------------------
   useEffect(() => {
     if (!projectId) return;
     setLoading(true);
     Promise.all([
       SprintService.getByProject(projectId),
       UserStoryService.getByProject(projectId),
+      TaskService.getByProject?.(projectId) || TaskService.getAll?.(),
       TaskService.getMyTasks(),
     ])
-      .then(([sRes, usRes, tRes]) => {
+      .then(([sRes, usRes, tRes, myTaskRes]) => {
+        const allUS = usRes.data || [];
+        const allTasks = tRes?.data || [];
+
         setSprints(sRes.data || []);
-        setUserStories(usRes.data || []);
-        // Lọc task thuộc project hiện tại
-        const tasksInProject = (tRes.data || []).filter(
+        setUserStories(allUS);
+        setTasks(allTasks);
+
+        const tasksInProject = (myTaskRes.data || []).filter(
           (t) => t.project_id === projectId
         );
         setMyTasks(tasksInProject);
+
+        // ✅ Tính tiến độ project theo công thức chuẩn
+        const totalPoints = allUS.reduce(
+          (sum, u) => sum + (Number(u.total_points) || 0),
+          0
+        );
+
+        let completedPoints = 0;
+
+        allUS.forEach((us) => {
+          const tasksOfUS = allTasks.filter((t) => t.user_story_id === us.id);
+          const total = tasksOfUS.length;
+          if (total === 0) return;
+          const done = tasksOfUS.filter(
+            (t) =>
+              (t.status || "").toLowerCase() === "done" ||
+              (t.status_label || "").toLowerCase() === "done"
+          ).length;
+
+          const usProgress = done / total;
+          completedPoints += (Number(us.total_points) || 0) * usProgress;
+        });
+
+        const percent =
+          totalPoints > 0 ? Math.round((completedPoints / totalPoints) * 100) : 0;
+        setProgress(percent);
       })
-      .catch(() => toast.error("Không tải được dữ liệu Sprint / User Stories"))
+      .catch((err) => {
+        console.error(err);
+        toast.error("Không tải được dữ liệu Project");
+      })
       .finally(() => setLoading(false));
   }, [projectId]);
 
+  // -------------------- HANDLERS --------------------
   const handleOpenUserStory = (usId) => {
     if (!usId) return;
     navigate(`/user-stories/${usId}`);
@@ -120,7 +158,7 @@ export default function Home() {
         deadline: dayjs().add(14, "day").format("YYYY-MM-DD"),
       });
       toast.success("Tạo sprint thành công");
-    } catch (err) {
+    } catch {
       toast.error("Tạo sprint thất bại");
     }
   };
@@ -134,18 +172,12 @@ export default function Home() {
     if (src === dst && source.index === destination.index) return;
 
     const usId = Number(draggableId.replace("us-", ""));
-
-    const previousStories = userStories.map((u) => ({ ...u }));
+    const prev = userStories.map((u) => ({ ...u }));
 
     const applyLocalChange = (newSprintId) => {
       setUserStories((prev) =>
         prev.map((u) =>
-          u.id === usId
-            ? {
-                ...u,
-                sprint_id: newSprintId,
-              }
-            : u
+          u.id === usId ? { ...u, sprint_id: newSprintId } : u
         )
       );
     };
@@ -159,12 +191,13 @@ export default function Home() {
         applyLocalChange(sprintId);
         await SprintService.addUserStory(sprintId, usId);
       }
-    } catch (e) {
-      setUserStories(previousStories);
+    } catch {
+      setUserStories(prev);
       toast.error("Update sprint for User Story failed");
     }
   };
 
+  // -------------------- UI --------------------
   if (!currentProject) {
     return (
       <MainLayout>
@@ -176,24 +209,42 @@ export default function Home() {
   return (
     <MainLayout>
       <div className="p-6">
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-semibold">
-            Scrum — {currentProject.name}
-          </h1>
-          <div className="flex items-center gap-3">
-            
-            <button
-              className="px-3 py-2 rounded-xl bg-[var(--color-accent)] text-white hover:opacity-90"
-              onClick={() => setShowAddModal(true)}
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold">
+              Scrum — {currentProject.name}
+            </h1>
+
+            {/* ✅ Thanh tiến độ Project */}
+            <div
+              className="flex items-center gap-2 bg-[#3b3b4f] px-3 py-1.5 rounded-lg text-white text-sm shadow-inner"
+              title={`Project progress: ${progress}%`}
             >
-              New Sprint
-            </button>
+              <div className="relative w-32 h-3 bg-gray-600 rounded-full overflow-hidden">
+                <div
+                  className="absolute left-0 top-0 h-full bg-teal-400 transition-all duration-700 ease-in-out"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <span className="text-teal-300 font-semibold w-10 text-right">
+                {progress}%
+              </span>
+            </div>
           </div>
+
+          <button
+            className="px-3 py-2 rounded-xl bg-[var(--color-accent)] text-white hover:opacity-90"
+            onClick={() => setShowAddModal(true)}
+          >
+            New Sprint
+          </button>
         </div>
 
+        {/* Content */}
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-12 gap-6">
-            {/* My Tasks Panel */}
+            {/* My Tasks */}
             <div className="col-span-3">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 p-4 sticky top-6">
                 <h3 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
@@ -215,7 +266,6 @@ export default function Home() {
                     {myTasks.length}
                   </span>
                 </h3>
-                
                 <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
                   {myTasks.length === 0 ? (
                     <p className="text-sm text-blue-600 text-center py-4">
@@ -226,27 +276,39 @@ export default function Home() {
                       const dueInfo = task.due_date
                         ? evaluateDueDate(task.due_date)
                         : null;
+                      const dueLabel = task.due_date
+                        ? dayjs(task.due_date).format("DD/MM/YYYY")
+                        : "No due date";
+
                       return (
                         <Link
                           key={task.id}
                           to={`/tasks/${task.id}`}
                           className="block bg-white rounded-lg p-3 border border-blue-200 hover:shadow-md transition group"
                         >
+                          {/* Hàng 1: Tên task + Trạng thái */}
                           <div className="flex items-start justify-between gap-2 mb-1">
                             <p className="font-semibold text-sm text-gray-800 group-hover:text-blue-600 line-clamp-2">
                               {task.name || task.title}
                             </p>
-                            {dueInfo && (
+                            <span className="text-xs font-medium text-gray-600 whitespace-nowrap">
+                              {task.status || "Pending"}
+                            </span>
+                          </div>
+
+                          {/* Hàng 2: Ưu tiên (Overdue / Upcoming) + Ngày hết hạn */}
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            {dueInfo ? (
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${dueInfo.badgeClass}`}
+                                className={`px-2 py-0.5 rounded-full ${dueInfo.badgeClass}`}
                               >
                                 {dueInfo.label}
                               </span>
+                            ) : (
+                              <span className="text-gray-400">No deadline</span>
                             )}
+                            <span className="ml-2">{dueLabel}</span>
                           </div>
-                          <p className="text-xs text-gray-500 line-clamp-1">
-                            {task.status || "Pending"}
-                          </p>
                         </Link>
                       );
                     })
@@ -257,17 +319,13 @@ export default function Home() {
 
             {/* Backlog */}
             <div className="col-span-5">
-                      <Link
+              <Link
                 to="/user-stories/new"
-                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-semibold
-                          bg-gradient-to-r from-yellow-400 to-yellow-500 text-white shadow-md
-                          hover:from-yellow-500 hover:to-yellow-600 hover:shadow-lg
-                          transition-all duration-200 active:scale-95"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 to-yellow-500 text-white shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all duration-200 active:scale-95"
               >
                 + User Story
               </Link>
-
-              <div className="bg-gray-50 rounded-2xl border p-4">
+              <div className="bg-gray-50 rounded-2xl border p-4 mt-2">
                 <div className="flex items-center justify-between mb-3">
                   <div className="font-semibold">Backlog</div>
                   <div className="text-sm opacity-70">
@@ -275,7 +333,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <Droppable droppableId="backlog" isDropDisabled={false}>
+                <Droppable droppableId="backlog">
                   {(provided) => (
                     <div
                       ref={provided.innerRef}
@@ -303,7 +361,7 @@ export default function Home() {
                 {sprints.map((s) => {
                   const usList = usBySprint[s.id] || [];
                   const totalPts = usList.reduce(
-                    (sum, u) => sum + (Number(u.points) || 0),
+                    (sum, u) => sum + (Number(u.total_points) || 0),
                     0
                   );
                   return (
@@ -324,10 +382,7 @@ export default function Home() {
                       </div>
 
                       <div className="p-3">
-                        <Droppable
-                          droppableId={`sprint-${s.id}`}
-                          isDropDisabled={false}
-                        >
+                        <Droppable droppableId={`sprint-${s.id}`}>
                           {(provided) => (
                             <div
                               ref={provided.innerRef}
@@ -365,7 +420,7 @@ export default function Home() {
         </DragDropContext>
       </div>
 
-      {/* Add Sprint Modal */}
+      {/* Modal giữ nguyên */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl w-[480px] p-6">
@@ -395,7 +450,6 @@ export default function Home() {
                   }
                 />
               </div>
-
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"

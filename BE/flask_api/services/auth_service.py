@@ -7,7 +7,7 @@ from email_validator import validate_email, EmailNotValidError
 
 from flask_api.extensions import db
 from flask_api.models.user_models import User
-from flask_api.utils.tokens import generate_confirmation_token, confirm_token
+from flask_api.utils.tokens import generate_reset_token, confirm_reset_token
 
 
 class AuthService:
@@ -129,23 +129,18 @@ class AuthService:
 
         return user, None
     @staticmethod
-    def generate_reset_token(email: str) -> Tuple[Optional[str], Optional[str]]:
-        """
-        Sinh token reset password từ email
-        """
+    def generate_reset_token(email: str):
         if not email:
             return None, "email is required"
         user = User.query.filter_by(email=email).first()
         if not user:
             return None, "user not found"
 
-        token = generate_confirmation_token(user.email)
+        token = generate_reset_token(user.email)
         return token, None
 
     @staticmethod
     def reset_password(token: str, new_password: str):
-        """Đặt lại mật khẩu qua token"""
-        # Validate password
         if len(new_password) < 8:
             return False, "password must be at least 8 characters"
         if not re.search(r"[A-Za-z]", new_password):
@@ -153,8 +148,7 @@ class AuthService:
         if not re.search(r"\d", new_password):
             return False, "password must contain at least one digit"
 
-        # Giải mã token
-        email = confirm_token(token)
+        email = confirm_reset_token(token)  # ← dùng hàm riêng cho reset token
         if not email:
             return False, "invalid or expired token"
 

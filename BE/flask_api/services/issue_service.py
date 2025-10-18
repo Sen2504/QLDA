@@ -94,7 +94,7 @@ class IssueService:
 
         expire_date = data.get("expire_date")
         if not expire_date or expire_date < str(date.today()):
-            return None, "Invalid expiration date."
+            return None, "Expire date cannot be earlier than today."
 
         # Tạo issue
         new_issue = Issue(
@@ -150,6 +150,25 @@ class IssueService:
             for field in ["name", "description", "hashtag", "expire_date", "type_id"]:
                 if field in data and data[field] is not None:
                     setattr(issue, field, data[field])
+
+            # ==== Validate ngày hết hạn ====
+            if "expire_date" in data and data["expire_date"]:
+                try:
+                    from datetime import datetime, date
+                    expire_date = datetime.strptime(data["expire_date"], "%Y-%m-%d").date()
+                    if expire_date < date.today():
+                        return None, "Expire date cannot be earlier than today."
+                    issue.expire_date = expire_date
+                except ValueError:
+                    return None, "Invalid expire_date format. Expect YYYY-MM-DD."
+                
+            # ==== Validate type_id ====
+            if not data.get("type_id"):
+                return None, "Issue type is required."
+            else:
+                issue_type = IssueType.query.get(data["type_id"])
+                if not issue_type:
+                    return None, "Selected issue type does not exist."
 
             # ==== Enum: status ====
             if "status" in data and data["status"]:

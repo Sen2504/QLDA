@@ -80,10 +80,20 @@ export default function IssueCreate() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentProject) return alert("Chưa chọn project.");
-    if (!name.trim()) return alert("Vui lòng nhập tên issue.");
-    if (!typeId) return alert("Chọn loại issue.");
-    if (!expireDate) return alert("Chọn ngày hết hạn.");
+
+    // Check validate
+    if (!currentProject) {
+      return setPopup({ message: "Please select a project.", type: "error" });
+    }
+    if (!name.trim()) {
+      return setPopup({ message: "Please enter issue title.", type: "error" });
+    }
+    if (!typeId) {
+      return setPopup({ message: "Please select issue type.", type: "error" });
+    }
+    if (!expireDate) {
+      return setPopup({ message: "Please select due date.", type: "error" });
+    }
 
     const formData = new FormData();
     formData.append("project_id", currentProject.id);
@@ -96,22 +106,25 @@ export default function IssueCreate() {
     formData.append("priority", priority);
     formData.append("expire_date", expireDate);
 
-    // hỗ trợ nhiều file
     if (files.length > 0) {
       files.forEach((f) => formData.append("files", f));
     }
 
     try {
       await IssueService.create(formData);
-      setPopup({ message: "Create issue success", type: "success" });
-      setTimeout(() => {
-        navigate("/issues/list");
-      }, 1500);
+      setPopup({ message: "Issue created successfully!", type: "success" });
+      setTimeout(() => navigate("/issues/list"), 1500);
     } catch (err) {
       console.error("Error creating issue:", err);
-      setPopup({ message: "Unable to create issue. Please try again.", type: "error" });
+      const backendMsg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data ||
+        "Unable to create issue. Please try again.";
+      setPopup({ message: backendMsg, type: "error" });
     }
   };
+
 
   return (
     <MainLayout>

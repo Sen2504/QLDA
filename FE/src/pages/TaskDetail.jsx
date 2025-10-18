@@ -25,7 +25,7 @@ export default function TaskDetail() {
   const [editMode, setEditMode] = useState(false);
   const [forbidden, setForbidden] = useState(false);
 
-  // ✅ Kiểm tra nếu task đã Done thì khóa hành động
+  // Kiểm tra nếu task đã Done thì khóa hành động
   const isDone = useMemo(() => {
     const statusName = task?.status?.toLowerCase?.() || "";
     return statusName === "done" || statusName === "completed";
@@ -117,6 +117,7 @@ export default function TaskDetail() {
   }
 
   setSaving(true);
+
   try {
     const payload = {
       name: form.name.trim(),
@@ -127,9 +128,16 @@ export default function TaskDetail() {
       payload.status_id = Number(form.status_id);
     }
 
-    await TaskService.update(taskId, payload);
+    // 🧩 Gọi API update
+    const result = await TaskService.update(taskId, payload);
 
-    // 🔁 Sau khi update, load lại dữ liệu từ server
+    // ❌ Nếu có lỗi từ BE, show lỗi và return
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+
+    // ✅ Nếu thành công, reload lại task
     const refreshed = await TaskService.getById(taskId);
     const data = refreshed.data;
 
@@ -137,9 +145,14 @@ export default function TaskDetail() {
     setComments(data?.comments || []);
     resetForm(data);
     setEditMode(false);
+
     toast.success("Task updated successfully");
   } catch (error) {
-    toast.error(error.response?.data?.error || "Unable to update task");
+    const message =
+      error?.response?.data?.error ||
+      error?.response?.data?.message ||
+      "Unable to update task.";
+    toast.error(message);
   } finally {
     setSaving(false);
   }
@@ -147,7 +160,7 @@ export default function TaskDetail() {
 
 
   const handleSubmitComment = async () => {
-    if (isDone) return; // ✅ Không cho gửi comment nếu Done
+    if (isDone) return; // Không cho gửi comment nếu Done
     if (!commentInput.trim()) {
       toast.warn("Please enter comment content");
       return;
@@ -172,7 +185,7 @@ export default function TaskDetail() {
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (isDone) return; // ✅ Không cho xóa comment nếu Done
+    if (isDone) return; // Không cho xóa comment nếu Done
     if (!window.confirm("Are you sure you want to delete this comment??")) return;
     setCommentSubmitting(true);
     try {
