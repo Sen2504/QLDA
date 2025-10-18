@@ -217,29 +217,6 @@ export default function Home() {
           <h1 className="text-xl font-semibold">
             Scrum — {currentProject.name}
           </h1>
-          {/* ✅ Thanh tiến độ Project */}
-            <div
-              className="flex items-center gap-2 bg-[#3b3b4f] px-3 py-1.5 rounded-lg text-white text-sm shadow-inner"
-              title={`Project progress: ${progress}%`}
-            >
-              <div className="relative w-32 h-3 bg-gray-600 rounded-full overflow-hidden">
-                <div
-                  className="absolute left-0 top-0 h-full bg-teal-400 transition-all duration-700 ease-in-out"
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-              <span className="text-teal-300 font-semibold w-10 text-right">
-                {progress}%
-              </span>
-            </div>
-          </div>
-
-          <button
-            className="px-3 py-2 rounded-xl bg-[var(--color-accent)] text-white hover:opacity-90"
-            onClick={() => setShowAddModal(true)}
-          >
-            New Sprint
-          </button>
           <div className="flex items-center gap-3">
           <PermissionGuard resource="Sprint" action="Create">
             <button
