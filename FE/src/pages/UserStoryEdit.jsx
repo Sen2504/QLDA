@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import UserStoryService from "../services/userStoryService";
@@ -48,6 +49,12 @@ export default function UserStoryEdit() {
     () => Object.values(complexities).reduce((a, b) => a + (Number(b) || 0), 0),
     [complexities]
   );
+
+  // Lock selecting Done manually unless already Done
+  const isDone = useMemo(() => {
+    const cur = statuses.find((s) => s.id === statusId);
+    return (cur?.name || "").trim().toLowerCase() === "done";
+  }, [statuses, statusId]);
 
   // ----- Load dữ liệu ban đầu -----
   useEffect(() => {
@@ -153,8 +160,14 @@ export default function UserStoryEdit() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentProject) return alert("Chưa chọn Project.");
-    if (!name.trim()) return alert("Vui lòng nhập tên User Story.");
+    if (!currentProject) {
+      toast.error("Chưa chọn Project.");
+      return;
+    }
+    if (!name.trim()) {
+      toast.error("Vui lòng nhập tên User Story.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("Name_story", name.trim());
@@ -172,8 +185,14 @@ export default function UserStoryEdit() {
     const deleted = existingFiles.filter((f) => f._deleted).map((f) => f.filename);
     formData.append("deleted_files", JSON.stringify(deleted));
 
-    await UserStoryService.update(id, formData);
-    navigate("/");
+    try {
+      await UserStoryService.update(id, formData);
+      toast.success("User Story updated successfully!");
+      setTimeout(() => navigate("/user-stories"), 1500);
+    } catch (err) {
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Failed to update user story:", err);
+    }
   };
 
   // ----- UI -----
@@ -296,7 +315,11 @@ export default function UserStoryEdit() {
                 onChange={(e) => setStatusId(Number(e.target.value))}
               >
                 {statuses.map((s) => (
-                  <option key={s.id} value={s.id}>
+                  <option
+                    key={s.id}
+                    value={s.id}
+                    disabled={!isDone && ((s.name || "").trim().toLowerCase() === "done")}
+                  >
                     {s.name}
                   </option>
                 ))}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import IssueService from "../services/issueService";
@@ -7,7 +8,6 @@ import IssueTypeService from "../services/issueTypeService";
 import HashtagService from "../services/hashtagService";
 import TeamService from "../services/teamService";
 import ComponentUpload from "../components/ComponentUpload";
-import PopupMessage from "../components/Popup_message";
 
 function useDebounce(value, delay = 250) {
   const [v, setV] = useState(value);
@@ -48,9 +48,6 @@ export default function IssueEdit() {
   // files
   const [files, setFiles] = useState([]); // file mới
   const [existingFiles, setExistingFiles] = useState([]); // file cũ
-
-  // popup
-  const [popup, setPopup] = useState({ show: false, message: "", type: "success" });
 
   const STATUS_OPTIONS = ["New", "In Progress", "Ready for test", "Closed", "Need Info", "Rejected", "Postponed"];
   const SEVERITY_OPTIONS = ["Wishlist", "Minor", "Normal", "Important", "Critical"];
@@ -123,12 +120,9 @@ export default function IssueEdit() {
           }))
         );
       })
-      .catch(() => {
-        setPopup({
-          show: true,
-          message: "Unable to load issue data!",
-          type: "error",
-        });
+      .catch((err) => {
+        console.error("Error loading issue:", err);
+        // Lỗi đã được xử lý bởi api.js interceptor
       });
   }, [id]);
 
@@ -197,41 +191,20 @@ export default function IssueEdit() {
     formData.append("deleted_files", JSON.stringify(deleted));
 
     try {
-  await IssueService.update(id, formData);
-  setPopup({ show: true, message: "Updated successfully!", type: "success" });
-  setTimeout(() => {
-    setPopup({ ...popup, show: false });
-    navigate("/issues/list");
-  }, 1500);
-} catch (err) {
-  console.error("Update issue error:", err);
-
-  // lấy message từ BE nếu có
-  let msg = "An error occurred while updating!";
-  if (err.response?.data?.message) {
-    msg = err.response.data.message;
-  } else if (err.response?.data?.error) {
-    msg = err.response.data.error;
-  } else if (typeof err === "string") {
-    msg = err;
-  }
-
-  setPopup({ show: true, message: msg, type: "error" });
-}
-
+      await IssueService.update(id, formData);
+      toast.success("Updated successfully!");
+      setTimeout(() => {
+        navigate("/issues/list");
+      }, 1500);
+    } catch (err) {
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Error updating issue:", err);
+    }
   };
 
   // ---- UI ----
   return (
     <MainLayout>
-      {popup.show && (
-        <PopupMessage
-          message={popup.message}
-          type={popup.type}
-          onClose={() => setPopup({ ...popup, show: false })}
-        />
-      )}
-
       <form
         onSubmit={handleSubmit}
         className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-200 my-8"

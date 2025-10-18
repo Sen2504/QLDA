@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import UserStoryService from "../services/userStoryService";
 import HashtagService from "../services/hashtagService";
 import WorkflowStatusService from "../services/workflowStatusService";
 import ComponentUpload from "../components/ComponentUpload";
-import PopupMessage from "../components/Popup_message"; // ✅ popup thông báo
 
 // === debounce nhỏ ===
 function useDebounce(value, delay = 250) {
@@ -48,14 +48,10 @@ export default function UserStory() {
     () => Object.values(complexities).reduce((a, b) => a + (Number(b) || 0), 0),
     [complexities]
   );
-
-  // ✅ popup state
-  const [popup, setPopup] = useState({ message: "", type: "", visible: false });
-
-  const showPopup = (message, type = "success") => {
-    setPopup({ message, type, visible: true });
-    setTimeout(() => setPopup({ ...popup, visible: false }), 3000);
-  };
+  const isDone = useMemo(() => {
+    const cur = statuses.find((s) => s.id === statusId);
+    return (cur?.name || "").trim().toLowerCase() === "done";
+  }, [statuses, statusId]);
 
   // ---- effects
   useEffect(() => {
@@ -112,12 +108,18 @@ export default function UserStory() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentProject)
-      return showPopup("Please select a project.", "error");
-    if (!name.trim())
-      return showPopup("Please enter the User Story name.", "error");
-    if (!expireDate)
-      return showPopup("Please select an expiration date.", "error");
+    if (!currentProject) {
+      toast.error("Please select a project.");
+      return;
+    }
+    if (!name.trim()) {
+      toast.error("Please enter the User Story name.");
+      return;
+    }
+    if (!expireDate) {
+      toast.error("Please select an expiration date.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("Name_story", name.trim());
@@ -138,31 +140,21 @@ export default function UserStory() {
       const res = await UserStoryService.create(formData);
 
       if (res?.error || res?.message) {
-        showPopup(res.error || res.message, "error");
-      } else {
-        showPopup("User Story created successfully!", "success");
-        setTimeout(() => navigate("/user-stories"), 1500);
+        // Không hiển thị toast vì api.js interceptor đã xử lý
+        return;
       }
+      
+      toast.success("User Story created successfully!");
+      setTimeout(() => navigate("/user-stories"), 1500);
     } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Failed to create user story.";
-      showPopup(msg, "error");
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Failed to create user story:", err);
     }
   };
 
   // ---- UI
   return (
     <MainLayout>
-      {popup.visible && (
-        <PopupMessage
-          message={popup.message}
-          type={popup.type}
-          onClose={() => setPopup({ ...popup, visible: false })}
-        />
-      )}
-
       <form
         onSubmit={handleSubmit}
         className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-200 my-8"
@@ -275,7 +267,11 @@ export default function UserStory() {
                 onChange={(e) => setStatusId(Number(e.target.value))}
               >
                 {statuses.map((s) => (
-                  <option key={s.id} value={s.id}>
+                  <option
+                    key={s.id}
+                    value={s.id}
+                    disabled={!isDone && ((s.name || "").trim().toLowerCase() === "done")}
+                  >
                     {s.name}
                   </option>
                 ))}

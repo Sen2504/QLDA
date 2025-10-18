@@ -8,6 +8,9 @@ import TaskService from "../services/taskService";
 import TaskStatusService from "../services/taskStatusService";
 import { toast } from "react-toastify";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
+import PermissionGuard from "../components/PermissionGuard";
+import withPermissions from "../components/withPermissions";
+import { usePermission } from "../store/PermissionContext";
 
 const FALLBACK_STATUSES = [
   { id: "NEW", rawId: null, name_status: "NEW" },
@@ -111,10 +114,11 @@ function TaskCard({ task, index, onOpenTask }) {
   );
 }
 
-export default function SprintBoard() {
+function SprintBoard() {
   const { projectId, sprintId } = useParams();
   const navigate = useNavigate();
   const { currentProject } = useProject();
+  const canEditTask = usePermission('Task', 'Edit');
 
   const [userStories, setUserStories] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -459,3 +463,5 @@ export default function SprintBoard() {
     </MainLayout>
   );
 }
+
+export default withPermissions(SprintBoard);

@@ -188,6 +188,7 @@ class TaskService:
 
             # --- Validate user story ---
             target_story = task.user_story
+            
             if user_story_id is not None and user_story_id != task.user_story_id:
                 new_story = UserStory.query.get(user_story_id)
                 if not new_story:
@@ -265,15 +266,21 @@ class TaskService:
 
             # --- Auto update User Story ---
             if task.user_story_id:
-                TaskService._auto_update_user_story_status(task.user_story_id)
+                try:
+                    TaskService._auto_update_user_story_status(task.user_story_id)
+                except Exception as auto_err:
+                    print(f"[WARN] Auto update user story status failed: {auto_err}")
+                    # Không rollback vì task đã update thành công
 
             refreshed = TaskService.get_by_id(task.id)
             return refreshed or task, None
 
         except Exception as e:
             db.session.rollback()
-            print("❌ Task update error:", e)
-            return None, "Unexpected error while updating task."
+            print(f"[ERROR] TaskService.update failed: {type(e).__name__}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return None, "Can not update task."
 
     # ==========================================
     # HÀM PHỤ: Tự động cập nhật trạng thái User Story
@@ -293,14 +300,10 @@ class TaskService:
 
         # Kiểm tra tất cả task có Done chưa (fix lỗi strip)
         all_done = all(
-            (
-                (t.status_id == done_task_status.id)
-                or (
-                    isinstance(t.status, TaskStatus)
-                    and t.status.name_status
-                    and t.status.name_status.strip().lower() == "done"
-                )
-            )
+            (t.status_id == done_task_status.id)
+            or (hasattr(t, 'task_status') and t.task_status and 
+                t.task_status.name_status and 
+                t.task_status.name_status.strip().lower() == "done")
             for t in tasks
         )
 

@@ -10,7 +10,7 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const status = error?.response?.status;
+  const status = error?.response?.status;
     const message = error?.response?.data?.error || error?.response?.data?.message;
     if (status === 401) {
       toast.error(message || "Bạn cần đăng nhập để tiếp tục.");

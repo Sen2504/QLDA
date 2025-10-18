@@ -73,7 +73,8 @@ export default function IssueDetail() {
       setCommentInput("");
       toast.success("Comment added");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Cannot add comments");
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Failed to add comment:", err);
     } finally {
       setCommentSubmitting(false);
     }
@@ -87,7 +88,8 @@ export default function IssueDetail() {
       setComments((prev) => prev.filter((c) => c.id !== commentId));
       toast.success("Comment deleted");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Comments cannot be deleted");
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Failed to delete comment:", err);
     } finally {
       setCommentSubmitting(false);
     }

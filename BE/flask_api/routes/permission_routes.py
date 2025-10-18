@@ -35,6 +35,24 @@ def get_matrix(project_id):
     return jsonify(PermissionMatrixSchema().dump(matrix)), 200
 
 
+@permission_bp.route("/matrix", methods=["GET"])
+@login_required
+def get_user_permissions():
+    """Get current user's permissions for a specific project.
+    Query params: project_id (required)
+    Returns: {role_id, role_name, permissions: {ResourceName: {ActionName: bool}}}
+    """
+    project_id = request.args.get("project_id", type=int)
+    if not project_id:
+        return jsonify({"error": "project_id is required"}), 400
+    
+    permissions = PermissionService.get_user_permissions_in_project(current_user.id, project_id)
+    if permissions is None:
+        return jsonify({"error": "You are not a member of this project."}), 403
+    
+    return jsonify(permissions), 200
+
+
 @permission_bp.route("/project/<int:project_id>/role/<int:projrole_id>", methods=["PUT"])
 @login_required
 def update_role_permissions(project_id, projrole_id):

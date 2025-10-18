@@ -8,10 +8,16 @@ import TaskStatusService from "../services/taskStatusService";
 import TaskCommentService from "../services/taskCommentService";
 import UserService from "../services/userService";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
+import PermissionGuard from "../components/PermissionGuard";
+import { usePermission } from "../store/PermissionContext";
+import withPermissions from "../components/withPermissions";
 
-export default function TaskDetail() {
+function TaskDetail() {
   const { taskId } = useParams();
   const navigate = useNavigate();
+
+  const canEdit = usePermission('Task', 'Edit');
+  const canComment = usePermission('Task', 'Comment');
 
   const [task, setTask] = useState(null);
   const [form, setForm] = useState({ name: "", description: "", status_id: "", due_date: "" });
@@ -122,14 +128,21 @@ export default function TaskDetail() {
     const payload = {
       name: form.name.trim(),
       description: form.description.trim(),
-      due_date: form.due_date || null,
     };
-    if (form.status_id) {
+    
+    // Luôn gửi due_date (null nếu rỗng)
+    payload.due_date = form.due_date && form.due_date.trim() ? form.due_date.trim() : null;
+    
+    if (form.status_id && form.status_id !== "") {
       payload.status_id = Number(form.status_id);
     }
 
-    // 🧩 Gọi API update
-    const result = await TaskService.update(taskId, payload);
+    const updateResult = await TaskService.update(taskId, payload);
+    
+    // Kiểm tra nếu có lỗi thì dừng lại (lỗi đã được hiển thị bởi api.js interceptor)
+    if (updateResult?.error) {
+      return;
+    }
 
     // ❌ Nếu có lỗi từ BE, show lỗi và return
     if (result.error) {
@@ -148,11 +161,8 @@ export default function TaskDetail() {
 
     toast.success("Task updated successfully");
   } catch (error) {
-    const message =
-      error?.response?.data?.error ||
-      error?.response?.data?.message ||
-      "Unable to update task.";
-    toast.error(message);
+    // Lỗi đã được xử lý bởi api.js interceptor
+    console.error("Failed to update task:", error);
   } finally {
     setSaving(false);
   }
@@ -175,10 +185,8 @@ export default function TaskDetail() {
       setCommentInput("");
       toast.success("Comment added");
     } catch (error) {
-      const status = error?.response?.status;
-      if (status !== 403) {
-        toast.error(error.response?.data?.error || "Không thể thêm bình luận");
-      }
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Failed to add comment:", error);
     } finally {
       setCommentSubmitting(false);
     }
@@ -193,10 +201,8 @@ export default function TaskDetail() {
       setComments((prev) => prev.filter((comment) => comment.id !== commentId));
       toast.success("Comment deleted");
     } catch (error) {
-      const status = error?.response?.status;
-      if (status !== 403) {
-        toast.error(error.response?.data?.error || "Không thể xóa bình luận");
-      }
+      // Lỗi đã được xử lý bởi api.js interceptor
+      console.error("Failed to delete comment:", error);
     } finally {
       setCommentSubmitting(false);
     }
@@ -295,14 +301,16 @@ export default function TaskDetail() {
               <div className="flex items-center gap-3">
                 {editMode ? (
                   <>
-                    <button
-                      onClick={handleSave}
-                      disabled={saving || isDone}
-                      className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-                      type="button"
-                    >
-                      {saving ? "Đang lưu..." : "Lưu thay đổi"}
-                    </button>
+                    <PermissionGuard resource="Task" action="Edit">
+                      <button
+                        onClick={handleSave}
+                        disabled={saving || isDone}
+                        className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+                        type="button"
+                      >
+                        {saving ? "Saving..." : "Save changes"}
+                      </button>
+                    </PermissionGuard>
                     <button
                       onClick={() => {
                         resetForm();
@@ -316,16 +324,18 @@ export default function TaskDetail() {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => setEditMode(true)}
-                    disabled={isDone}
-                    className={`px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 ${
-                      isDone ? "opacity-60 cursor-not-allowed" : ""
-                    }`}
-                    type="button"
-                  >
-                    ✏️ Edit
-                  </button>
+                  <PermissionGuard resource="Task" action="Edit">
+                    <button
+                      onClick={() => setEditMode(true)}
+                      disabled={isDone}
+                      className={`px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 ${
+                        isDone ? "opacity-60 cursor-not-allowed" : ""
+                      }`}
+                      type="button"
+                    >
+                      ✏️ Edit
+                    </button>
+                  </PermissionGuard>
                 )}
               </div>
             </div>
@@ -466,28 +476,30 @@ export default function TaskDetail() {
                         isDone ? "bg-gray-100 opacity-70" : "bg-emerald-50"
                       }`}
                     >
-                      <textarea
-                        value={commentInput}
-                        onChange={(e) => setCommentInput(e.target.value)}
-                        rows={3}
-                        placeholder={
-                          isDone
-                            ? "Task đã hoàn thành — không thể thêm bình luận."
-                            : "Share updates or discuss..."
-                        }
-                        className="w-full border border-emerald-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        disabled={isDone}
-                      />
-                      <div className="flex justify-end mt-2">
-                        <button
-                          onClick={handleSubmitComment}
-                          disabled={commentSubmitting || isDone}
-                          className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-                          type="button"
-                        >
-                          {commentSubmitting ? "Sending..." : "Post a comment"}
-                        </button>
-                      </div>
+                      <PermissionGuard resource="Task" action="Comment">
+                        <textarea
+                          value={commentInput}
+                          onChange={(e) => setCommentInput(e.target.value)}
+                          rows={3}
+                          placeholder={
+                            isDone
+                              ? "Task đã hoàn thành — không thể thêm bình luận."
+                              : "Share updates or discuss..."
+                          }
+                          className="w-full border border-emerald-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          disabled={isDone || !canComment}
+                        />
+                        <div className="flex justify-end mt-2">
+                          <button
+                            onClick={handleSubmitComment}
+                            disabled={commentSubmitting || isDone || !canComment}
+                            className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+                            type="button"
+                          >
+                            {commentSubmitting ? "Sending..." : "Post a comment"}
+                          </button>
+                        </div>
+                      </PermissionGuard>
                     </div>
                   </div>
                 </section>
@@ -499,3 +511,5 @@ export default function TaskDetail() {
     </MainLayout>
   );
 }
+
+export default withPermissions(TaskDetail);

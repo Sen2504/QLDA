@@ -12,13 +12,13 @@ import {
   Check,
 } from "lucide-react";
 import { useProject } from "../store/ProjectContext";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, memo } from "react";
 import ProjectService from "../services/projectService";
 import api from "../services/api";
 import SprintService from "../services/sprintService";
 import dayjs from "dayjs";
 
-export default function Sidebar() {
+function Sidebar() {
   const { currentProject, setCurrentProject } = useProject();
   const [projects, setProjects] = useState([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
@@ -127,7 +127,7 @@ export default function Sidebar() {
     });
   }, [currentProject, sprints, location.pathname]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await api.post("/auth/logout");
     } catch (err) {
@@ -136,10 +136,25 @@ export default function Sidebar() {
       setCurrentProject(null);
       navigate("/login", { replace: true });
     }
-  };
+  }, [navigate, setCurrentProject]);
 
-  // Helper để check route active
-  const isActive = (path) => location.pathname.startsWith(path);
+  const toggleDropdown = useCallback(() => {
+    setDropdownOpen((open) => !open);
+  }, []);
+
+  const handleProjectSelect = useCallback((proj) => {
+    setCurrentProject(proj);
+    setDropdownOpen(false);
+  }, [setCurrentProject]);
+
+  const handleDropdownBlur = useCallback((e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDropdownOpen(false);
+    }
+  }, []);
+
+  // Helper để check route active - memoize để tránh tạo function mới mỗi render
+  const isActive = useCallback((path) => location.pathname.startsWith(path), [location.pathname]);
 
   return (
     <aside className="bg-white border-r border-gray-200 w-64 min-h-screen p-6">
@@ -147,15 +162,11 @@ export default function Sidebar() {
       <div
         className="mb-2"
         tabIndex={0}
-        onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget)) {
-            setDropdownOpen(false);
-          }
-        }}
+        onBlur={handleDropdownBlur}
       >
         <button
           type="button"
-          onClick={() => setDropdownOpen((open) => !open)}
+          onClick={toggleDropdown}
           className="w-full flex items-center justify-between gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 shadow hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-400"
         >
           <span className="truncate text-left">
@@ -181,10 +192,7 @@ export default function Sidebar() {
                 <li key={proj.id}>
                   <button
                     type="button"
-                    onClick={() => {
-                      setCurrentProject(proj);
-                      setDropdownOpen(false);
-                    }}
+                    onClick={() => handleProjectSelect(proj)}
                     className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-sm transition ${
                       selected
                         ? "bg-green-100 text-green-700 font-semibold"
@@ -201,43 +209,7 @@ export default function Sidebar() {
         )}
       </div>
 
-      {currentProject && (
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-500 mb-2">
-            <span>Sprints</span>
-            {sprintsLoading && <span className="text-emerald-600">Loading...</span>}
-          </div>
-
-          <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-            {!sprintsLoading && sprintLinks.length === 0 && (
-              <div className="text-xs text-gray-400 px-2 py-1">
-                No sprints yet.
-              </div>
-            )}
-
-            {sprintLinks.map((sprint) => (
-              <Link
-                key={sprint.id}
-                to={sprint.path}
-                className={`block rounded-lg px-3 py-2 text-sm transition border ${
-                  sprint.active
-                    ? "bg-emerald-100 text-emerald-700 border-emerald-200 font-semibold"
-                    : "border-transparent hover:bg-emerald-50 text-gray-700"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate">{sprint.name}</span>
-                  {sprint.deadline && (
-                    <span className="text-xs text-gray-500 whitespace-nowrap">
-                      {dayjs(sprint.deadline).format("DD/MM")}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      
 
       {/* Navigation */}
       <ul className="space-y-3 mt-4">
@@ -352,6 +324,63 @@ export default function Sidebar() {
           </button>
         </li>
       </ul>
+
+      {currentProject && (
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-500 mb-2">
+            <span>Sprints</span>
+            {sprintsLoading && <span className="text-emerald-600">Loading...</span>}
+          </div>
+
+          {/* Fixed height container để tránh layout shift */}
+          <div className="space-y-1 min-h-[120px] max-h-48 overflow-y-auto pr-1">
+            {sprintsLoading ? (
+              // Skeleton loading với chiều cao cố định
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="block rounded-lg px-3 py-2 border border-transparent animate-pulse"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                      <div className="h-3 bg-gray-200 rounded w-12"></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : sprintLinks.length === 0 ? (
+              <div className="text-xs text-gray-400 px-2 py-1">
+                No sprints yet.
+              </div>
+            ) : (
+              sprintLinks.map((sprint) => (
+                <Link
+                  key={sprint.id}
+                  to={sprint.path}
+                  className={`block rounded-lg px-3 py-2 text-sm transition border ${
+                    sprint.active
+                      ? "bg-emerald-100 text-emerald-700 border-emerald-200 font-semibold"
+                      : "border-transparent hover:bg-emerald-50 text-gray-700"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{sprint.name}</span>
+                    {sprint.deadline && (
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {dayjs(sprint.deadline).format("DD/MM")}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
+
+// Memoize toàn bộ component để tránh re-render không cần thiết
+export default memo(Sidebar);

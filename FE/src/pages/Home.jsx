@@ -10,6 +10,9 @@ import SprintService from "../services/sprintService";
 import UserStoryService from "../services/userStoryService";
 import TaskService from "../services/taskService";
 import { evaluateDueDate } from "../utils/dueDate";
+import PermissionGuard from "../components/PermissionGuard";
+import withPermissions from "../components/withPermissions";
+import { usePermission } from "../store/PermissionContext";
 
 function SmallUSCard({ us, index, onOpen }) {
   return (
@@ -211,12 +214,10 @@ export default function Home() {
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold">
-              Scrum — {currentProject.name}
-            </h1>
-
-            {/* ✅ Thanh tiến độ Project */}
+          <h1 className="text-xl font-semibold">
+            Scrum — {currentProject.name}
+          </h1>
+          {/* ✅ Thanh tiến độ Project */}
             <div
               className="flex items-center gap-2 bg-[#3b3b4f] px-3 py-1.5 rounded-lg text-white text-sm shadow-inner"
               title={`Project progress: ${progress}%`}
@@ -239,6 +240,16 @@ export default function Home() {
           >
             New Sprint
           </button>
+          <div className="flex items-center gap-3">
+          <PermissionGuard resource="Sprint" action="Create">
+            <button
+              className="px-3 py-2 rounded-xl bg-[var(--color-accent)] text-white hover:opacity-90"
+              onClick={() => setShowAddModal(true)}
+            >
+              New Sprint
+            </button>
+          </PermissionGuard>
+          </div>
         </div>
 
         {/* Content */}
@@ -319,13 +330,16 @@ export default function Home() {
 
             {/* Backlog */}
             <div className="col-span-5">
-              <Link
-                to="/user-stories/new"
-                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 to-yellow-500 text-white shadow-md hover:from-yellow-500 hover:to-yellow-600 transition-all duration-200 active:scale-95"
-              >
-                + User Story
-              </Link>
-              <div className="bg-gray-50 rounded-2xl border p-4 mt-2">
+          <PermissionGuard resource="UserStory" action="Create">
+            <button
+              onClick={() => navigate("/user-stories/new")}
+              className="px-4 py-2 rounded-2xl bg-[var(--color-accent,#16a34a)] text-white hover:opacity-90"
+            >
+              + Create User Story
+            </button>
+          </PermissionGuard>
+
+              <div className="bg-gray-50 rounded-2xl border p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="font-semibold">Backlog</div>
                   <div className="text-sm opacity-70">

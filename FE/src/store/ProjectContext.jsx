@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 const ProjectContext = createContext();
 const STORAGE_KEY_BASE = "currentProject";
 
 export function ProjectProvider({ children }) {
   // ✅ Xác định key theo user (nếu bạn có lưu user trong localStorage)
-  const getStorageKey = () => {
+  const getStorageKey = useCallback(() => {
     try {
       const userRaw = localStorage.getItem("user"); // ví dụ bạn lưu user info khi login
       if (userRaw) {
@@ -16,12 +16,12 @@ export function ProjectProvider({ children }) {
       /* ignore */
     }
     return STORAGE_KEY_BASE;
-  };
+  }, []);
 
   const [storageKey, setStorageKey] = useState(getStorageKey);
 
   // ✅ Hydrate từ localStorage (lazy init)
-  const [currentProject, setCurrentProject] = useState(() => {
+  const [currentProject, setCurrentProjectState] = useState(() => {
     try {
       const raw = localStorage.getItem(storageKey);
       return raw ? JSON.parse(raw) : null;
@@ -29,6 +29,11 @@ export function ProjectProvider({ children }) {
       return null;
     }
   });
+
+  // ✅ Memoize setCurrentProject để tránh tạo function mới mỗi render
+  const setCurrentProject = useCallback((project) => {
+    setCurrentProjectState(project);
+  }, []);
 
   // ✅ Persist mỗi khi thay đổi currentProject
   useEffect(() => {
@@ -50,9 +55,9 @@ export function ProjectProvider({ children }) {
       setStorageKey(newKey);
       try {
         const raw = localStorage.getItem(newKey);
-        setCurrentProject(raw ? JSON.parse(raw) : null);
+        setCurrentProjectState(raw ? JSON.parse(raw) : null);
       } catch {
-        setCurrentProject(null);
+        setCurrentProjectState(null);
       }
     };
 
@@ -62,10 +67,16 @@ export function ProjectProvider({ children }) {
       window.removeEventListener("storage", handleStorageUpdate);
       window.removeEventListener("userChanged", handleStorageUpdate);
     };
-  }, []);
+  }, [getStorageKey]);
+
+  // ✅ Memoize context value để tránh re-render children
+  const value = useMemo(
+    () => ({ currentProject, setCurrentProject }),
+    [currentProject, setCurrentProject]
+  );
 
   return (
-    <ProjectContext.Provider value={{ currentProject, setCurrentProject }}>
+    <ProjectContext.Provider value={value}>
       {children}
     </ProjectContext.Provider>
   );
