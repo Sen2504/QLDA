@@ -4,8 +4,10 @@ import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import IssueService from "../services/issueService";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
+import PermissionGuard from "../components/PermissionGuard";
+import withPermissions from "../components/withPermissions";
 
-export default function IssueList() {
+function IssueList() {
   const navigate = useNavigate();
   const { currentProject } = useProject();
 
@@ -72,12 +74,14 @@ const handleStatusChange = (issueId, value) => {
       <div className="mt-6 bg-white rounded-2xl shadow p-5">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">Issue list</h2>
-          <button
-            onClick={() => navigate("/issues/")}
-            className="px-4 py-2 rounded-2xl bg-[var(--color-accent,#16a34a)] text-white hover:opacity-90"
-          >
-            + Create issue
-          </button>
+          <PermissionGuard resource="Issue" action="Create">
+            <button
+              onClick={() => navigate("/issues/")}
+              className="px-4 py-2 rounded-2xl bg-[var(--color-accent,#16a34a)] text-white hover:opacity-90"
+            >
+              + Create issue
+            </button>
+          </PermissionGuard>
         </div>
 
         {loading ? (
@@ -162,12 +166,14 @@ const handleStatusChange = (issueId, value) => {
                     </td>
 
                     <td className="px-4 py-2 text-center">
-                        <button
-                            onClick={() => navigate(`/issues/${issue.id}/edit`)}
-                            className="px-3 py-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
-                        >
-                            Edit
-                        </button>
+                        <PermissionGuard resource="Issue" action="Edit">
+                          <button
+                              onClick={() => navigate(`/issues/${issue.id}/edit`)}
+                              className="px-3 py-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
+                          >
+                              Edit
+                          </button>
+                        </PermissionGuard>
                     </td>
                   </tr>
                 ))}
@@ -183,3 +189,5 @@ const handleStatusChange = (issueId, value) => {
     </MainLayout>
   );
 }
+
+export default withPermissions(IssueList);

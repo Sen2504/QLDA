@@ -6,9 +6,11 @@ import { useProject } from "../store/ProjectContext";
 import InviteForm from "../components/InviteForm";
 import PendingInvites from "../components/PendingInvites";
 import PopupMessage from "../components/Popup_message";
+import PermissionGuard from "../components/PermissionGuard";
+import withPermissions from "../components/withPermissions";
 import api from "../services/api";
 
-export default function Team() {
+function Team() {
   const { projectId } = useParams();
   const [members, setMembers] = useState([]);
   const [pending, setPending] = useState([]);
@@ -162,12 +164,12 @@ export default function Team() {
                       {currentProject?.role_name === "Project Owner" &&
                         m.role_name !== "Project Owner" &&
                         m.user_id !== currentUser?.id && (
-                          <button
-                            onClick={() => handleRemove(m.user_id)}
-                            className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 transition"
-                          >
-                            Delete
-                          </button>
+                            <button
+                              onClick={() => handleRemove(m.user_id)}
+                              className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 transition"
+                            >
+                              Delete
+                            </button>
                         )}
                     </li>
                   );
@@ -258,3 +260,5 @@ export default function Team() {
     </>
   );
 }
+
+export default withPermissions(Team);

@@ -9,8 +9,11 @@ import WorkflowStatusService from "../services/workflowStatusService";
 import TaskTable from "../components/TaskTable";
 import TaskFormModal from "../components/TaskFormModal";
 import MainLayout from "../layouts/MainLayout";
+import PermissionGuard from "../components/PermissionGuard";
+import { usePermission } from "../store/PermissionContext";
+import withPermissions from "../components/withPermissions";
 
-export default function UserStoryDetail() {
+function UserStoryDetail() {
   const { userStoryId } = useParams();
   const navigate = useNavigate();
   const [story, setStory] = useState(null);
@@ -168,18 +171,20 @@ export default function UserStoryDetail() {
                 )}
 
                 {/* ✅ Disable nút Edit nếu user story đã Done */}
-                <button
-                  type="button"
-                  onClick={() => navigate(`/user-stories/${story.id}/edit`)}
-                  disabled={isDone}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-                    isDone
-                      ? "border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100"
-                      : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                  }`}
-                >
-                  ✏️ Edit Story
-                </button>
+                <PermissionGuard resource="UserStory" action="Edit">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/user-stories/${story.id}/edit`)}
+                    disabled={isDone}
+                    className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                      isDone
+                        ? "border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100"
+                        : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                    }`}
+                  >
+                    ✏️ Edit Story
+                  </button>
+                </PermissionGuard>
               </div>
             </div>
 
@@ -302,3 +307,5 @@ export default function UserStoryDetail() {
     </MainLayout>
   );
 }
+
+export default withPermissions(UserStoryDetail);

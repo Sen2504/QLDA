@@ -8,10 +8,16 @@ import TaskStatusService from "../services/taskStatusService";
 import TaskCommentService from "../services/taskCommentService";
 import UserService from "../services/userService";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
+import PermissionGuard from "../components/PermissionGuard";
+import { usePermission } from "../store/PermissionContext";
+import withPermissions from "../components/withPermissions";
 
-export default function TaskDetail() {
+function TaskDetail() {
   const { taskId } = useParams();
   const navigate = useNavigate();
+
+  const canEdit = usePermission('Task', 'Edit');
+  const canComment = usePermission('Task', 'Comment');
 
   const [task, setTask] = useState(null);
   const [form, setForm] = useState({ name: "", description: "", status_id: "", due_date: "" });
@@ -287,14 +293,16 @@ export default function TaskDetail() {
               <div className="flex items-center gap-3">
                 {editMode ? (
                   <>
-                    <button
-                      onClick={handleSave}
-                      disabled={saving || isDone}
-                      className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-                      type="button"
-                    >
-                      {saving ? "Saving..." : "Save changes"}
-                    </button>
+                    <PermissionGuard resource="Task" action="Edit">
+                      <button
+                        onClick={handleSave}
+                        disabled={saving || isDone}
+                        className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+                        type="button"
+                      >
+                        {saving ? "Saving..." : "Save changes"}
+                      </button>
+                    </PermissionGuard>
                     <button
                       onClick={() => {
                         resetForm();
@@ -308,16 +316,18 @@ export default function TaskDetail() {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => setEditMode(true)}
-                    disabled={isDone}
-                    className={`px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 ${
-                      isDone ? "opacity-60 cursor-not-allowed" : ""
-                    }`}
-                    type="button"
-                  >
-                    ✏️ Edit
-                  </button>
+                  <PermissionGuard resource="Task" action="Edit">
+                    <button
+                      onClick={() => setEditMode(true)}
+                      disabled={isDone}
+                      className={`px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 ${
+                        isDone ? "opacity-60 cursor-not-allowed" : ""
+                      }`}
+                      type="button"
+                    >
+                      ✏️ Edit
+                    </button>
+                  </PermissionGuard>
                 )}
               </div>
             </div>
@@ -458,28 +468,30 @@ export default function TaskDetail() {
                         isDone ? "bg-gray-100 opacity-70" : "bg-emerald-50"
                       }`}
                     >
-                      <textarea
-                        value={commentInput}
-                        onChange={(e) => setCommentInput(e.target.value)}
-                        rows={3}
-                        placeholder={
-                          isDone
-                            ? "Task đã hoàn thành — không thể thêm bình luận."
-                            : "Share updates or discuss..."
-                        }
-                        className="w-full border border-emerald-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        disabled={isDone}
-                      />
-                      <div className="flex justify-end mt-2">
-                        <button
-                          onClick={handleSubmitComment}
-                          disabled={commentSubmitting || isDone}
-                          className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-                          type="button"
-                        >
-                          {commentSubmitting ? "Sending..." : "Post a comment"}
-                        </button>
-                      </div>
+                      <PermissionGuard resource="Task" action="Comment">
+                        <textarea
+                          value={commentInput}
+                          onChange={(e) => setCommentInput(e.target.value)}
+                          rows={3}
+                          placeholder={
+                            isDone
+                              ? "Task đã hoàn thành — không thể thêm bình luận."
+                              : "Share updates or discuss..."
+                          }
+                          className="w-full border border-emerald-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          disabled={isDone || !canComment}
+                        />
+                        <div className="flex justify-end mt-2">
+                          <button
+                            onClick={handleSubmitComment}
+                            disabled={commentSubmitting || isDone || !canComment}
+                            className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+                            type="button"
+                          >
+                            {commentSubmitting ? "Sending..." : "Post a comment"}
+                          </button>
+                        </div>
+                      </PermissionGuard>
                     </div>
                   </div>
                 </section>
@@ -491,3 +503,5 @@ export default function TaskDetail() {
     </MainLayout>
   );
 }
+
+export default withPermissions(TaskDetail);

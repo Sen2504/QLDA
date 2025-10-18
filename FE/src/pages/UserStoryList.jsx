@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import UserStoryService from "../services/userStoryService";
+import PermissionGuard from "../components/PermissionGuard";
+import withPermissions from "../components/withPermissions";
 
-export default function UserStoryList() {
+function UserStoryList() {
   const navigate = useNavigate();
   const { currentProject } = useProject();
 
@@ -62,12 +64,14 @@ export default function UserStoryList() {
           <h2 className="text-lg font-semibold text-gray-800">
             User Story List
           </h2>
-          <button
-            onClick={() => navigate("/user-stories/new")}
-            className="px-4 py-2 rounded-2xl bg-[var(--color-accent,#16a34a)] text-white hover:opacity-90"
-          >
-            + Create User Story
-          </button>
+          <PermissionGuard resource="UserStory" action="Create">
+            <button
+              onClick={() => navigate("/user-stories/new")}
+              className="px-4 py-2 rounded-2xl bg-[var(--color-accent,#16a34a)] text-white hover:opacity-90"
+            >
+              + Create User Story
+            </button>
+          </PermissionGuard>
         </div>
 
         {loading ? (
@@ -154,18 +158,20 @@ export default function UserStoryList() {
 
                     {/* Action */}
                     <td className="px-4 py-2 text-center">
-                      <button
-                        onClick={() => navigate(`/user-stories/${s.id}/edit`)}
-                        disabled={isDone}
-                        className={`px-3 py-1 text-xs rounded-lg transition ${
-                          isDone
-                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            : "bg-emerald-500 hover:bg-emerald-600 text-white"
-                        }`}
-                        title={isDone ? "This User Story is Done." : "Edit User Story"}
-                      >
-                        Edit
-                      </button>
+                      <PermissionGuard resource="UserStory" action="Edit">
+                        <button
+                          onClick={() => navigate(`/user-stories/${s.id}/edit`)}
+                          disabled={isDone}
+                          className={`px-3 py-1 text-xs rounded-lg transition ${
+                            isDone
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-emerald-500 hover:bg-emerald-600 text-white"
+                          }`}
+                          title={isDone ? "This User Story is Done." : "Edit User Story"}
+                        >
+                          Edit
+                        </button>
+                      </PermissionGuard>
                     </td>
                   </tr>
                 );})}
@@ -183,3 +189,5 @@ export default function UserStoryList() {
     </MainLayout>
   );
 }
+
+export default withPermissions(UserStoryList);

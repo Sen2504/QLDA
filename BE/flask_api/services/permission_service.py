@@ -157,6 +157,52 @@ class PermissionService:
         }
 
     @staticmethod
+    def get_user_permissions_in_project(user_id, project_id):
+        """Return all permissions for a specific user in a project.
+        
+        Returns:
+            dict: {
+                "role_id": int,
+                "role_name": str,
+                "permissions": {
+                    "ResourceName": {
+                        "ActionName": bool
+                    }
+                }
+            }
+        """
+        # Get user's project role
+        projrole_id = PermissionService._projrole_for_user_project(user_id, project_id)
+        if projrole_id is None:
+            return None
+        
+        projrole = ProjectRole.query.get(projrole_id)
+        if not projrole:
+            return None
+        
+        # Get all resources and actions
+        resources = Resource.query.all()
+        actions = Action.query.all()
+        action_names = [a.name for a in actions]
+        
+        # Build permissions map
+        permissions = {}
+        for res in resources:
+            allowed_actions = PermissionService._allowed_actions_for_resource(res.name, action_names)
+            permissions[res.name] = {}
+            for act_name in allowed_actions:
+                # Use the same check logic as permission enforcement
+                permissions[res.name][act_name] = PermissionService._check_by_projrole(
+                    projrole_id, res.name, act_name
+                )
+        
+        return {
+            "role_id": projrole.id,
+            "role_name": projrole.name,
+            "permissions": permissions
+        }
+
+    @staticmethod
     def set_permissions_bulk(project_id, projrole_id, updates):
         """updates: {resource_name: {action_name: bool}} sets permissions accordingly for projrole in project.
         This will upsert Permission rows; any missing combinations will be created with is_allowed False by default.
