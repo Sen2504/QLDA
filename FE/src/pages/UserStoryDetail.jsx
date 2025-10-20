@@ -8,7 +8,6 @@ import TeamService from "../services/teamService";
 import WorkflowStatusService from "../services/workflowStatusService";
 import TaskTable from "../components/TaskTable";
 import TaskFormModal from "../components/TaskFormModal";
-import MainLayout from "../layouts/MainLayout";
 import PermissionGuard from "../components/PermissionGuard";
 import { usePermission } from "../store/PermissionContext";
 import withPermissions from "../components/withPermissions";
@@ -16,6 +15,7 @@ import withPermissions from "../components/withPermissions";
 function UserStoryDetail() {
   const { userStoryId } = useParams();
   const navigate = useNavigate();
+  
   const [story, setStory] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -120,6 +120,7 @@ function UserStoryDetail() {
             setTeamMembers([]);
           }
         }
+        
       } catch (e) {
         console.error(e);
       } finally {
@@ -141,7 +142,7 @@ function UserStoryDetail() {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="p-6">
         <button
           className="px-3 py-2 rounded-lg border"
@@ -304,7 +305,7 @@ function UserStoryDetail() {
           />
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }
 

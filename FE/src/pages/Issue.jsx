@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import HashtagService from "../services/hashtagService";
 import IssueService from "../services/issueService";
@@ -113,7 +112,7 @@ export default function IssueCreate() {
   };
 
   return (
-    <MainLayout>
+    <>
         <form
           onSubmit={handleSubmit}
           className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-200"
@@ -221,7 +220,7 @@ export default function IssueCreate() {
             </div>
           </div>
         </form>
-    </MainLayout>
+    </>
   );
 }
 

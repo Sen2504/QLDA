@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
-import MainLayout from "../layouts/MainLayout";
 import IssueService from "../services/issueService";
 import IssueTypeService from "../services/issueTypeService";
 import IssueCommentService from "../services/issueCommentService";
@@ -41,6 +40,7 @@ export default function IssueDetail() {
         setTypes(typeRes?.data || []);
         setCurrentUser(profileRes?.data || null);
         setComments(issueData?.comments || []);
+        
       } catch (err) {
         console.error("Error loading issue detail:", err);
         toast.error(err.response?.data?.error || "Unable to load issue");
@@ -98,14 +98,14 @@ export default function IssueDetail() {
   // ==================== RENDER ====================
   if (!issue && !loading) {
     return (
-      <MainLayout>
+      <>
         <div className="p-6 text-center text-gray-500">Issue not found.</div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <button onClick={() => navigate(-1)} className="px-3 py-2 border rounded-lg">
@@ -273,6 +273,6 @@ export default function IssueDetail() {
           </div>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }

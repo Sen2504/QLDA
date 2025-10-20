@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import IssueService from "../services/issueService";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
@@ -70,7 +69,7 @@ const handleStatusChange = (issueId, value) => {
 
   // ---- UI ----
   return (
-    <MainLayout>
+    <>
       <div className="mt-6 bg-white rounded-2xl shadow p-5">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">Issue list</h2>
@@ -186,7 +185,7 @@ const handleStatusChange = (issueId, value) => {
           </div>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }
 

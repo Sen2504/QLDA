@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
-import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import TaskService from "../services/taskService";
 import TaskStatusService from "../services/taskStatusService";
@@ -14,11 +13,21 @@ export default function Tasks() {
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingStatuses, setLoadingStatuses] = useState(false);
+  
+  // useRef để chặn duplicate calls
+  const statusesFetchedRef = useRef(false);
+  const tasksFetchedProjectIdRef = useRef(null);
 
   useEffect(() => {
+    // Chặn cứng - chỉ fetch statuses 1 lần
+    if (statusesFetchedRef.current) return;
+    statusesFetchedRef.current = true;
+    
     setLoadingStatuses(true);
     TaskStatusService.getAll()
-      .then((res) => setStatuses(res.data || []))
+      .then((res) => {
+        setStatuses(res.data || []);
+      })
       .catch((err) => {
         console.error("Can't loading status of task", err);
         toast.error("Can't loading status task list");
@@ -31,10 +40,18 @@ export default function Tasks() {
       setTasks([]);
       return;
     }
+    
+    // Chặn cứng - nếu đã fetch project này rồi → skip
+    if (tasksFetchedProjectIdRef.current === currentProject.id) {
+      return;
+    }
+    tasksFetchedProjectIdRef.current = currentProject.id;
 
     setLoading(true);
     TaskService.getByProject(currentProject.id)
-      .then((res) => setTasks(res.data || []))
+      .then((res) => {
+        setTasks(res.data || []);
+      })
       .catch(async (err) => {
         const status = err?.response?.status;
         if (status === 403) {
@@ -119,7 +136,7 @@ export default function Tasks() {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold text-gray-900">Task list</h1>
@@ -258,6 +275,6 @@ export default function Tasks() {
           </div>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }

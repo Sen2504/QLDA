@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import UserStoryService from "../services/userStoryService";
 import PermissionGuard from "../components/PermissionGuard";
 import withPermissions from "../components/withPermissions";
+import { TableSkeleton } from "../components/LoadingSkeleton";
 
 function UserStoryList() {
   const navigate = useNavigate();
@@ -14,11 +14,22 @@ function UserStoryList() {
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState({});
+  
+  // useRef để chặn duplicate API calls
+  const fetchedProjectIdRef = useRef(null);
 
   // ---- LOAD USER STORIES ----
   useEffect(() => {
     if (!currentProject) return;
+    
+    // Chặn cứng - nếu đã fetch project này rồi → skip
+    if (fetchedProjectIdRef.current === currentProject.id) {
+      return;
+    }
+    
+    fetchedProjectIdRef.current = currentProject.id;
     setLoading(true);
+    
     Promise.all([
       UserStoryService.getByProject(currentProject.id),
       UserStoryService.getStatuses(),
@@ -27,7 +38,9 @@ function UserStoryList() {
         setStories(resStories.data || []);
         setStatuses(resStatuses || []);
       })
-      .catch((err) => console.error("Lỗi khi tải User Stories:", err))
+      .catch((err) => {
+        console.error("Lỗi khi tải User Stories:", err);
+      })
       .finally(() => setLoading(false));
   }, [currentProject]);
 
@@ -58,7 +71,7 @@ function UserStoryList() {
 
   // ---- UI ----
   return (
-    <MainLayout>
+    <>
       <div className="mt-6 bg-white rounded-2xl shadow p-5">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -75,7 +88,7 @@ function UserStoryList() {
         </div>
 
         {loading ? (
-          <p className="text-gray-500 text-sm">Loading...</p>
+          <TableSkeleton rows={5} columns={6} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-700">
@@ -186,7 +199,7 @@ function UserStoryList() {
           </div>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }
 

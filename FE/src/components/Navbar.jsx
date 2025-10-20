@@ -1,18 +1,27 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef, memo, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserCircle, Mail } from "lucide-react";
 import api from "../services/api";
 import TeamService from "../services/teamService";
 import PopupMessage from "../components/Popup_message";
 import { useProject } from "../store/ProjectContext";
+import PerformanceMonitor, { useAPITimer } from "./PerformanceMonitor";
 
-export default function Navbar() {
+function Navbar() {
   const [user, setUser] = useState(null);
   const [invites, setInvites] = useState([]);
   const [open, setOpen] = useState(false);
   const [popup, setPopup] = useState({ message: "", type: "", visible: false });
+  
+  // useRef để chặn 100% duplicate API calls
+  const userFetchedRef = useRef(false);
+  const invitesFetchedRef = useRef(false);
+  
   const navigate = useNavigate();
   const { setCurrentProject } = useProject();
+  
+  // Memoize apiTimer để tránh re-create mỗi render
+  const apiTimer = useMemo(() => useAPITimer('Navbar'), []);
 
   const showPopup = useCallback((message, type = "success") => {
     setPopup({ message, type, visible: true });
@@ -22,40 +31,44 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    let ignore = false;
+    // Chặn cứng - chỉ chạy 1 lần duy nhất
+    if (userFetchedRef.current) return;
+    userFetchedRef.current = true;
+    
+    const timer = apiTimer.start();
 
     api
       .get("/auth/me")
       .then((res) => {
-        if (!ignore) setUser(res.data);
+        setUser(res.data);
+        timer.end(true);
       })
       .catch(() => {
         setCurrentProject(null);
         navigate("/login");
+        timer.end(false);
       });
-
-    return () => {
-      ignore = true;
-    };
-  }, [navigate, setCurrentProject]);
+  }, []); // Empty deps - chỉ chạy on mount
 
   useEffect(() => {
-    let ignore = false;
+    // Chặn cứng - chỉ chạy 1 lần duy nhất
+    if (invitesFetchedRef.current) return;
+    invitesFetchedRef.current = true;
+    
+    const timer = apiTimer.start();
 
     TeamService.getMyInvites()
       .then((res) => {
-        if (!ignore) setInvites(res.data);
+        setInvites(res.data);
+        timer.end(true);
       })
       .catch((err) => {
-        if (!ignore && err.response?.status !== 401) {
+        if (err.response?.status !== 401) {
           showPopup("Unable to download invitation!", "error");
         }
+        timer.end(false);
       });
-
-    return () => {
-      ignore = true;
-    };
-  }, [showPopup]);
+  }, []); // Empty deps - chỉ chạy on mount
 
   const handleAccept = async (inviteId) => {
     try {
@@ -79,6 +92,7 @@ export default function Navbar() {
 
   return (
     <>
+      <PerformanceMonitor componentName="Navbar" />
       <header className="bg-gradient-to-r from-green-400 to-green-600 text-white px-6 py-4 shadow-md flex justify-between items-center relative">
         {/* Logo */}
         <h1 className="text-xl font-bold tracking-wide">QLDA</h1>
@@ -162,3 +176,6 @@ export default function Navbar() {
     </>
   );
 }
+
+// Memoize Navbar để tránh re-render không cần thiết
+export default memo(Navbar);

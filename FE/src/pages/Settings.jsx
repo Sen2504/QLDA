@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { useProject } from "../store/ProjectContext";
 import CustomRoleManager from "../components/CustomRoleManager";
 import PermissionsPanel from "../components/PermissionsPanel";
-import MainLayout from "../layouts/MainLayout";
 import TeamService from "../services/teamService";
 import UserService from "../services/userService";
 
@@ -46,7 +45,7 @@ export default function Settings() {
   }, [location.search]);
 
   return (
-    <MainLayout>
+    <>
       <div className="p-6 space-y-6">
         <h2 className="text-2xl font-bold text-green-700">
           Setting project {currentProject?.name}
@@ -90,6 +89,6 @@ export default function Settings() {
           </>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }

@@ -10,7 +10,6 @@ import {
   MDBBtn,
 } from "mdb-react-ui-kit";
 import UserService from "../services/userService";
-import MainLayout from "../layouts/MainLayout";
 import PopupMessage from "../components/Popup_message";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import CreatableSelect from "react-select/creatable";
@@ -153,7 +152,7 @@ export default function ProfilePage() {
   if (!user) return <p className="p-5 text-center">Loading...</p>;
 
   return (
-    <MainLayout>
+    <>
       {popup.show && (
         <PopupMessage
           message={popup.message}
@@ -453,6 +452,6 @@ export default function ProfilePage() {
           </MDBRow>
         </MDBContainer>
       </section>
-    </MainLayout>
+    </>
   );
 }

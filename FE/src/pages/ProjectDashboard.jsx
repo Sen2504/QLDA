@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
-import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import ProjectService from "../services/projectService";
 import TaskService from "../services/taskService";
@@ -81,7 +80,7 @@ export default function ProjectDashboard() {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="p-6 space-y-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-green-700">
@@ -213,6 +212,6 @@ export default function ProjectDashboard() {
           )}
         </section>
       </div>
-    </MainLayout>
+    </>
   );
 }

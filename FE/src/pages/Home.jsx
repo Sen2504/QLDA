@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 
-import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import SprintService from "../services/sprintService";
 import UserStoryService from "../services/userStoryService";
@@ -53,6 +52,9 @@ function SmallUSCard({ us, index, onOpen }) {
 export default function Home() {
   const { currentProject } = useProject();
   const navigate = useNavigate();
+  
+  // useRef để chặn duplicate calls
+  const fetchedProjectIdRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
   const [sprints, setSprints] = useState([]);
@@ -82,6 +84,13 @@ export default function Home() {
 
   useEffect(() => {
     if (!projectId) return;
+    
+    // Chặn cứng - nếu đã fetch project này rồi → skip
+    if (fetchedProjectIdRef.current === projectId) {
+      return;
+    }
+    fetchedProjectIdRef.current = projectId;
+    
     setLoading(true);
     Promise.all([
       SprintService.getByProject(projectId),
@@ -97,7 +106,9 @@ export default function Home() {
         );
         setMyTasks(tasksInProject);
       })
-      .catch(() => toast.error("Không tải được dữ liệu Sprint / User Stories"))
+      .catch(() => {
+        toast.error("Không tải được dữ liệu Sprint / User Stories");
+      })
       .finally(() => setLoading(false));
   }, [projectId]);
 
@@ -170,14 +181,14 @@ export default function Home() {
 
   if (!currentProject) {
     return (
-      <MainLayout>
+      <>
         <div className="p-6">Select a project to continue.</div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold">
@@ -418,6 +429,6 @@ export default function Home() {
           </div>
         </div>
       )}
-    </MainLayout>
+    </>
   );
 }

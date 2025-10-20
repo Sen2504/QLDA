@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import MainLayout from "../layouts/MainLayout";
 import ProjectService from "../services/projectService";
 import { useProject } from "../store/ProjectContext";
 
@@ -10,15 +9,24 @@ export default function Projects() {
   const [description, setDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
-  const { setCurrentProject } = useProject(); // dùng context để chọn project trong sidebar
+  const { setCurrentProject } = useProject();
+  
+  // useRef để chặn duplicate API calls
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    // Chặn cứng - chỉ fetch 1 lần
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    
     ProjectService.getMyProjects()
-      .then((res) => setProjects(res.data))
+      .then((res) => {
+        setProjects(res.data);
+      })
       .catch((err) => {
         if (err.response?.status === 401) navigate("/login");
       });
-  }, [navigate]);
+  }, []); // Empty deps - chỉ chạy on mount
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -85,7 +93,7 @@ export default function Projects() {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="p-6 space-y-8">
         {/* Form tạo project */}
         <div className="bg-white p-6 rounded-lg shadow">
@@ -188,6 +196,6 @@ export default function Projects() {
           )}
         </div>
       </div>
-    </MainLayout>
+    </>
   );
 }

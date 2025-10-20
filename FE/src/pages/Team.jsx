@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TeamService from "../services/teamService";
-import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import InviteForm from "../components/InviteForm";
 import PendingInvites from "../components/PendingInvites";
@@ -95,7 +94,7 @@ function Team() {
 
   return (
     <>
-      <MainLayout>
+      <>
         <div className="p-6 space-y-8">
           <h2 className="text-2xl font-bold text-green-700">
             Team của project{" "}
@@ -189,7 +188,7 @@ function Team() {
             }}
           />
         </div>
-      </MainLayout>
+      </>
 
       {popup.visible && (
         <PopupMessage

@@ -25,37 +25,42 @@ import IssueList from "./pages/IssueList";
 import TaskDetail from "./pages/TaskDetail";
 import IssueDetail from "./pages/IssueDetail";
 import ResendConfirm from "./pages/ResendConfirm";
+import PersistentLayout from "./layouts/PersistentLayout";
 
 export default function App() {
   return (
     <BrowserRouter>
       <ToastContainer position="top-right" autoClose={3000} newestOnTop theme="colored" />
       <Routes>
-        <Route path="/" element={<Home />} />
+        {/* Public routes - không có layout */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/tasks" element={<Tasks />} /> 
-        <Route path="/tasks/:taskId" element={<TaskDetail />} />
-        <Route path="/projects/:projectId/team" element={<Team />} />
-        <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />
-        <Route path="/projects/:projectId/permissions" element={<ProjectPermissions />} />
-        <Route path="/my-invites" element={<MyInvites />} />
-        <Route path="/user-stories" element={<UserStoryList />} />
-        <Route path="/user-stories/new" element={<UserStory />} />
-        <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
-        <Route path="/projects/:projectId/sprints/:sprintId/taskboard" element={<SprintBoard />} />
-        <Route path="/tasks" element={<Tasks />} />
-        <Route path="/issues" element={<Issue />} />
-        <Route path="/issues/:id/edit" element={<IssueEdit />} />
-        <Route path="/issues/list" element={<IssueList />} />
-        <Route path="/issues/:id" element={<IssueDetail />} />
         <Route path="/resend-confirm" element={<ResendConfirm />} />
+        
+        {/* Protected routes - dùng PersistentLayout */}
+        <Route element={<PersistentLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/tasks" element={<Tasks />} /> 
+          <Route path="/tasks/:taskId" element={<TaskDetail />} />
+          <Route path="/projects/:projectId/team" element={<Team />} />
+          <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />
+          <Route path="/projects/:projectId/permissions" element={<ProjectPermissions />} />
+          <Route path="/my-invites" element={<MyInvites />} />
+          <Route path="/user-stories" element={<UserStoryList />} />
+          <Route path="/user-stories/new" element={<UserStory />} />
+          <Route path="/user-stories/:id/edit" element={<UserStoryEdit />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/user-stories/:userStoryId" element={<UserStoryDetail />} />
+          <Route path="/projects/:projectId/sprints/:sprintId/taskboard" element={<SprintBoard />} />
+          <Route path="/issues" element={<Issue />} />
+          <Route path="/issues/:id/edit" element={<IssueEdit />} />
+          <Route path="/issues/list" element={<IssueList />} />
+          <Route path="/issues/:id" element={<IssueDetail />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import UserStoryService from "../services/userStoryService";
 import HashtagService from "../services/hashtagService";
@@ -154,7 +153,7 @@ export default function UserStory() {
 
   // ---- UI
   return (
-    <MainLayout>
+    <>
       <form
         onSubmit={handleSubmit}
         className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-200 my-8"
@@ -348,6 +347,6 @@ export default function UserStory() {
           </div>
         </div>
       </form>
-    </MainLayout>
+    </>
   );
 }

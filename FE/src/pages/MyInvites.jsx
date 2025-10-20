@@ -1,7 +1,6 @@
 // components/MyInvites.jsx
 import { useEffect, useState } from "react";
 import TeamService from "../services/teamService";
-import MainLayout from "../layouts/MainLayout";
 
 export default function MyInvites() {
   const [invites, setInvites] = useState([]);
@@ -32,7 +31,7 @@ export default function MyInvites() {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="p-6 space-y-6">
         <h2 className="text-2xl font-bold text-green-700">My invitation</h2>
         {invites.length > 0 ? (
@@ -69,6 +68,6 @@ export default function MyInvites() {
           <p className="text-gray-500">You don't have any invitations.</p>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }

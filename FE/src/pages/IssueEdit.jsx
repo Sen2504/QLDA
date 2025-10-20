@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import MainLayout from "../layouts/MainLayout";
 import { useProject } from "../store/ProjectContext";
 import IssueService from "../services/issueService";
 import IssueTypeService from "../services/issueTypeService";
@@ -204,7 +203,7 @@ export default function IssueEdit() {
 
   // ---- UI ----
   return (
-    <MainLayout>
+    <>
       <form
         onSubmit={handleSubmit}
         className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-200 my-8"
@@ -393,7 +392,7 @@ export default function IssueEdit() {
           </div>
         </div>
       </form>
-    </MainLayout>
+    </>
   );
 }
 
