@@ -70,6 +70,22 @@ const TaskService = {
       return { error: msg };
     }
   },
+
+  async updateAssignees(id, team_ids) {
+    try {
+      const res = await api.put(`/tasks/${id}/assignees`, { team_ids });
+      if (res.data?.error) {
+        return { error: res.data.error };
+      }
+      return { data: res.data, message: "Assignees updated successfully!" };
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Failed to update assignees.";
+      return { error: msg };
+    }
+  },
 };
 
 export default TaskService;

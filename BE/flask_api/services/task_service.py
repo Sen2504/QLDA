@@ -8,6 +8,8 @@ from flask_api.models.team_models import Team
 from flask_api.models.phan_cong_models import PhanCong
 from flask_api.models.task_comment_models import TaskComment
 from flask_api.models.workflow_status_models import WorkflowStatus
+from flask_api.models.task_hashtag_models import TaskHashtag
+from flask_api.models.hashtag_models import Hashtag
 
 
 class TaskService:
@@ -35,6 +37,8 @@ class TaskService:
                 joinedload(Task.comments)
                 .joinedload(TaskComment.team)
                 .joinedload(Team.projrole),
+                joinedload(Task.hashtags)
+                .joinedload(TaskHashtag.hashtag),
             )
             .filter(Task.id == task_id)
             .first()
@@ -81,6 +85,7 @@ class TaskService:
         team_id = data.get("team_id")
         team_ids = data.get("team_ids") or []
         due_date = data.get("due_date")
+        hashtag_ids = data.get("hashtag_ids") or []
 
         if not name:
             return None, "Task name is required."
@@ -111,6 +116,15 @@ class TaskService:
             if not t.projrole or t.projrole.project_id != user_story.project_id:
                 return None, "There are members who are not part of the user story's project."
 
+        # Validate hashtags nếu có
+        hashtags = []
+        if hashtag_ids:
+            hashtags = Hashtag.query.filter(Hashtag.id.in_(hashtag_ids)).all()
+            found_hashtag_ids = {h.id for h in hashtags}
+            missing_hashtags = [hid for hid in hashtag_ids if hid not in found_hashtag_ids]
+            if missing_hashtags:
+                return None, f"Can not found hashtag: {missing_hashtags}"
+
         try:
             new_task = Task(
                 name=name,
@@ -125,6 +139,12 @@ class TaskService:
             for t in teams:
                 assignment = PhanCong(team_id=t.id, task_id=new_task.id)
                 db.session.add(assignment)
+            
+            # Thêm hashtags
+            for h in hashtags:
+                task_hashtag = TaskHashtag(task_id=new_task.id, hashtag_id=h.id)
+                db.session.add(task_hashtag)
+            
             db.session.commit()
             refreshed = TaskService.get_by_id(new_task.id)
             return refreshed or new_task, None
@@ -145,6 +165,7 @@ class TaskService:
         team_ids = data.get("team_ids") or []
         update_due_date = "due_date" in data
         due_date = data.get("due_date")
+        hashtag_ids = data.get("hashtag_ids") if "hashtag_ids" in data else None
 
         try:
             if name is not None:
@@ -203,6 +224,23 @@ class TaskService:
                     assignment.team_id = team.id
                 else:
                     db.session.add(PhanCong(team_id=team.id, task_id=task.id))
+
+            # Cập nhật hashtags nếu có trong data
+            if hashtag_ids is not None:
+                # Xóa tất cả hashtags cũ
+                TaskHashtag.query.filter_by(task_id=task.id).delete()
+                
+                # Thêm hashtags mới
+                if hashtag_ids:
+                    hashtags = Hashtag.query.filter(Hashtag.id.in_(hashtag_ids)).all()
+                    found_hashtag_ids = {h.id for h in hashtags}
+                    missing_hashtags = [hid for hid in hashtag_ids if hid not in found_hashtag_ids]
+                    if missing_hashtags:
+                        return None, f"Can not found hashtag: {missing_hashtags}"
+                    
+                    for h in hashtags:
+                        task_hashtag = TaskHashtag(task_id=task.id, hashtag_id=h.id)
+                        db.session.add(task_hashtag)
 
             # Commit task thay đổi
             db.session.commit()

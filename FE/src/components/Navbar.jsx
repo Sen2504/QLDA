@@ -5,7 +5,6 @@ import api from "../services/api";
 import TeamService from "../services/teamService";
 import PopupMessage from "../components/Popup_message";
 import { useProject } from "../store/ProjectContext";
-import PerformanceMonitor, { useAPITimer } from "./PerformanceMonitor";
 
 // Invite dropdown tách riêng -> tránh render lại Navbar mỗi khi toggle
 const InviteDropdown = memo(({ invites, onAccept, onReject }) => {
@@ -70,7 +69,6 @@ function Navbar() {
   const userFetchedRef = useRef(false);
   const navigate = useNavigate();
   const { setCurrentProject } = useProject();
-  const apiTimer = useAPITimer("Navbar");
 
   // popup tiện ích
   const showPopup = useCallback((message, type = "success") => {
@@ -83,16 +81,13 @@ function Navbar() {
     if (userFetchedRef.current) return;
     userFetchedRef.current = true;
 
-    const timer = apiTimer.start();
 
     Promise.all([api.get("/auth/me"), TeamService.getMyInvites()])
       .then(([userRes, invitesRes]) => {
         setUser(userRes.data);
         setInvites(invitesRes.data || []);
-        timer.end(true);
       })
       .catch((err) => {
-        timer.end(false);
         if (err.response?.status === 401) {
           setCurrentProject(null);
           navigate("/login");
@@ -124,7 +119,6 @@ function Navbar() {
 
   return (
     <>
-      <PerformanceMonitor componentName="Navbar" />
       <header className="bg-gradient-to-r from-green-400 to-green-600 text-white px-6 py-4 shadow-md flex justify-between items-center relative">
         <h1 className="text-xl font-bold tracking-wide">QLDA</h1>
 

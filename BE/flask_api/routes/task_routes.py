@@ -185,3 +185,21 @@ def delete_task(task_id):
         status_code = 404 if error == "Khong tim thay task." else 400
         return jsonify({"error": error}), status_code
     return jsonify({"message": "Da xoa task."}), 200
+
+
+@task_bp.route("/<int:task_id>/assignees", methods=["PUT"])
+@login_required
+@require_permission("Task", "Edit", project_id_getter=lambda task_id: get_project_id_from_task(task_id))
+def update_task_assignees(task_id):
+    """Cập nhật phân công (assignees) cho task"""
+    payload = request.get_json() or {}
+    team_ids = payload.get("team_ids", [])
+    
+    if not isinstance(team_ids, list):
+        return jsonify({"error": "team_ids phai la mang."}), 400
+    
+    task, error = TaskService.update(task_id, {"team_ids": team_ids})
+    if error:
+        status_code = 404 if error == "Khong tim thay task." else 400
+        return jsonify({"error": error}), status_code
+    return jsonify(task_schema.dump(task)), 200

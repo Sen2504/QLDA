@@ -8,6 +8,8 @@ from flask_cors import CORS
 from flask_api.extensions import db, migrate, login_manager, mail  
 from flask_api.config import Config
 from flask import send_from_directory, abort
+from sqlalchemy import event
+from flask_api.extensions import db
 
 load_dotenv()
 def create_app():
@@ -51,7 +53,7 @@ def create_app():
     mail.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
-
+   
     # Import models để SQLAlchemy biết bảng
     from . import models  # noqa: F401
     from .models import User  # noqa: F401
@@ -73,7 +75,7 @@ def create_app():
             ]
             if not image_files:
                 return abort(404, description="Không tìm thấy ảnh trong thư mục.")
-            # ✅ lấy ảnh đầu tiên trong thư mục (vì mỗi thư mục user chỉ có 1 ảnh)
+            # lấy ảnh đầu tiên trong thư mục (vì mỗi thư mục user chỉ có 1 ảnh)
             first_image = image_files[0]
             return send_from_directory(full_path, first_image)
 

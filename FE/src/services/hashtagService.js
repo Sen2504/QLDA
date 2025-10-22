@@ -5,6 +5,10 @@ const HashtagService = {
   search(q) {
     return api.get(`/hashtags/search`, { params: { q } });
   },
+
+  create(name) {
+    return api.post(`/hashtags/`, { name });
+  },
 };
 
 export default HashtagService;

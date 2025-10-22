@@ -9,4 +9,4 @@ class TeamSchema(Schema):
     role_name = fields.Str()
     # nested để trả thêm thông tin user & role
     user = fields.Nested("UserSchema", only=("id", "email", "name"), dump_only=True)
-    projrole = fields.Nested("ProjectRoleSchema", only=("id", "role_id"), dump_only=True)
+    projrole = fields.Nested("ProjectRoleSchema", only=("id", "role_id", "name"), dump_only=True)

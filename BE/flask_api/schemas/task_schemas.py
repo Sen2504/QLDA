@@ -16,6 +16,7 @@ class TaskSchema(Schema):
     assignee = fields.Method("get_assignee", dump_only=True)  # Giữ tương thích cũ (lấy người đầu tiên)
     assignees = fields.Method("get_assignees", dump_only=True)
     comments = fields.Nested("TaskCommentSchema", many=True, dump_only=True)
+    hashtags = fields.Method("get_hashtags", dump_only=True)
 
     user_story = fields.Nested("UserStorySchema", only=("id", "name"), dump_only=True)
 
@@ -68,6 +69,18 @@ class TaskSchema(Schema):
             })
         return results
 
+    def get_hashtags(self, obj):
+        hashtag_relations = getattr(obj, "hashtags", None) or []
+        results = []
+        for rel in hashtag_relations:
+            hashtag = getattr(rel, "hashtag", None)
+            if hashtag:
+                results.append({
+                    "id": hashtag.id,
+                    "name": hashtag.name,
+                })
+        return results
+
     # ------------------ VALIDATION ------------------
     @validates("name")
     def validate_name(self, value, **kwargs):
@@ -96,6 +109,8 @@ class TaskCreateSchema(TaskSchema):
     team_id = fields.Int(load_only=True)
     # Mới: danh sách nhiều team id
     team_ids = fields.List(fields.Int(), load_only=True)
+    # Hashtag IDs
+    hashtag_ids = fields.List(fields.Int(), load_only=True)
 
     @validates("team_ids")
     def validate_team_ids(self, value, **kwargs):
@@ -121,6 +136,8 @@ class TaskUpdateSchema(Schema):
     status_id = fields.Int()
     team_id = fields.Int(load_only=True)
     due_date = fields.Date(allow_none=True)
+    team_ids = fields.List(fields.Int(), load_only=True)
+    hashtag_ids = fields.List(fields.Int(), load_only=True)
 
     @validates("name")
     def validate_name(self, value, **kwargs):

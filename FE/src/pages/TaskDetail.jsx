@@ -6,6 +6,8 @@ import TaskService from "../services/taskService";
 import TaskStatusService from "../services/taskStatusService";
 import TaskCommentService from "../services/taskCommentService";
 import UserService from "../services/userService";
+import HashtagService from "../services/hashtagService";
+import api from "../services/api";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 import PermissionGuard from "../components/PermissionGuard";
 import { usePermission } from "../store/PermissionContext";
@@ -29,6 +31,17 @@ function TaskDetail() {
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [forbidden, setForbidden] = useState(false);
+  
+  // Hashtag states
+  const [hashtags, setHashtags] = useState([]);
+  const [hashtagInput, setHashtagInput] = useState("");
+  const [hashtagSuggestions, setHashtagSuggestions] = useState([]);
+  const [editingHashtags, setEditingHashtags] = useState(false);
+  
+  // Assignees states
+  const [editingAssignees, setEditingAssignees] = useState(false);
+  const [availableMembers, setAvailableMembers] = useState([]);
+  const [selectedAssignees, setSelectedAssignees] = useState([]);
 
   // ✅ Kiểm tra nếu task đã Done thì khóa hành động
   const isDone = useMemo(() => {
@@ -55,6 +68,7 @@ function TaskDetail() {
           const taskData = taskRes.value?.data;
           setTask(taskData || null);
           setComments(taskData?.comments || []);
+          setHashtags(taskData?.hashtags || []);
           setForm({
             name: taskData?.name || "",
             description: taskData?.description || "",
@@ -114,11 +128,43 @@ function TaskDetail() {
       status_id: data.status_id ? String(data.status_id) : "",
       due_date: data.due_date ? dayjs(data.due_date).format("YYYY-MM-DD") : "",
     });
+    setHashtags(data?.hashtags || []);
+    setSelectedAssignees(data?.assignees?.map(a => a.team_id) || []);
+  };
+
+  const handleEnterEditMode = async () => {
+    setEditMode(true);
+    // Load danh sách team members từ project
+    if (task?.project_id) {
+      try {
+        const response = await api.get(`/teams/${task.project_id}`);
+        const members = response.data || [];
+        setAvailableMembers(members);
+      } catch (error) {
+        console.error("Failed to load team members:", error);
+        toast.error("Cannot load team members.");
+      }
+    } else {
+      toast.warn("Cannot determine project to load team members");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    resetForm();
+    setEditMode(false);
+    setHashtagInput("");
+    setHashtagSuggestions([]);
+    setAvailableMembers([]);
   };
 
   const handleSave = async () => {
   if (!form.name.trim() || !form.description.trim()) {
     toast.warn("Please enter the full name and description of the task");
+    return;
+  }
+
+  if (selectedAssignees.length === 0) {
+    toast.warn("Please select at least 1 assignee");
     return;
   }
 
@@ -136,6 +182,10 @@ function TaskDetail() {
       payload.status_id = Number(form.status_id);
     }
 
+    // Thêm team_ids và hashtag_ids
+    payload.team_ids = selectedAssignees;
+    payload.hashtag_ids = hashtags.map(h => h.id);
+
     const updateResult = await TaskService.update(taskId, payload);
     
     // Kiểm tra nếu có lỗi thì dừng lại (lỗi đã được hiển thị bởi api.js interceptor)
@@ -149,8 +199,12 @@ function TaskDetail() {
 
     setTask(data);
     setComments(data?.comments || []);
+    setHashtags(data?.hashtags || []);
     resetForm(data);
     setEditMode(false);
+    setAvailableMembers([]);
+    setHashtagInput("");
+    setHashtagSuggestions([]);
     toast.success("Task updated successfully");
   } catch (error) {
     // Lỗi đã được xử lý bởi api.js interceptor
@@ -160,6 +214,77 @@ function TaskDetail() {
   }
 };
 
+  // Hashtag handlers
+  const handleHashtagSearch = async (query) => {
+    if (!query.trim()) {
+      setHashtagSuggestions([]);
+      return;
+    }
+    try {
+      const { data } = await HashtagService.search(query);
+      setHashtagSuggestions(data || []);
+    } catch (error) {
+      console.error("Failed to search hashtags:", error);
+    }
+  };
+
+  const handleAddHashtag = (hashtag) => {
+    if (hashtags.some(h => h.id === hashtag.id)) {
+      toast.warn("Hashtag has been added");
+      return;
+    }
+    setHashtags(prev => [...prev, hashtag]);
+    setHashtagInput("");
+    setHashtagSuggestions([]);
+  };
+
+  const handleRemoveHashtag = (hashtagId) => {
+    setHashtags(prev => prev.filter(h => h.id !== hashtagId));
+  };
+
+  const handleHashtagKeyDown = async (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const value = hashtagInput.trim();
+      
+      if (!value) {
+        toast.warn("Please enter a hashtag name.");
+        return;
+      }
+
+      // Kiểm tra xem có trong suggestions không
+      const existingInSuggestions = hashtagSuggestions.find(
+        h => h.name.toLowerCase() === value.toLowerCase()
+      );
+
+      if (existingInSuggestions) {
+        // Nếu có trong suggestions thì thêm luôn
+        handleAddHashtag(existingInSuggestions);
+      } else {
+        // Nếu chưa có thì tạo mới
+        try {
+          const { data } = await HashtagService.create(value);
+          if (data) {
+            handleAddHashtag(data);
+            toast.success("Created new hashtag successfully!");
+          }
+        } catch (error) {
+          console.error("Failed to create hashtag:", error);
+          toast.error("Cannot create new hashtag");
+        }
+      }
+    }
+  };
+
+  const handleToggleAssignee = (teamId) => {
+    setSelectedAssignees(prev => {
+      if (prev.includes(teamId)) {
+        return prev.filter(id => id !== teamId);
+      } else {
+        return [...prev, teamId];
+      }
+    });
+  };
 
   const handleSubmitComment = async () => {
     if (isDone) return; // ✅ Không cho gửi comment nếu Done
@@ -304,10 +429,7 @@ function TaskDetail() {
                       </button>
                     </PermissionGuard>
                     <button
-                      onClick={() => {
-                        resetForm();
-                        setEditMode(false);
-                      }}
+                      onClick={handleCancelEdit}
                       className="px-4 py-2 rounded-lg border"
                       type="button"
                       disabled={isDone}
@@ -318,7 +440,7 @@ function TaskDetail() {
                 ) : (
                   <PermissionGuard resource="Task" action="Edit">
                     <button
-                      onClick={() => setEditMode(true)}
+                      onClick={handleEnterEditMode}
                       disabled={isDone}
                       className={`px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 ${
                         isDone ? "opacity-60 cursor-not-allowed" : ""
@@ -332,41 +454,45 @@ function TaskDetail() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Describe</h2>
+            {/* Main Content Section */}
+            <div className="space-y-5">
+              {/* Description, Due Date, Status - Full Width */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <section className="md:col-span-3">
+                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Description</h2>
                   {editMode ? (
                     <textarea
                       value={form.description}
                       onChange={(e) => handleChange("description", e.target.value)}
-                      rows={6}
+                      rows={4}
                       className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   ) : (
-                    <p className="text-gray-700 whitespace-pre-line">
+                    <p className="text-gray-700 whitespace-pre-line bg-gray-50 rounded-xl p-4">
                       {task.description?.trim() || "(No description yet)"}
                     </p>
                   )}
                 </section>
 
                 <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Expiration date</h2>
+                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Due Date</h2>
                   {editMode ? (
                     <input
                       type="date"
                       value={form.due_date}
                       onChange={(e) => handleChange("due_date", e.target.value)}
-                      className="border rounded-lg px-3 py-2"
+                      className="w-full border rounded-lg px-3 py-2"
                     />
                   ) : (
-                    <div className="text-gray-800 font-medium">
-                      {dueInfo?.dueDisplay || "Chưa thiết lập"}
-                    </div>
-                  )}
-                  {dueInfo?.diffDays !== null && !editMode && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {describeDiffDays(dueInfo.diffDays)}
+                    <div className="bg-gray-50 rounded-lg px-4 py-3">
+                      <div className="text-gray-800 font-medium">
+                        {dueInfo?.dueDisplay || "Not set yet"}
+                      </div>
+                      {dueInfo?.diffDays !== null && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {describeDiffDays(dueInfo.diffDays)}
+                        </div>
+                      )}
                     </div>
                   )}
                 </section>
@@ -377,7 +503,7 @@ function TaskDetail() {
                     <select
                       value={form.status_id}
                       onChange={(e) => handleChange("status_id", e.target.value)}
-                      className="border rounded-lg px-3 py-2"
+                      className="w-full border rounded-lg px-3 py-2"
                     >
                       <option value="">Choose status</option>
                       {statuses.map((status) => (
@@ -387,114 +513,274 @@ function TaskDetail() {
                       ))}
                     </select>
                   ) : (
-                    <div className="text-gray-800 font-medium">
-                      {task.status || "—"}
+                    <div className="bg-gray-50 rounded-lg px-4 py-3">
+                      <div className="text-gray-800 font-medium">
+                        {task.status || "—"}
+                      </div>
                     </div>
                   )}
                 </section>
               </div>
 
-              <div className="space-y-4">
-                <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Implement</h2>
-                  {task.assignees?.length ? (
-                    <ul className="space-y-2">
-                      {task.assignees.map((assignee) => (
-                        <li
-                          key={`assignee-${assignee.team_id || assignee.user_id || assignee.user_email}`}
-                          className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 flex flex-col"
-                        >
-                          <span className="font-medium text-emerald-900">
-                            {assignee.user_name || assignee.name || assignee.user_email || assignee.email || "Ẩn danh"}
+              {/* Two Column Layout: Left 35% | Right 65% */}
+              <div className="grid grid-cols-1 lg:grid-cols-[35%_1fr] gap-5">
+                {/* LEFT COLUMN - 35% */}
+                <div className="space-y-4">
+                  {/* Hashtags Section */}
+                  <section className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                    <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3 flex items-center gap-2">
+                      <span className="text-blue-600">#</span>
+                      Hashtags
+                    </h2>
+                  
+                  {editMode ? (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {hashtags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-700"
+                          >
+                            #{tag.name}
+                            <button
+                              onClick={() => handleRemoveHashtag(tag.id)}
+                              className="hover:text-blue-900"
+                              type="button"
+                            >
+                              ×
+                            </button>
                           </span>
-                          {assignee.role_name && (
-                            <span className="text-xs text-emerald-700">
-                              {assignee.role_name}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                        ))}
+                      </div>
+                      
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={hashtagInput}
+                          onChange={(e) => {
+                            setHashtagInput(e.target.value);
+                            handleHashtagSearch(e.target.value);
+                          }}
+                          onKeyDown={handleHashtagKeyDown}
+                          placeholder="Tìm kiếm hoặc tạo hashtag... (Enter để thêm)"
+                          className="w-full border rounded-lg px-3 py-2 text-sm"
+                        />
+                        {hashtagSuggestions.length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                            {hashtagSuggestions.map((tag) => (
+                              <button
+                                key={tag.id}
+                                onClick={() => handleAddHashtag(tag)}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                                type="button"
+                              >
+                                #{tag.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {hashtagInput.trim() && hashtagSuggestions.length === 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg">
+                            <div className="px-3 py-2 text-sm text-gray-500">
+                              Nhấn Enter để tạo hashtag mới: <span className="font-semibold text-blue-600">#{hashtagInput.trim()}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ) : (
-                    <div className="text-sm text-gray-500">Not assigned yet</div>
+                    <div className="flex flex-wrap gap-2">
+                      {hashtags.length > 0 ? (
+                        hashtags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-700"
+                          >
+                            #{tag.name}
+                          </span>
+                        ))
+                      ) : (
+                        <div className="text-sm text-gray-500">Chưa có hashtag</div>
+                      )}
+                    </div>
                   )}
                 </section>
 
-                <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3">Comment</h2>
-                  <div className="space-y-4">
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 max-h-72 overflow-y-auto space-y-3">
-                      {comments.length === 0 && (
-                        <div className="text-sm text-gray-500 text-center">There are no comments yet.</div>
-                      )}
-                      {comments.map((comment) => {
-                        const created = comment.created_at ? dayjs(comment.created_at) : null;
-                        const isOwner = currentUser && comment.user?.id === currentUser.id;
-                        return (
-                          <div
-                            key={comment.id}
-                            className="bg-white border border-gray-100 rounded-lg p-3 shadow-sm"
-                          >
-                            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                              <span className="font-medium text-gray-700">
-                                {comment.author_name || comment.user?.name || "Ẩn danh"}
-                              </span>
-                              {created?.isValid() && (
-                                <span>{created.format("HH:mm DD/MM/YYYY")}</span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-800 whitespace-pre-line">
-                              {comment.content}
-                            </p>
-                            {isOwner && !isDone && (
-                              <div className="text-right mt-2">
-                                <button
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                  disabled={commentSubmitting}
-                                  className="text-xs text-red-500 hover:text-red-600"
-                                  type="button"
-                                >
-                                  Xóa
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                  {/* Assignees Section */}
+                  <section className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                    <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3 flex items-center gap-2">
+                      <span className="text-emerald-600">👥</span>
+                      Assignees
+                    </h2>
 
-                    <div
-                      className={`border border-emerald-100 rounded-xl p-3 ${
-                        isDone ? "bg-gray-100 opacity-70" : "bg-emerald-50"
-                      }`}
-                    >
-                      <PermissionGuard resource="Task" action="Comment">
-                        <textarea
-                          value={commentInput}
-                          onChange={(e) => setCommentInput(e.target.value)}
-                          rows={3}
-                          placeholder={
-                            isDone
-                              ? "Task đã hoàn thành — không thể thêm bình luận."
-                              : "Share updates or discuss..."
-                          }
-                          className="w-full border border-emerald-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          disabled={isDone || !canComment}
-                        />
-                        <div className="flex justify-end mt-2">
-                          <button
-                            onClick={handleSubmitComment}
-                            disabled={commentSubmitting || isDone || !canComment}
-                            className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-                            type="button"
-                          >
-                            {commentSubmitting ? "Sending..." : "Post a comment"}
-                          </button>
+                  {editMode ? (
+                    <div className="border rounded-lg p-3 max-h-60 overflow-y-auto space-y-2">
+                      {availableMembers.length === 0 ? (
+                        <div className="text-sm text-gray-500">Đang tải danh sách thành viên...</div>
+                      ) : (
+                        availableMembers.map((member) => {
+                          const userName = member.user?.name || member.user?.email || member.user_email || "Ẩn danh";
+                          const roleName = member.projrole?.name || member.role_name || "";
+                          
+                          return (
+                            <label
+                              key={member.id}
+                              className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedAssignees.includes(member.id)}
+                                onChange={() => handleToggleAssignee(member.id)}
+                                className="w-4 h-4"
+                              />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {userName}
+                                </div>
+                                {roleName && (
+                                  <div className="text-xs text-gray-600">
+                                    {roleName}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })
+                      )}
+                      {selectedAssignees.length > 0 && (
+                        <div className="text-xs text-emerald-600 mt-1 px-2">
+                          Đã chọn {selectedAssignees.length} người
                         </div>
-                      </PermissionGuard>
+                      )}
                     </div>
-                  </div>
-                </section>
+                  ) : (
+                    <>
+                      {task.assignees?.length ? (
+                        <ul className="space-y-2">
+                          {task.assignees.map((assignee) => (
+                            <li
+                              key={`assignee-${assignee.team_id || assignee.user_id || assignee.user_email}`}
+                              className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 flex flex-col"
+                            >
+                              <span className="font-medium text-emerald-900">
+                                {assignee.user_name || assignee.name || assignee.user_email || assignee.email || "Ẩn danh"}
+                              </span>
+                              {assignee.role_name && (
+                                <span className="text-xs text-emerald-700">
+                                  {assignee.role_name}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="text-sm text-gray-500">Not assigned yet</div>
+                      )}
+                    </>
+                  )}
+                  </section>
+                </div>
+
+                {/* RIGHT COLUMN - 65% */}
+                <div>
+                  <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <h2 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="text-emerald-600">💬</span>
+                      Comments
+                      {comments.length > 0 && (
+                        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
+                          {comments.length}
+                        </span>
+                      )}
+                    </h2>
+                    
+                    <div className="space-y-4">
+                      {/* Comments List */}
+                      <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                        {comments.length === 0 && (
+                          <div className="text-center py-8 text-gray-400">
+                            <div className="text-4xl mb-2">💭</div>
+                            <div className="text-sm">No comments yet. Be the first to comment!</div>
+                          </div>
+                        )}
+                        
+                        {comments.map((comment) => {
+                          const created = comment.created_at ? dayjs(comment.created_at) : null;
+                          const isOwner = currentUser && comment.user?.id === currentUser.id;
+                          return (
+                            <div
+                              key={comment.id}
+                              className="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow"
+                            >
+                              <div className="flex items-start justify-between mb-1">
+                                <div>
+                                  <div className="font-medium text-gray-800 text-sm">
+                                    {comment.author_name || comment.user?.name || "Ẩn danh"}
+                                  </div>
+                                  {created?.isValid() && (
+                                    <div className="text-xs text-gray-500">
+                                      {created.format("HH:mm DD/MM/YYYY")}
+                                    </div>
+                                  )}
+                                </div>
+                                {isOwner && !isDone && (
+                                  <button
+                                    onClick={() => handleDeleteComment(comment.id)}
+                                    disabled={commentSubmitting}
+                                    className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50"
+                                    type="button"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-700 whitespace-pre-line mt-2">
+                                {comment.content}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Add Comment Form */}
+                      <div className={`border-t border-gray-200 pt-4 ${isDone ? "opacity-50" : ""}`}>
+                        <PermissionGuard resource="Task" action="Comment">
+                          <div className="space-y-3">
+                            <textarea
+                              value={commentInput}
+                              onChange={(e) => setCommentInput(e.target.value)}
+                              rows={3}
+                              placeholder={
+                                isDone
+                                  ? "Task completed — cannot add comments."
+                                  : "Write a comment..."
+                              }
+                              className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                              disabled={isDone || !canComment}
+                            />
+                            <div className="flex justify-end">
+                              <button
+                                onClick={handleSubmitComment}
+                                disabled={commentSubmitting || isDone || !canComment || !commentInput.trim()}
+                                className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                type="button"
+                              >
+                                {commentSubmitting ? (
+                                  <span className="flex items-center gap-2">
+                                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                    Posting...
+                                  </span>
+                                ) : (
+                                  "Post Comment"
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </PermissionGuard>
+                      </div>
+                    </div>
+                  </section>
+                </div>
               </div>
             </div>
           </div>

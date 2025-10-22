@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import TaskStatusService from "../services/taskStatusService";
+import HashtagService from "../services/hashtagService";
 
 export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStoryId }) {
   const [form, setForm] = useState({
@@ -14,6 +15,11 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
   const [statuses, setStatuses] = useState([]);
   const [loadingStatuses, setLoadingStatuses] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Hashtag states
+  const [hashtags, setHashtags] = useState([]);
+  const [hashtagInput, setHashtagInput] = useState("");
+  const [hashtagSuggestions, setHashtagSuggestions] = useState([]);
 
   // ===== Load status =====
   useEffect(() => {
@@ -51,6 +57,68 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
     });
   };
 
+  // Hashtag handlers
+  const handleHashtagSearch = async (query) => {
+    if (!query.trim()) {
+      setHashtagSuggestions([]);
+      return;
+    }
+    try {
+      const { data } = await HashtagService.search(query);
+      setHashtagSuggestions(data || []);
+    } catch (error) {
+      console.error("Failed to search hashtags:", error);
+    }
+  };
+
+  const handleAddHashtag = (hashtag) => {
+    if (hashtags.some(h => h.id === hashtag.id)) {
+      toast.warn("Hashtag already added.");
+      return;
+    }
+    setHashtags(prev => [...prev, hashtag]);
+    setHashtagInput("");
+    setHashtagSuggestions([]);
+  };
+
+  const handleRemoveHashtag = (hashtagId) => {
+    setHashtags(prev => prev.filter(h => h.id !== hashtagId));
+  };
+
+  const handleHashtagKeyDown = async (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const value = hashtagInput.trim();
+      
+      if (!value) {
+        toast.warn("Please enter a hashtag name.");
+        return;
+      }
+
+      // Kiểm tra xem có trong suggestions không
+      const existingInSuggestions = hashtagSuggestions.find(
+        h => h.name.toLowerCase() === value.toLowerCase()
+      );
+
+      if (existingInSuggestions) {
+        // Nếu có trong suggestions thì thêm luôn
+        handleAddHashtag(existingInSuggestions);
+      } else {
+        // Nếu chưa có thì tạo mới
+        try {
+          const { data } = await HashtagService.create(value);
+          if (data) {
+            handleAddHashtag(data);
+            toast.success("Created successfully!");
+          }
+        } catch (error) {
+          console.error("Failed to create hashtag:", error);
+          toast.error("Failed to create hashtag");
+        }
+      }
+    }
+  };
+
   // ===== Submit =====
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.description.trim() || !form.status_id || !form.team_ids.length) {
@@ -67,6 +135,7 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
         status_id: Number(form.status_id),
         team_ids: form.team_ids.map(Number),
         due_date: form.due_date || null,
+        hashtag_ids: hashtags.map(h => h.id),
       };
 
       const result = await onSubmit(payload);
@@ -129,6 +198,63 @@ export default function TaskFormModal({ onClose, onSubmit, teamMembers, userStor
             onChange={handleChange}
             className="border rounded-lg w-full p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
+
+          {/* Hashtags */}
+          <label className="block text-sm mb-1">Hashtags</label>
+          <div className="mb-3">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {hashtags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-700"
+                >
+                  #{tag.name}
+                  <button
+                    onClick={() => handleRemoveHashtag(tag.id)}
+                    className="hover:text-blue-900"
+                    type="button"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            
+            <div className="relative">
+              <input
+                type="text"
+                value={hashtagInput}
+                onChange={(e) => {
+                  setHashtagInput(e.target.value);
+                  handleHashtagSearch(e.target.value);
+                }}
+                onKeyDown={handleHashtagKeyDown}
+                placeholder="Search or create hashtag..."
+                className="border rounded-lg w-full p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              {hashtagSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  {hashtagSuggestions.map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => handleAddHashtag(tag)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                      type="button"
+                    >
+                      #{tag.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {hashtagInput.trim() && hashtagSuggestions.length === 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg">
+                  <div className="px-3 py-2 text-sm text-gray-500">
+                    Nhấn Enter để tạo hashtag mới: <span className="font-semibold text-blue-600">#{hashtagInput.trim()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Status + Members */}
           <div className="grid grid-cols-2 gap-3">
