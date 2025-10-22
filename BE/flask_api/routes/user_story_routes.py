@@ -46,7 +46,7 @@ def create_user_story():
     if not new_user_story:   # tránh trường hợp (None, None)
         return jsonify({"error": "Unknown error khi tạo user story"}), 500
 
-    return jsonify({"message": "Tạo thành công", "id": new_user_story.id}), 201
+    return jsonify({"message": "Create successfully", "id": new_user_story.id}), 201
 
 
 
@@ -119,20 +119,16 @@ def update_user_story(story_id):
         story_id,
         data,
         new_files=new_files,
-        deleted_files=deleted_files    # ✅ đổi sang deleted_files
+        deleted_files=deleted_files    # đổi sang deleted_files
     )
 
     # ---- Trả về response ----
     if error:
-        status_code = 404 if error == "Không tìm thấy User Story." else 400
+        status_code = 404 if error == "Can not found user story" else 400
         return jsonify({"error": error}), status_code
 
-    return jsonify({
-        "message": "Cập nhật thành công",
-        "id": updated_story.id,
-        "files": UserStoryService._list_files(updated_story.id)
-    }), 200
-
+    message = "Update status successfully" if "Status_id" in data else "Update successfully"
+    return jsonify({"message": message, "id": updated_story.id}), 200
 
 @user_story_bp.route("/<int:story_id>", methods=["DELETE"])
 @login_required

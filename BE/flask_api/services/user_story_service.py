@@ -412,8 +412,6 @@ class UserStoryService:
             db.session.rollback()
             return None, str(e)
 
-
-
     @staticmethod
     def delete(story_id):
         story = UserStory.query.get(story_id)

@@ -8,6 +8,7 @@ from flask_api.models.team_models import Team
 from flask_api.models.phan_cong_models import PhanCong
 from flask_api.models.task_comment_models import TaskComment
 from flask_api.models.workflow_status_models import WorkflowStatus
+from datetime import datetime
 from flask_api.models.task_hashtag_models import TaskHashtag
 from flask_api.models.hashtag_models import Hashtag
 
@@ -90,26 +91,49 @@ class TaskService:
         if not name:
             return None, "Task name is required."
         if not description:
-            return None, "Task describe is required."
+            return None, "Task description is required."
 
         user_story = UserStory.query.get(user_story_id)
         if not user_story:
-            return None, "Can not found user story."
+            return None, "Cannot find user story."
 
         status = TaskStatus.query.get(status_id)
         if not status:
-            return None, "Can not found task status."
+            return None, "Cannot find task status."
+
+        # Validate due date (nếu có)
+        if due_date:
+            try:
+                # Nếu FE gửi datetime.date → chuyển sang datetime
+                if isinstance(due_date, datetime):
+                    due_date_obj = due_date
+                elif hasattr(due_date, "isoformat"):
+                    # trường hợp date object
+                    due_date_obj = datetime.combine(due_date, datetime.min.time())
+                elif isinstance(due_date, str):
+                    # Chuỗi dạng "YYYY-MM-DD"
+                    due_date_obj = datetime.strptime(due_date, "%Y-%m-%d")
+                else:
+                    return None, "Invalid due_date type."
+
+                if due_date_obj.date() < datetime.now().date():
+                    return None, "Due date cannot be in the past."
+            except Exception:
+                return None, "Invalid due date format. Expected YYYY-MM-DD."
+        else:
+            due_date_obj = None
+
 
         # Nếu có truyền nhiều team_ids thì validate tất cả
         candidate_team_ids = team_ids if team_ids else ([team_id] if team_id else [])
         if not candidate_team_ids:
-            return None, "Select at less 1 member in team."
+            return None, "Select at least 1 member in team."
 
         teams = Team.query.filter(Team.id.in_(candidate_team_ids)).all()
         found_ids = {t.id for t in teams}
         missing = [tid for tid in candidate_team_ids if tid not in found_ids]
         if missing:
-            return None, f"Can not found member in team: {missing}"
+            return None, f"Cannot find member(s) in team: {missing}"
 
         # Validate cùng project
         for t in teams:
@@ -131,7 +155,7 @@ class TaskService:
                 description=description,
                 user_story_id=user_story.id,
                 status_id=status.id,
-                due_date=due_date,
+                due_date=due_date_obj,
             )
             db.session.add(new_task)
             db.session.flush()
@@ -148,10 +172,11 @@ class TaskService:
             db.session.commit()
             refreshed = TaskService.get_by_id(new_task.id)
             return refreshed or new_task, None
-        except Exception:
+        except Exception as e:
             db.session.rollback()
-            return None, "Can not create task."
+            return None, f"Cannot create task. Error: {str(e)}"
 
+    @staticmethod
     def update(task_id, data):
         task = Task.query.get(task_id)
         if not task:
@@ -168,6 +193,7 @@ class TaskService:
         hashtag_ids = data.get("hashtag_ids") if "hashtag_ids" in data else None
 
         try:
+            # --- Validate các trường cơ bản ---
             if name is not None:
                 name = name.strip()
                 if not name:
@@ -177,9 +203,10 @@ class TaskService:
             if description is not None:
                 description = description.strip()
                 if not description:
-                    return None, "Task describe is required."
+                    return None, "Task description is required."
                 task.description = description
 
+            # --- Validate user story ---
             target_story = task.user_story
             
             if user_story_id is not None and user_story_id != task.user_story_id:
@@ -189,30 +216,59 @@ class TaskService:
                 target_story = new_story
                 task.user_story_id = new_story.id
 
+            # --- Validate status ---
             if status_id is not None:
                 status = TaskStatus.query.get(status_id)
                 if not status:
                     return None, "Can not found task status."
                 task.status_id = status.id
 
+            # --- Validate due_date ---
             if update_due_date:
-                task.due_date = due_date
+                if due_date:
+                    try:
+                        # FE có thể gửi date, datetime hoặc string
+                        if isinstance(due_date, datetime):
+                            due_date_obj = due_date
+                        elif hasattr(due_date, "isoformat"):  # datetime.date
+                            due_date_obj = datetime.combine(due_date, datetime.min.time())
+                        elif isinstance(due_date, str):
+                            # Hỗ trợ cả "YYYY-MM-DD" và "DD/MM/YYYY"
+                            if "/" in due_date:
+                                due_date_obj = datetime.strptime(due_date, "%d/%m/%Y")
+                            else:
+                                due_date_obj = datetime.strptime(due_date, "%Y-%m-%d")
+                        else:
+                            return None, "Invalid due_date type."
 
-            # Cập nhật 1 người cũ (team_id) hoặc nhiều người (team_ids)
+                        # Kiểm tra không nhỏ hơn hôm nay
+                        if due_date_obj.date() < datetime.now().date():
+                            return None, "Due date cannot be in the past."
+
+                        task.due_date = due_date_obj
+                    except Exception:
+                        return None, "Invalid due date format. Expected YYYY-MM-DD."
+                else:
+                    task.due_date = None
+
+            # --- Validate team ---
             if team_ids:
                 teams = Team.query.filter(Team.id.in_(team_ids)).all()
                 found = {t.id for t in teams}
                 missing = [tid for tid in team_ids if tid not in found]
                 if missing:
                     return None, f"Can not found member team: {missing}"
+
                 for t in teams:
                     if not t.projrole or t.projrole.project_id != target_story.project_id:
                         return None, "There are members who are not part of the user story's project."
+
                 # Xóa assignments cũ rồi tạo lại
                 for a in list(task.phan_cong or []):
                     db.session.delete(a)
                 for t in teams:
                     db.session.add(PhanCong(team_id=t.id, task_id=task.id))
+
             elif team_id is not None:
                 team = Team.query.get(team_id)
                 if not team:
@@ -245,7 +301,7 @@ class TaskService:
             # Commit task thay đổi
             db.session.commit()
 
-            # Auto update trạng thái User Story sau khi Task đổi trạng thái
+            # --- Auto update User Story ---
             if task.user_story_id:
                 try:
                     TaskService._auto_update_user_story_status(task.user_story_id)
@@ -268,12 +324,10 @@ class TaskService:
     # ==========================================
     @staticmethod
     def _auto_update_user_story_status(user_story_id):
-
         tasks = Task.query.filter_by(user_story_id=user_story_id).all()
         if not tasks:
             return
 
-        # Lấy trạng thái "Done" trong bảng task_status
         done_task_status = TaskStatus.query.filter(
             db.func.lower(TaskStatus.name_status) == "done"
         ).first()
@@ -281,7 +335,7 @@ class TaskService:
             print("⚠️ TaskStatus 'Done' not found.")
             return
 
-        # Kiểm tra tất cả task có Done chưa
+        # Kiểm tra tất cả task có Done chưa (fix lỗi strip)
         all_done = all(
             (t.status_id == done_task_status.id)
             or (hasattr(t, 'task_status') and t.task_status and 
@@ -293,7 +347,6 @@ class TaskService:
         if not all_done:
             return  # nếu chưa done hết thì thôi
 
-        # Lấy trạng thái 'Done' trong bảng workflow_status (cho User Story)
         done_workflow_status = WorkflowStatus.query.filter(
             db.func.lower(WorkflowStatus.name) == "done"
         ).first()
@@ -304,10 +357,10 @@ class TaskService:
         if not user_story:
             return
 
-        # Nếu tất cả task đã Done → chuyển User Story sang Done
         if user_story.status_id != done_workflow_status.id:
             user_story.status_id = done_workflow_status.id
             db.session.commit()
+
 
     @staticmethod
     def delete(task_id):

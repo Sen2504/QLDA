@@ -17,8 +17,8 @@ function TaskDetail() {
   const { taskId } = useParams();
   const navigate = useNavigate();
 
-  const canEdit = usePermission('Task', 'Edit');
-  const canComment = usePermission('Task', 'Comment');
+  const canEdit = usePermission("Task", "Edit");
+  const canComment = usePermission("Task", "Comment");
 
   const [task, setTask] = useState(null);
   const [form, setForm] = useState({ name: "", description: "", status_id: "", due_date: "" });
@@ -51,7 +51,6 @@ function TaskDetail() {
 
   useEffect(() => {
     let mounted = true;
-
     async function fetchData() {
       setLoading(true);
       try {
@@ -63,7 +62,6 @@ function TaskDetail() {
 
         if (!mounted) return;
 
-        // Task detail can be forbidden for non-assignees when Task.View = false
         if (taskRes.status === "fulfilled") {
           const taskData = taskRes.value?.data;
           setTask(taskData || null);
@@ -80,30 +78,22 @@ function TaskDetail() {
           setTask(null);
           setComments([]);
           const status = taskRes?.reason?.response?.status;
-          if (status === 403) {
-            setForbidden(true);
-          } else if (status === 404) {
-            setForbidden(false);
-          } else {
-            toast.error("Không thể tải thông tin task");
-          }
+          if (status === 403) setForbidden(true);
+          else if (status === 404) setForbidden(false);
+          else toast.error("Failed to load task information");
         }
 
-        // Status list
         const statusesData = statusRes.status === "fulfilled" ? statusRes.value?.data : [];
         setStatuses(statusesData || []);
 
-        // Current user
         const profileData = profileRes.status === "fulfilled" ? profileRes.value?.data : null;
         setCurrentUser(profileData || null);
         
       } catch (error) {
         console.error("Failed to load task detail", error);
-        toast.error(error.response?.data?.error || "Không thể tải thông tin task");
+        toast.error(error.response?.data?.error || "Failed to load task information");
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     }
 
@@ -115,9 +105,7 @@ function TaskDetail() {
 
   const dueInfo = useMemo(() => evaluateDueDate(task?.due_date), [task?.due_date]);
 
-  const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const resetForm = (nextTask) => {
     const data = nextTask || task;
@@ -287,7 +275,7 @@ function TaskDetail() {
   };
 
   const handleSubmitComment = async () => {
-    if (isDone) return; // ✅ Không cho gửi comment nếu Done
+    if (isDone) return;
     if (!commentInput.trim()) {
       toast.warn("Please enter comment content");
       return;
@@ -302,24 +290,24 @@ function TaskDetail() {
       setCommentInput("");
       toast.success("Comment added");
     } catch (error) {
-      // Lỗi đã được xử lý bởi api.js interceptor
       console.error("Failed to add comment:", error);
+      toast.error(error.response?.data?.error || "Failed to add comment");
     } finally {
       setCommentSubmitting(false);
     }
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (isDone) return; // ✅ Không cho xóa comment nếu Done
-    if (!window.confirm("Are you sure you want to delete this comment??")) return;
+    if (isDone) return;
+    if (!window.confirm("Are you sure you want to delete this comment?")) return;
     setCommentSubmitting(true);
     try {
       await TaskCommentService.delete(taskId, commentId);
-      setComments((prev) => prev.filter((comment) => comment.id !== commentId));
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
       toast.success("Comment deleted");
     } catch (error) {
-      // Lỗi đã được xử lý bởi api.js interceptor
       console.error("Failed to delete comment:", error);
+      toast.error(error.response?.data?.error || "Failed to delete comment");
     } finally {
       setCommentSubmitting(false);
     }
@@ -329,16 +317,10 @@ function TaskDetail() {
     return (
       <>
         <div className="p-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-3 py-2 rounded-lg border mb-4"
-            type="button"
-          >
+          <button onClick={() => navigate(-1)} className="px-3 py-2 rounded-lg border mb-4" type="button">
             ← Back
           </button>
-          <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-600">
-            Tasks not found.
-          </div>
+          <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-600">Task not found.</div>
         </div>
       </>
     );
@@ -348,11 +330,7 @@ function TaskDetail() {
     <>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-3 py-2 rounded-lg border"
-            type="button"
-          >
+          <button onClick={() => navigate(-1)} className="px-3 py-2 rounded-lg border" type="button">
             ← Back
           </button>
           {task?.user_story?.id && (
@@ -367,20 +345,19 @@ function TaskDetail() {
         </div>
 
         {loading && (
-          <div className="bg-white rounded-2xl shadow p-6 text-gray-500">
-            Đang tải thông tin task...
-          </div>
+          <div className="bg-white rounded-2xl shadow p-6 text-gray-500">Loading task information...</div>
         )}
 
         {forbidden && !loading && (
           <div className="bg-white rounded-2xl shadow p-6 border border-red-200">
-            <div className="text-red-600 font-semibold mb-1">Không có quyền truy cập</div>
-            <div className="text-gray-700">Bạn không có quyền xem Task này.</div>
+            <div className="text-red-600 font-semibold mb-1">Access denied</div>
+            <div className="text-gray-700">You do not have permission to view this task.</div>
           </div>
         )}
 
         {task && (
           <div className="bg-white rounded-2xl shadow p-6">
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
               <div>
                 {editMode ? (

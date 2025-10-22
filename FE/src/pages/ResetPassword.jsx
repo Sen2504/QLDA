@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { EyeIcon, EyeOffIcon } from "lucide-react"; // 👁 thêm icon mắt
 import api from "../services/api";
 import Popup_message from "../components/Popup_message";
 
@@ -13,6 +14,10 @@ export default function ResetPassword() {
   const [passwordError, setPasswordError] = useState("");
   const [message, setMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
+
+  // 👁 Trạng thái hiển thị/ẩn mật khẩu
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // So sánh mật khẩu realtime
   useEffect(() => {
@@ -55,38 +60,74 @@ export default function ResetPassword() {
         <h2 className="text-2xl font-bold text-center text-rose-700 mb-6">
           Reset Password
         </h2>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Mật khẩu mới */}
+          {/* ===== New Password ===== */}
           <div>
-            <input
-              type="password"
-              placeholder="New password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-rose-400 outline-none"
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              New Password
+            </label>
+            <div className="relative">
+              <input
+                type={showNewPassword ? "text" : "password"}
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-rose-400 outline-none pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-rose-600 focus:outline-none"
+              >
+                {showNewPassword ? (
+                  <EyeOffIcon size={20} />
+                ) : (
+                  <EyeIcon size={20} />
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Xác nhận mật khẩu */}
+          {/* ===== Confirm Password ===== */}
           <div>
-            <input
-              type="password"
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 ${
-                passwordError
-                  ? "border-red-400 focus:ring-red-300"
-                  : "focus:ring-rose-400"
-              }`}
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full px-4 py-2 border rounded-lg outline-none pr-10 focus:ring-2 ${
+                  passwordError
+                    ? "border-red-400 focus:ring-red-300"
+                    : "focus:ring-rose-400"
+                }`}
+                required
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowConfirmPassword(!showConfirmPassword)
+                }
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-rose-600 focus:outline-none"
+              >
+                {showConfirmPassword ? (
+                  <EyeOffIcon size={20} />
+                ) : (
+                  <EyeIcon size={20} />
+                )}
+              </button>
+            </div>
             {passwordError && (
               <p className="text-red-500 text-sm mt-1">{passwordError}</p>
             )}
           </div>
 
+          {/* ===== Submit ===== */}
           <button
             type="submit"
             disabled={!!passwordError}

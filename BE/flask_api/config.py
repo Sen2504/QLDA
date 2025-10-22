@@ -22,4 +22,10 @@ class Config:
     SESSION_COOKIE_SAMESITE = "None"
     SESSION_COOKIE_SECURE = False
 
+    CONFIRM_TOKEN_EXPIRE = 300  # 5 phút cho xác nhận email
+    RESET_TOKEN_EXPIRE = 300    # 5 phút cho reset mật khẩu
+    SECURITY_CONFIRM_SALT = "confirm-salt"
+    SECURITY_RESET_SALT = "reset-salt"
+
+
     FRONTEND_URL=os.getenv("FRONTEND_URL", "http://localhost:5173")

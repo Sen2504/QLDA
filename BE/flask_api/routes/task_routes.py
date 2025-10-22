@@ -158,22 +158,35 @@ def create_task():
 
 @task_bp.route("/<int:task_id>", methods=["PUT"])
 @login_required
-@require_permission("Task", "Edit", project_id_getter=lambda task_id: get_project_id_from_task(task_id))
+@require_permission(
+    "Task", "Edit",
+    project_id_getter=lambda task_id: get_project_id_from_task(task_id)
+)
 def update_task(task_id):
     payload = request.get_json() or {}
+
+    # Validate input
     try:
         data = task_update_schema.load(payload)
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
 
     if not data:
-        return jsonify({"error": "Khong co truong nao de cap nhat."}), 400
+        return jsonify({"error": "Không có trường nào để cập nhật."}), 400
 
+    # Update logic
     task, error = TaskService.update(task_id, data)
     if error:
-        status_code = 404 if error == "Khong tim thay task." else 400
-        return jsonify({"error": error}), status_code
-    return jsonify(task_schema.dump(task)), 200
+        # Dùng tiếng Việt thống nhất và check lỗi not found bằng contains thay vì ==
+        if "not found" in error.lower() or "không tìm" in error.lower():
+            return jsonify({"error": error}), 404
+        return jsonify({"error": error}), 400
+
+    # Thành công → trả message + dữ liệu task mới nhất
+    return jsonify({
+        "message": "Task updated successfully",
+        "task": task_schema.dump(task)
+    }), 200
 
 
 @task_bp.route("/<int:task_id>", methods=["DELETE"])
