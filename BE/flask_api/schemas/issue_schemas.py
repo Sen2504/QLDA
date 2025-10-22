@@ -23,7 +23,13 @@ class IssueSchema(Schema):
     type_id = fields.Int(required=True)
     name = fields.Str(required=True)
     description = fields.Str(required=True)
+
+    # ✅ Giữ nguyên trường cũ để lưu string
     hashtag = fields.Str()
+
+    # ✅ Thêm trường mới để FE xài (list dạng [{id, name}])
+    hashtags = fields.Method("get_hashtag_list", dump_only=True)
+
     status = fields.Method("get_status")
     severity = fields.Method("get_severity")
     priority = fields.Method("get_priority")
@@ -33,7 +39,7 @@ class IssueSchema(Schema):
     # ---- Danh sách người xử lý ----
     handlers = fields.Method("get_handlers")
 
-    # Nested
+    # Nested project + comments
     project = fields.Nested(
         "flask_api.schemas.project_schemas.ProjectSchema",
         only=("id", "name", "role_name", "status"),
@@ -47,7 +53,7 @@ class IssueSchema(Schema):
         try:
             return obj.status.value if obj.status else None
         except AttributeError:
-            return str(obj.status)  # fallback nếu status là chuỗi
+            return str(obj.status)
 
     def get_severity(self, obj):
         try:
@@ -61,12 +67,27 @@ class IssueSchema(Schema):
         except AttributeError:
             return str(obj.priority)
 
-    def get_hashtag(self, obj):
-        try:
-            import json
-            return json.loads(obj.hashtag) if obj.hashtag else []
-        except Exception:
+    # ✅ Cập nhật parse hashtag
+    def get_hashtag_list(self, obj):
+        """Trả về danh sách hashtag dạng [{id, name}]"""
+        import json
+        raw = obj.hashtag
+        if not raw:
             return []
+
+        try:
+            # Nếu là JSON string ["Test","ABC"]
+            parsed = json.loads(raw)
+            if isinstance(parsed, list):
+                return [{"id": h, "name": h} for h in parsed]
+            # Nếu là string bình thường "Test"
+            elif isinstance(parsed, str):
+                return [{"id": parsed, "name": parsed}]
+            else:
+                return []
+        except Exception:
+            # Fallback: nếu không phải JSON hợp lệ thì trả string đơn
+            return [{"id": 0, "name": str(raw)}]
 
     def get_evidence_files(self, obj):
         try:

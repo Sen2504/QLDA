@@ -40,19 +40,7 @@ const TaskService = {
   },
 
   async update(id, data) {
-    try {
-      const res = await api.put(`/tasks/${id}`, data);
-      if (res.data?.error) {
-        return { error: res.data.error };
-      }
-      return { data: res.data, message: "Task updated successfully!" };
-    } catch (err) {
-      const msg =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        "Failed to update task.";
-      return { error: msg };
-    }
+    return api.put(`/tasks/${id}`, data);
   },
 
   async delete(id) {

@@ -1,10 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
-from flask_api.utils.permissions import (
-    require_permission,
-    get_project_id_from_issue,
-)
 
 from flask_api.services.issue_service import IssueService
 from flask_api.services.issue_comment_service import IssueCommentService
@@ -46,7 +42,6 @@ def get_all_issues():
 # ----------------- GET ISSUE BY PROJECT -----------------
 @issue_bp.route("/project/<int:project_id>", methods=["GET"])
 @login_required
-@require_permission("Issue", "View", project_id_getter=lambda project_id: project_id)
 def get_issues_by_project(project_id):
     issues = IssueService.get_issue_by_project(project_id)
     return jsonify(issues_schema.dump(issues)), 200
@@ -55,7 +50,6 @@ def get_issues_by_project(project_id):
 # ----------------- GET BY ID -----------------
 @issue_bp.route("/<int:issue_id>", methods=["GET"])
 @login_required
-@require_permission("Issue", "View", project_id_getter=lambda issue_id: get_project_id_from_issue(issue_id))
 def get_issue(issue_id):
     issue = IssueService.get_by_id(issue_id)
     if not issue:
@@ -67,29 +61,31 @@ def get_issue(issue_id):
 # ----------------- CREATE -----------------
 @issue_bp.route("/", methods=["POST"])
 @login_required
-@require_permission("Issue", "Create", project_id_getter=lambda: request.form.get("project_id"))
 def create_issue():
-    # Ép form-data ra dict
     data = request.form.to_dict(flat=True)
 
-    # Lấy danh sách file (hỗ trợ cả 1 hoặc nhiều)
+    # Lấy danh sách file
     files = request.files.getlist("files")
     if not files:
         single_file = request.files.get("files")
         if single_file:
             files = [single_file]
 
-    issue, error = IssueService.create(data, files)
-    if error:
-        return jsonify({"error": error}), 400
+    issue, message = IssueService.create(data, files)
 
-    return jsonify(issue_schema.dump(issue)), 201
+    if not issue:  # nếu không tạo được issue
+        return jsonify({"error": message}), 400
+
+    # Thành công → trả đúng status code 201
+    return jsonify({
+        "message": message,
+        "data": issue_schema.dump(issue)
+    }), 201
 
 
 # ----------------- UPDATE ISSUE -----------------
 @issue_bp.route("/<int:issue_id>", methods=["PUT"])
 @login_required
-@require_permission("Issue", "Edit", project_id_getter=lambda issue_id: get_project_id_from_issue(issue_id))
 def update_issue(issue_id):
     data = request.form.to_dict(flat=True)
 
@@ -122,7 +118,7 @@ def update_issue(issue_id):
         return jsonify({"error": error}), 400
 
     return jsonify({
-        "message": "Cập nhật issue thành công!",
+        "message": "Update status successfully!",
         "issue": issue.id,
         "files": IssueService._list_files(issue.id)
     }), 200

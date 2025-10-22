@@ -84,59 +84,56 @@ class IssueService:
 
     @staticmethod
     def create(data, files=None):
-        issue_type = IssueType.query.get(data.get("type_id"))
-        if not issue_type:
-            return None, "The issue type does not exist."
+        try:
+            issue_type = IssueType.query.get(data.get("type_id"))
+            if not issue_type:
+                raise ValueError("The issue type does not exist.")
 
-        name = (data.get("name") or "").strip()
-        if not name:
-            return None, "Issue name is required."
+            name = (data.get("name") or "").strip()
+            if not name:
+                raise ValueError("Issue name is required.")
 
-        expire_date = data.get("expire_date")
-        if not expire_date or expire_date < str(date.today()):
-            return None, "Expire date cannot be earlier than today."
+            expire_date = data.get("expire_date")
+            if not expire_date or expire_date < str(date.today()):
+                raise ValueError("Expire date cannot be earlier than today.")
 
-        # Tạo issue
-        new_issue = Issue(
-            project_id=data.get("project_id"),
-            type_id=data.get("type_id"),
-            name=data.get("name"),
-            description=data.get("description"),
-            hashtag=data.get("hashtag"),
-            status=data.get("status"),
-            severity=data.get("severity"),
-            priority=data.get("priority"),
-            expire_date=data.get("expire_date"),
-            evidence_file=None
-        )
-        db.session.add(new_issue)
-        db.session.flush()  # để có ID
+            new_issue = Issue(
+                project_id=data.get("project_id"),
+                type_id=data.get("type_id"),
+                name=data.get("name"),
+                description=data.get("description"),
+                hashtag=data.get("hashtag"),
+                status=data.get("status"),
+                severity=data.get("severity"),
+                priority=data.get("priority"),
+                expire_date=data.get("expire_date"),
+                evidence_file=None,
+            )
+            db.session.add(new_issue)
+            db.session.flush()
 
-        # Tạo thư mục lưu file
-        issue_folder = IssueService._issue_folder(new_issue.id)
-        os.makedirs(issue_folder, exist_ok=True)
+            issue_folder = IssueService._issue_folder(new_issue.id)
+            os.makedirs(issue_folder, exist_ok=True)
 
-        # Lưu file nếu có
-        filenames = []
-        if files:
-            for file in files:
-                if file and file.filename:
-                    _, error = IssueService._save_file(file, new_issue.id)
-                    if error:
-                        db.session.rollback()
-                        return None, error
-                    filenames.append(secure_filename(file.filename))
+            filenames = []
+            if files:
+                for file in files:
+                    if file and file.filename:
+                        _, error = IssueService._save_file(file, new_issue.id)
+                        if error:
+                            raise ValueError(error)
+                        filenames.append(secure_filename(file.filename))
 
-        # Lưu danh sách tên file vào DB 
-        if filenames:
-            import json
-            new_issue.evidence_file = json.dumps(filenames)
+            if filenames:
+                new_issue.evidence_file = json.dumps(filenames)
 
-        # Thêm record IssueResolve mặc định
-        db.session.add(IssueResolve(issue_id=new_issue.id, team_id=None))
+            db.session.add(IssueResolve(issue_id=new_issue.id, team_id=None))
+            db.session.commit()
+            return new_issue, "Issue created successfully!"
 
-        db.session.commit()
-        return new_issue, None
+        except Exception as e:
+            db.session.rollback()  # 💥 Không commit nếu có lỗi
+            return None, str(e)
 
     @staticmethod
     def update(issue_id, data, new_files=None, deleted_files=None):
@@ -162,13 +159,16 @@ class IssueService:
                 except ValueError:
                     return None, "Invalid expire_date format. Expect YYYY-MM-DD."
                 
-            # ==== Validate type_id ====
-            if not data.get("type_id"):
-                return None, "Issue type is required."
-            else:
-                issue_type = IssueType.query.get(data["type_id"])
+            # ==== Validate & update type_id (optional for partial update) ====
+            if "type_id" in data:
+                type_id = data.get("type_id")
+                if not type_id:
+                    return None, "Issue type is required."
+                issue_type = IssueType.query.get(type_id)
                 if not issue_type:
                     return None, "Selected issue type does not exist."
+                issue.type_id = type_id
+
 
             # ==== Enum: status ====
             if "status" in data and data["status"]:

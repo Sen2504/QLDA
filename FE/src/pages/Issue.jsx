@@ -8,6 +8,7 @@ import IssueService from "../services/issueService";
 import IssueTypeService from "../services/issueTypeService";
 import ComponentUpload from "../components/ComponentUpload";
 
+
 function useDebounce(value, delay = 250) {
   const [v, setV] = useState(value);
   useEffect(() => {
@@ -78,23 +79,16 @@ export default function IssueCreate() {
   const removeTag = (t) => setSelectedTags((prev) => prev.filter((x) => x !== t));
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Check validate
-    if (!currentProject) {
-      return setPopup({ message: "Please select a project.", type: "error" });
-    }
-    if (!name.trim()) {
-      return setPopup({ message: "Please enter issue title.", type: "error" });
-    }
-    if (!typeId) {
-      return setPopup({ message: "Please select issue type.", type: "error" });
-    }
-    if (!expireDate) {
-      return setPopup({ message: "Please select due date.", type: "error" });
-    }
+  if (!currentProject) {
+    toast.error("Please select a project before creating an issue.");
+    return;
+  }
 
+  try {
     const formData = new FormData();
+
     formData.append("project_id", currentProject.id);
     formData.append("type_id", typeId);
     formData.append("name", name.trim());
@@ -109,18 +103,15 @@ export default function IssueCreate() {
       files.forEach((f) => formData.append("files", f));
     }
 
-    try {
-      await IssueService.create(formData);
-      toast.success("Create issue success");
-      setTimeout(() => {
-        navigate("/issues/list");
-      }, 1500);
-    } catch (err) {
-      // Lỗi đã được xử lý bởi api.js interceptor
-      console.error("Error creating issue:", err);
+    const res = await IssueService.create(formData);
+    if (res.status === 201 || res.status === 200) {
+      toast.success(res?.data?.message || "Issue created successfully!");
+      setTimeout(() => navigate("/issues/list"), 1500);
     }
-  };
-
+  } catch (err) {
+    console.error("Error creating issue:", err);
+  }
+};
 
   return (
     <MainLayout>

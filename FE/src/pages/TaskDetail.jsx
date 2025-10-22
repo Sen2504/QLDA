@@ -16,8 +16,8 @@ function TaskDetail() {
   const { taskId } = useParams();
   const navigate = useNavigate();
 
-  const canEdit = usePermission('Task', 'Edit');
-  const canComment = usePermission('Task', 'Comment');
+  const canEdit = usePermission("Task", "Edit");
+  const canComment = usePermission("Task", "Comment");
 
   const [task, setTask] = useState(null);
   const [form, setForm] = useState({ name: "", description: "", status_id: "", due_date: "" });
@@ -31,7 +31,6 @@ function TaskDetail() {
   const [editMode, setEditMode] = useState(false);
   const [forbidden, setForbidden] = useState(false);
 
-  // Kiểm tra nếu task đã Done thì khóa hành động
   const isDone = useMemo(() => {
     const statusName = task?.status?.toLowerCase?.() || "";
     return statusName === "done" || statusName === "completed";
@@ -39,7 +38,6 @@ function TaskDetail() {
 
   useEffect(() => {
     let mounted = true;
-
     async function fetchData() {
       setLoading(true);
       try {
@@ -51,7 +49,6 @@ function TaskDetail() {
 
         if (!mounted) return;
 
-        // Task detail can be forbidden for non-assignees when Task.View = false
         if (taskRes.status === "fulfilled") {
           const taskData = taskRes.value?.data;
           setTask(taskData || null);
@@ -67,29 +64,21 @@ function TaskDetail() {
           setTask(null);
           setComments([]);
           const status = taskRes?.reason?.response?.status;
-          if (status === 403) {
-            setForbidden(true);
-          } else if (status === 404) {
-            setForbidden(false);
-          } else {
-            toast.error("Không thể tải thông tin task");
-          }
+          if (status === 403) setForbidden(true);
+          else if (status === 404) setForbidden(false);
+          else toast.error("Failed to load task information");
         }
 
-        // Status list
         const statusesData = statusRes.status === "fulfilled" ? statusRes.value?.data : [];
         setStatuses(statusesData || []);
 
-        // Current user
         const profileData = profileRes.status === "fulfilled" ? profileRes.value?.data : null;
         setCurrentUser(profileData || null);
       } catch (error) {
         console.error("Failed to load task detail", error);
-        toast.error(error.response?.data?.error || "Không thể tải thông tin task");
+        toast.error(error.response?.data?.error || "Failed to load task information");
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     }
 
@@ -101,9 +90,7 @@ function TaskDetail() {
 
   const dueInfo = useMemo(() => evaluateDueDate(task?.due_date), [task?.due_date]);
 
-  const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const resetForm = (nextTask) => {
     const data = nextTask || task;
@@ -116,61 +103,46 @@ function TaskDetail() {
     });
   };
 
+  // Updated version (with toast from BE message)
   const handleSave = async () => {
-  if (!form.name.trim() || !form.description.trim()) {
-    toast.warn("Please enter the full name and description of the task");
-    return;
-  }
-
-  setSaving(true);
-
-  try {
-    const payload = {
-      name: form.name.trim(),
-      description: form.description.trim(),
-    };
-    
-    // Luôn gửi due_date (null nếu rỗng)
-    payload.due_date = form.due_date && form.due_date.trim() ? form.due_date.trim() : null;
-    
-    if (form.status_id && form.status_id !== "") {
-      payload.status_id = Number(form.status_id);
-    }
-
-    const updateResult = await TaskService.update(taskId, payload);
-    
-    // Kiểm tra nếu có lỗi thì dừng lại (lỗi đã được hiển thị bởi api.js interceptor)
-    if (updateResult?.error) {
+    if (!form.name.trim() || !form.description.trim()) {
+      toast.warn("Please enter the full name and description of the task");
       return;
     }
 
-    // ❌ Nếu có lỗi từ BE, show lỗi và return
-    if (result.error) {
-      toast.error(result.error);
-      return;
+    setSaving(true);
+    try {
+      const payload = {
+        name: form.name.trim(),
+        description: form.description.trim(),
+        due_date: form.due_date && form.due_date.trim() ? form.due_date.trim() : null,
+        ...(form.status_id ? { status_id: Number(form.status_id) } : {}),
+      };
+
+      const response = await TaskService.update(taskId, payload);
+
+      if (response?.status === 200) {
+        toast.success(response.data?.message || "Task updated successfully");
+      }
+
+      const refreshed = await TaskService.getById(taskId);
+      const data = refreshed.data;
+
+      setTask(data);
+      setComments(data?.comments || []);
+      resetForm(data);
+      setEditMode(false);
+    } catch (error) {
+      // Lỗi đã hiển thị trong interceptor
+      console.error("Failed to update task:", error);
+    } finally {
+      setSaving(false);
     }
-
-    // ✅ Nếu thành công, reload lại task
-    const refreshed = await TaskService.getById(taskId);
-    const data = refreshed.data;
-
-    setTask(data);
-    setComments(data?.comments || []);
-    resetForm(data);
-    setEditMode(false);
-
-    toast.success("Task updated successfully");
-  } catch (error) {
-    // Lỗi đã được xử lý bởi api.js interceptor
-    console.error("Failed to update task:", error);
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
 
   const handleSubmitComment = async () => {
-    if (isDone) return; // Không cho gửi comment nếu Done
+    if (isDone) return;
     if (!commentInput.trim()) {
       toast.warn("Please enter comment content");
       return;
@@ -185,24 +157,24 @@ function TaskDetail() {
       setCommentInput("");
       toast.success("Comment added");
     } catch (error) {
-      // Lỗi đã được xử lý bởi api.js interceptor
       console.error("Failed to add comment:", error);
+      toast.error(error.response?.data?.error || "Failed to add comment");
     } finally {
       setCommentSubmitting(false);
     }
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (isDone) return; // Không cho xóa comment nếu Done
-    if (!window.confirm("Are you sure you want to delete this comment??")) return;
+    if (isDone) return;
+    if (!window.confirm("Are you sure you want to delete this comment?")) return;
     setCommentSubmitting(true);
     try {
       await TaskCommentService.delete(taskId, commentId);
-      setComments((prev) => prev.filter((comment) => comment.id !== commentId));
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
       toast.success("Comment deleted");
     } catch (error) {
-      // Lỗi đã được xử lý bởi api.js interceptor
       console.error("Failed to delete comment:", error);
+      toast.error(error.response?.data?.error || "Failed to delete comment");
     } finally {
       setCommentSubmitting(false);
     }
@@ -212,16 +184,10 @@ function TaskDetail() {
     return (
       <MainLayout>
         <div className="p-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-3 py-2 rounded-lg border mb-4"
-            type="button"
-          >
+          <button onClick={() => navigate(-1)} className="px-3 py-2 rounded-lg border mb-4" type="button">
             ← Back
           </button>
-          <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-600">
-            Tasks not found.
-          </div>
+          <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-600">Task not found.</div>
         </div>
       </MainLayout>
     );
@@ -231,11 +197,7 @@ function TaskDetail() {
     <MainLayout>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-3 py-2 rounded-lg border"
-            type="button"
-          >
+          <button onClick={() => navigate(-1)} className="px-3 py-2 rounded-lg border" type="button">
             ← Back
           </button>
           {task?.user_story?.id && (
@@ -250,20 +212,19 @@ function TaskDetail() {
         </div>
 
         {loading && (
-          <div className="bg-white rounded-2xl shadow p-6 text-gray-500">
-            Đang tải thông tin task...
-          </div>
+          <div className="bg-white rounded-2xl shadow p-6 text-gray-500">Loading task information...</div>
         )}
 
         {forbidden && !loading && (
           <div className="bg-white rounded-2xl shadow p-6 border border-red-200">
-            <div className="text-red-600 font-semibold mb-1">Không có quyền truy cập</div>
-            <div className="text-gray-700">Bạn không có quyền xem Task này.</div>
+            <div className="text-red-600 font-semibold mb-1">Access denied</div>
+            <div className="text-gray-700">You do not have permission to view this task.</div>
           </div>
         )}
 
         {task && (
           <div className="bg-white rounded-2xl shadow p-6">
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
               <div>
                 {editMode ? (
@@ -340,10 +301,12 @@ function TaskDetail() {
               </div>
             </div>
 
+            {/* Content */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left side */}
               <div className="space-y-4">
                 <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Describe</h2>
+                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Description</h2>
                   {editMode ? (
                     <textarea
                       value={form.description}
@@ -369,13 +332,11 @@ function TaskDetail() {
                     />
                   ) : (
                     <div className="text-gray-800 font-medium">
-                      {dueInfo?.dueDisplay || "Chưa thiết lập"}
+                      {dueInfo?.dueDisplay || "Not set yet"}
                     </div>
                   )}
                   {dueInfo?.diffDays !== null && !editMode && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {describeDiffDays(dueInfo.diffDays)}
-                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{describeDiffDays(dueInfo.diffDays)}</div>
                   )}
                 </section>
 
@@ -395,13 +356,12 @@ function TaskDetail() {
                       ))}
                     </select>
                   ) : (
-                    <div className="text-gray-800 font-medium">
-                      {task.status || "—"}
-                    </div>
+                    <div className="text-gray-800 font-medium">{task.status || "—"}</div>
                   )}
                 </section>
               </div>
 
+              {/* Right side */}
               <div className="space-y-4">
                 <section>
                   <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Implement</h2>
@@ -413,12 +373,14 @@ function TaskDetail() {
                           className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 flex flex-col"
                         >
                           <span className="font-medium text-emerald-900">
-                            {assignee.user_name || assignee.name || assignee.user_email || assignee.email || "Ẩn danh"}
+                            {assignee.user_name ||
+                              assignee.name ||
+                              assignee.user_email ||
+                              assignee.email ||
+                              "Ẩn danh"}
                           </span>
                           {assignee.role_name && (
-                            <span className="text-xs text-emerald-700">
-                              {assignee.role_name}
-                            </span>
+                            <span className="text-xs text-emerald-700">{assignee.role_name}</span>
                           )}
                         </li>
                       ))}
@@ -428,8 +390,9 @@ function TaskDetail() {
                   )}
                 </section>
 
+                {/* Comments */}
                 <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3">Comment</h2>
+                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3">Comments</h2>
                   <div className="space-y-4">
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 max-h-72 overflow-y-auto space-y-3">
                       {comments.length === 0 && (
@@ -439,21 +402,14 @@ function TaskDetail() {
                         const created = comment.created_at ? dayjs(comment.created_at) : null;
                         const isOwner = currentUser && comment.user?.id === currentUser.id;
                         return (
-                          <div
-                            key={comment.id}
-                            className="bg-white border border-gray-100 rounded-lg p-3 shadow-sm"
-                          >
+                          <div key={comment.id} className="bg-white border border-gray-100 rounded-lg p-3 shadow-sm">
                             <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
                               <span className="font-medium text-gray-700">
                                 {comment.author_name || comment.user?.name || "Ẩn danh"}
                               </span>
-                              {created?.isValid() && (
-                                <span>{created.format("HH:mm DD/MM/YYYY")}</span>
-                              )}
+                              {created?.isValid() && <span>{created.format("HH:mm DD/MM/YYYY")}</span>}
                             </div>
-                            <p className="text-sm text-gray-800 whitespace-pre-line">
-                              {comment.content}
-                            </p>
+                            <p className="text-sm text-gray-800 whitespace-pre-line">{comment.content}</p>
                             {isOwner && !isDone && (
                               <div className="text-right mt-2">
                                 <button
@@ -462,7 +418,7 @@ function TaskDetail() {
                                   className="text-xs text-red-500 hover:text-red-600"
                                   type="button"
                                 >
-                                  Xóa
+                                  Delete
                                 </button>
                               </div>
                             )}
@@ -483,7 +439,7 @@ function TaskDetail() {
                           rows={3}
                           placeholder={
                             isDone
-                              ? "Task đã hoàn thành — không thể thêm bình luận."
+                              ? "Task completed — comments disabled."
                               : "Share updates or discuss..."
                           }
                           className="w-full border border-emerald-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -496,7 +452,7 @@ function TaskDetail() {
                             className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
                             type="button"
                           >
-                            {commentSubmitting ? "Sending..." : "Post a comment"}
+                            {commentSubmitting ? "Sending..." : "Post comment"}
                           </button>
                         </div>
                       </PermissionGuard>
