@@ -99,6 +99,8 @@ function IssueList() {
   // ---- FILTER + SORT ----
   const filteredIssues = useMemo(() => {
     let data = [...issues];
+
+    // Filter
     if (filterType && filterValue) {
       if (filterType === "status") {
         data = data.filter(
@@ -110,15 +112,27 @@ function IssueList() {
         );
       }
     }
-    if (sortConfig.key === "expire_date") {
+
+    // Sort
+    if (sortConfig.key) {
       data.sort((a, b) => {
-        const aDate = new Date(a.expire_date || 0);
-        const bDate = new Date(b.expire_date || 0);
-        return sortConfig.direction === "asc"
-          ? aDate - bDate
-          : bDate - aDate;
+        const { key, direction } = sortConfig;
+        let result = 0;
+
+        if (key === "expire_date") {
+          const aDate = new Date(a.expire_date || 0);
+          const bDate = new Date(b.expire_date || 0);
+          result = aDate - bDate;
+        } else if (["severity", "priority"].includes(key)) {
+          const aVal = (a[key] || "").toLowerCase();
+          const bVal = (b[key] || "").toLowerCase();
+          result = aVal.localeCompare(bVal);
+        }
+
+        return direction === "asc" ? result : -result;
       });
     }
+
     return data;
   }, [issues, filterType, filterValue, sortConfig]);
 
@@ -193,15 +207,18 @@ function IssueList() {
               <thead className="text-xs uppercase bg-gray-100 text-gray-600">
                 <tr>
                   <th className="px-4 py-2 w-[20%]">Name</th>
-                  <th className="px-4 py-2 w-[15%]">
-                    Hashtag
+                  <th className="px-4 py-2 w-[10%]">Hashtag</th>
+                  <th className="px-4 py-2 w-[10%]">
+                    Deadline <SortIcon field="expire_date" />
                   </th>
-                  <th className="px-4 py-2 w-[15%]">
-                    Deadline
-                    <SortIcon field="expire_date" />
+                  <th className="px-4 py-2 w-[10%]">
+                    Severity <SortIcon field="severity" />
                   </th>
-                  <th className="px-4 py-2 w-[25%]">Handler</th>
-                  <th className="px-4 py-2 w-[15%]">Status</th>
+                  <th className="px-4 py-2 w-[10%]">
+                    Priority <SortIcon field="priority" />
+                  </th>
+                  <th className="px-4 py-2 w-[20%]">Handler</th>
+                  <th className="px-4 py-2 w-[10%]">Status</th>
                   <th className="px-4 py-2 text-center w-[5%]"></th>
                 </tr>
               </thead>
@@ -235,7 +252,9 @@ function IssueList() {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-xs italic">No hashtags</span>
+                        <span className="text-gray-400 text-xs italic">
+                          No hashtags
+                        </span>
                       )}
                     </td>
 
@@ -274,13 +293,27 @@ function IssueList() {
                       </div>
                     </td>
 
+                    {/* SEVERITY */}
+                    <td className="px-4 py-2">
+                      <span className="text-xs font-semibold text-gray-700">
+                        {issue.severity}
+                      </span>
+                    </td>
+
+                    {/* PRIORITY */}
+                    <td className="px-4 py-2">
+                      <span className="text-xs font-semibold text-gray-700">
+                        {issue.priority}
+                      </span>
+                    </td>
+
                     {/* HANDLER */}
                     <td className="px-4 py-2">
                       {issue.handlers && issue.handlers.length > 0 ? (
                         <div className="flex flex-col gap-0.5">
                           {issue.handlers.map((h, idx) => (
                             <span key={idx} className="text-xs text-gray-700">
-                              {h.user_email}
+                              {h.user_name}
                               {h.role_name && (
                                 <span className="text-gray-400">
                                   {" "}

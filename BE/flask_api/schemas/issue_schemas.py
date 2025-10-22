@@ -1,5 +1,4 @@
 from marshmallow import Schema, fields
-from flask_api.models.issue_models import IssueStatus, Severity, Priority
 from flask_api.models.issue_resolve_models import IssueResolve
 from flask_api.schemas.issue_comment_schemas import IssueCommentSchema
 
@@ -24,10 +23,10 @@ class IssueSchema(Schema):
     name = fields.Str(required=True)
     description = fields.Str(required=True)
 
-    # ✅ Giữ nguyên trường cũ để lưu string
+    # Giữ nguyên trường cũ để lưu string
     hashtag = fields.Str()
 
-    # ✅ Thêm trường mới để FE xài (list dạng [{id, name}])
+    # Thêm trường mới để FE xài (list dạng [{id, name}])
     hashtags = fields.Method("get_hashtag_list", dump_only=True)
 
     status = fields.Method("get_status")
@@ -67,7 +66,7 @@ class IssueSchema(Schema):
         except AttributeError:
             return str(obj.priority)
 
-    # ✅ Cập nhật parse hashtag
+    # Cập nhật parse hashtag
     def get_hashtag_list(self, obj):
         """Trả về danh sách hashtag dạng [{id, name}]"""
         import json
@@ -114,10 +113,12 @@ class IssueSchema(Schema):
             role = getattr(projrole, "role", None)
 
             handlers.append({
-                "team_id": team.id,
-                "user_id": user.id if user else None,
-                "user_email": user.email if user else None,
-                "role_name": role.name if role else None,
-            })
+            "team_id": team.id,
+            "user_id": user.id if user else None,
+            "user_name": user.name if user else None,
+            "user_email": user.email if user else None,
+            "role_name": role.name if role else None,
+        })
 
         return handlers
+
