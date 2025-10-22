@@ -40,7 +40,7 @@ export default function App() {
         <Route path="/resend-confirm" element={<ResendConfirm />} />
         
         {/* Protected routes - dùng PersistentLayout */}
-        <Route element={<PersistentLayout />}>
+        <Route path="/" element={<PersistentLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/tasks" element={<Tasks />} /> 
