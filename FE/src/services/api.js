@@ -13,7 +13,7 @@ api.interceptors.response.use(
     const message =
       error?.response?.data?.error ||
       error?.response?.data?.message ||
-      "Đã xảy ra lỗi không xác định.";
+      "error_unknown";
 
     // 🔹 Nếu có message chứa "successfully" hoặc "created" => không hiển thị toast.error
     if (typeof message === "string" && /(successfully|created)/i.test(message)) {
@@ -23,18 +23,18 @@ api.interceptors.response.use(
 
     // Chỉ hiển thị thật sự khi là lỗi
     if (status === 400) {
-      toast.error(message || "Yêu cầu không hợp lệ.");
+      toast.error(message || "Request are not valid.");
     } else if (status === 401) {
-      toast.error(message || "Bạn cần đăng nhập để tiếp tục.");
+      toast.error(message || "You are not authorized. Please log in.");
     } else if (status === 403) {
       const method = error?.config?.method?.toUpperCase?.();
       if (method && method !== "GET") {
-        toast.error("Bạn không có quyền thực hiện hành động này.");
+        toast.error("You do not have permission to perform this action.");
       }
     } else if (status === 404) {
-      toast.error(message || "Không tìm thấy tài nguyên.");
+      toast.error(message || "Resource not found.");
     } else if (status >= 500) {
-      toast.error("Lỗi máy chủ. Vui lòng thử lại sau.");
+      toast.error("Server error. Please try again later.");
     }
 
     return Promise.reject(error);

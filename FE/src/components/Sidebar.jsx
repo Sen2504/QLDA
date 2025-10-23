@@ -4,12 +4,15 @@ import {
   BadgeAlert,
   ClipboardList,
   Settings,
-  LogOut,
   Users,
   BookMarked,
   FolderKanban,
   ChevronDown,
   Check,
+  Menu,
+  X,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 import { useProject } from "../store/ProjectContext";
 import { useEffect, useMemo, useState, useCallback, memo } from "react";
@@ -28,8 +31,8 @@ function Sidebar() {
   const [sprintsLoading, setSprintsLoading] = useState(false);
   const location = useLocation();
 
-  // --- NEW STATE for collapse ---
-  const [collapsed, setCollapsed] = useState(true);
+  // Toggle sidebar - mặc định luôn BẬT (false = bật, true = tắt)
+  const [collapsed, setCollapsed] = useState(false);
 
   // Load projects
   useEffect(() => {
@@ -126,16 +129,7 @@ function Sidebar() {
     });
   }, [currentProject, sprints, location.pathname]);
 
-  const handleLogout = useCallback(async () => {
-    try {
-      await api.post("/auth/logout");
-    } catch (err) {
-      console.error("Error logging out", err);
-    } finally {
-      setCurrentProject(null);
-      navigate("/login", { replace: true });
-    }
-  }, [navigate, setCurrentProject]);
+
 
   const toggleDropdown = useCallback(() => {
     setDropdownOpen((open) => !open);
@@ -160,238 +154,324 @@ function Sidebar() {
     [location.pathname]
   );
 
-  // --- Hover Behavior ---
-  const handleMouseEnter = () => setCollapsed(false);
-  const handleMouseLeave = () => setCollapsed(true);
+  // Toggle sidebar
+  const toggleSidebar = useCallback(() => {
+    setCollapsed((prev) => !prev);
+  }, []);
 
   return (
-    <aside
-      className={`bg-white border-r border-gray-200 transition-all duration-300 sticky top-0 
-        ${collapsed ? "w-[70px]" : "w-64"} min-h-screen overflow-hidden`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <div
-        className={`p-6 transition-opacity duration-300 ${
-          collapsed ? "opacity-0 pointer-events-none" : "opacity-100"
-        }`}
+    <div className="relative flex-shrink-0">
+      {/* Sidebar */}
+      <aside
+        className={` bg-gradient-to-b from-white via-emerald-50/30 to-teal-50/50 border-r border-emerald-100 transition-all duration-300 shadow-xl h-screen flex flex-col
+          ${collapsed ? "w-0" : "w-64"}`}
       >
-        {/* Sidebar Header */}
-        <div className="mb-2" tabIndex={0} onBlur={handleDropdownBlur}>
-          <button
-            type="button"
-            onClick={toggleDropdown}
-            className="w-full flex items-center justify-between gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 shadow hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-400"
-          >
-            <span className="truncate text-left">
-              {currentProject ? currentProject.name : "Select project"}
-            </span>
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${
-                dropdownOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
+        {/* Sidebar Content */}
+        <div
+          className={`h-full overflow-hidden transition-all duration-300 flex flex-col ${
+            collapsed ? "opacity-0 invisible" : "opacity-100 visible"
+          }`}
+        >
+          {/* Main Content - Auto height */}
+          <div className="flex-shrink-0">
+            <div className="p-3 space-y-3">
+            {/* Project Selector - Compact */}
+            <div className="mb-3" tabIndex={0} onBlur={handleDropdownBlur}>
+              <label className="text-xs font-semibold text-emerald-700 mb-1.5 flex items-center gap-1">
+                <FolderKanban className="w-3 h-3" />
+                <span>PROJECT</span>
+              </label>
+              <button
+                type="button"
+                onClick={toggleDropdown}
+                className="w-full flex items-center justify-between gap-2 rounded-lg border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm hover:shadow-md hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all duration-200"
+              >
+                <span className="truncate text-left flex-1">
+                  {currentProject ? currentProject.name : "Select project"}
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
 
-          {dropdownOpen && (
-            <ul className="mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-green-100 bg-white shadow-lg focus:outline-none">
-              {projects.length === 0 && (
-                <li className="px-4 py-3 text-sm text-gray-500">
-                  You don't have any projects yet.
-                </li>
+              {dropdownOpen && (
+                <ul className="mt-2 max-h-48 w-full overflow-y-auto rounded-lg border-2 border-emerald-200 bg-white shadow-xl focus:outline-none custom-scrollbar">
+                  {projects.length === 0 && (
+                    <li className="px-3 py-2 text-sm text-gray-500 text-center">
+                      No projects available
+                    </li>
+                  )}
+                  {projects.map((proj) => {
+                    const selected = currentProject?.id === proj.id;
+                    return (
+                      <li key={proj.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleProjectSelect(proj)}
+                          className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-all duration-200 ${
+                            selected
+                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold"
+                              : "hover:bg-emerald-50 text-gray-700"
+                          }`}
+                        >
+                          <span className="truncate">{proj.name}</span>
+                          {selected && <Check className="h-3.5 w-3.5 flex-shrink-0" />}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
-              {projects.map((proj) => {
-                const selected = currentProject?.id === proj.id;
-                return (
-                  <li key={proj.id}>
-                    <button
-                      type="button"
-                      onClick={() => handleProjectSelect(proj)}
-                      className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-sm transition ${
-                        selected
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "hover:bg-green-50 text-gray-700"
-                      }`}
-                    >
-                      <span className="truncate">{proj.name}</span>
-                      {selected && <Check className="h-4 w-4" />}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+            </div>
 
-        {/* Navigation */}
-        <ul className="space-y-3 mt-4">
-          <li>
-            <Link
-              to="/"
-              className={`flex items-center gap-3 p-2 rounded-md transition ${
-                isActive("/") && location.pathname === "/"
-                  ? "bg-green-100 text-green-700 font-semibold"
-                  : "hover:bg-green-50 text-gray-700"
-              }`}
-            >
-              <Home className="w-5 h-5 text-green-600" />
-              <span>Dashboard</span>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/projects"
-              className={`flex items-center gap-3 p-2 rounded-md transition ${
-                isActive("/projects") && !isActive("/projects/")
-                  ? "bg-green-100 text-green-700 font-semibold"
-                  : "hover:bg-green-50 text-gray-700"
-              }`}
-            >
-              <FolderKanban className="w-5 h-5 text-green-600" />
-              <span>Projects</span>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/user-stories"
-              className={`flex items-center gap-3 p-2 rounded-md transition ${
-                isActive("/user-stories")
-                  ? "bg-emerald-100 text-emerald-700 font-semibold"
-                  : "hover:bg-emerald-50 text-gray-700"
-              }`}
-            >
-              <BookMarked className="w-5 h-5 text-green-600" />
-              <span>User Story</span>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/issues/list"
-              className={`flex items-center gap-3 p-2 rounded-md transition ${
-                isActive("/issues")
-                  ? "bg-amber-100 text-amber-700 font-semibold"
-                  : "hover:bg-amber-50 text-gray-700"
-              }`}
-            >
-              <BadgeAlert className="w-5 h-5 text-amber-500" />
-              <span>Issue</span>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/tasks"
-              className={`flex items-center gap-3 p-2 rounded-md transition ${
-                isActive("/tasks")
-                  ? "bg-blue-100 text-blue-700 font-semibold"
-                  : "hover:bg-blue-50 text-gray-700"
-              }`}
-            >
-              <ClipboardList className="w-5 h-5 text-blue-600" />
-              <span>Tasks</span>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/settings"
-              className={`flex items-center gap-3 p-2 rounded-md transition ${
-                isActive("/settings")
-                  ? "bg-gray-200 text-gray-900 font-semibold"
-                  : "hover:bg-gray-100 text-gray-700"
-              }`}
-            >
-              <Settings className="w-5 h-5 text-gray-700" />
-              <span>Settings</span>
-            </Link>
-          </li>
-
-          {currentProject && (
-            <li>
+            {/* Navigation Links - Compact */}
+            <nav className="space-y-1">
+              <div className="text-xs font-semibold text-gray-500 mb-2 px-2 flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                <span>NAVIGATION</span>
+              </div>
+              
               <Link
-                to={`/projects/${currentProject.id}/team`}
-                className={`flex items-center gap-3 p-2 rounded-md transition ${
-                  isActive(`/projects/${currentProject.id}/team`)
-                    ? "bg-teal-100 text-teal-700 font-semibold"
-                    : "hover:bg-teal-50 text-gray-700"
+                to="/"
+                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                  isActive("/") && location.pathname === "/"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+                    : "hover:bg-emerald-50 text-gray-700"
                 }`}
               >
-                <Users className="w-5 h-5 text-teal-600" />
-                <span>Team</span>
-              </Link>
-            </li>
-          )}
-
-          <li>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 p-2 mt-6 rounded-md hover:bg-red-100 transition"
-            >
-              <LogOut className="w-5 h-5 text-red-500" />
-              <span className="text-gray-700">Logout</span>
-            </button>
-          </li>
-        </ul>
-
-        {currentProject && (
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-500 mb-2">
-              <span>Sprints</span>
-              {sprintsLoading && (
-                <span className="text-emerald-600">Loading...</span>
-              )}
-            </div>
-
-            <div className="space-y-1 min-h-[120px] max-h-48 overflow-y-auto pr-1">
-              {sprintsLoading ? (
-                <>
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="block rounded-lg px-3 py-2 border border-transparent animate-pulse"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="h-4 bg-gray-200 rounded w-24"></div>
-                        <div className="h-3 bg-gray-200 rounded w-12"></div>
-                      </div>
-                    </div>
-                  ))}
-                </>
-              ) : sprintLinks.length === 0 ? (
-                <div className="text-xs text-gray-400 px-2 py-1">
-                  No sprints yet.
+                <div className={`p-1 rounded-lg transition-colors ${
+                  isActive("/") && location.pathname === "/"
+                    ? "bg-white/20"
+                    : "bg-emerald-100 group-hover:bg-emerald-200"
+                }`}>
+                  <Home className={`w-4 h-4 ${
+                    isActive("/") && location.pathname === "/"
+                      ? "text-white"
+                      : "text-emerald-600"
+                  }`} />
                 </div>
-              ) : (
-                sprintLinks.map((sprint) => (
-                  <Link
-                    key={sprint.id}
-                    to={sprint.path}
-                    className={`block rounded-lg px-3 py-2 text-sm transition border ${
-                      sprint.active
-                        ? "bg-emerald-100 text-emerald-700 border-emerald-200 font-semibold"
-                        : "border-transparent hover:bg-emerald-50 text-gray-700"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate">{sprint.name}</span>
-                      {sprint.deadline && (
-                        <span className="text-xs text-gray-500 whitespace-nowrap">
-                          {dayjs(sprint.deadline).format("DD/MM")}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                ))
+                <span className="font-medium text-sm">Dashboard</span>
+              </Link>
+
+              <Link
+                to="/projects"
+                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                  isActive("/projects") && !isActive("/projects/")
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+                    : "hover:bg-emerald-50 text-gray-700"
+                }`}
+              >
+                <div className={`p-1 rounded-lg transition-colors ${
+                  isActive("/projects") && !isActive("/projects/")
+                    ? "bg-white/20"
+                    : "bg-emerald-100 group-hover:bg-emerald-200"
+                }`}>
+                  <FolderKanban className={`w-4 h-4 ${
+                    isActive("/projects") && !isActive("/projects/")
+                      ? "text-white"
+                      : "text-emerald-600"
+                  }`} />
+                </div>
+                <span className="font-medium text-sm">Projects</span>
+              </Link>
+
+              <Link
+                to="/user-stories"
+                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                  isActive("/user-stories")
+                    ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md"
+                    : "hover:bg-blue-50 text-gray-700"
+                }`}
+              >
+                <div className={`p-1 rounded-lg transition-colors ${
+                  isActive("/user-stories")
+                    ? "bg-white/20"
+                    : "bg-blue-100 group-hover:bg-blue-200"
+                }`}>
+                  <BookMarked className={`w-4 h-4 ${
+                    isActive("/user-stories")
+                      ? "text-white"
+                      : "text-blue-600"
+                  }`} />
+                </div>
+                <span className="font-medium text-sm">User Stories</span>
+              </Link>
+
+              <Link
+                to="/issues/list"
+                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                  isActive("/issues")
+                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md"
+                    : "hover:bg-amber-50 text-gray-700"
+                }`}
+              >
+                <div className={`p-1 rounded-lg transition-colors ${
+                  isActive("/issues")
+                    ? "bg-white/20"
+                    : "bg-amber-100 group-hover:bg-amber-200"
+                }`}>
+                  <BadgeAlert className={`w-4 h-4 ${
+                    isActive("/issues")
+                      ? "text-white"
+                      : "text-amber-600"
+                  }`} />
+                </div>
+                <span className="font-medium text-sm">Issues</span>
+              </Link>
+
+              <Link
+                to="/tasks"
+                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                  isActive("/tasks")
+                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
+                    : "hover:bg-purple-50 text-gray-700"
+                }`}
+              >
+                <div className={`p-1 rounded-lg transition-colors ${
+                  isActive("/tasks")
+                    ? "bg-white/20"
+                    : "bg-purple-100 group-hover:bg-purple-200"
+                }`}>
+                  <ClipboardList className={`w-4 h-4 ${
+                    isActive("/tasks")
+                      ? "text-white"
+                      : "text-purple-600"
+                  }`} />
+                </div>
+                <span className="font-medium text-sm">Tasks</span>
+              </Link>
+
+              {currentProject && (
+                <Link
+                  to={`/projects/${currentProject.id}/team`}
+                  className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                    isActive(`/projects/${currentProject.id}/team`)
+                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md"
+                      : "hover:bg-teal-50 text-gray-700"
+                  }`}
+                >
+                  <div className={`p-1 rounded-lg transition-colors ${
+                    isActive(`/projects/${currentProject.id}/team`)
+                      ? "bg-white/20"
+                      : "bg-teal-100 group-hover:bg-teal-200"
+                  }`}>
+                    <Users className={`w-4 h-4 ${
+                      isActive(`/projects/${currentProject.id}/team`)
+                        ? "text-white"
+                        : "text-teal-600"
+                    }`} />
+                  </div>
+                  <span className="font-medium text-sm">Team</span>
+                </Link>
               )}
+
+              <Link
+                to="/settings"
+                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                  isActive("/settings")
+                    ? "bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-md"
+                    : "hover:bg-gray-100 text-gray-700"
+                }`}
+              >
+                <div className={`p-1 rounded-lg transition-colors ${
+                  isActive("/settings")
+                    ? "bg-white/20"
+                    : "bg-gray-200 group-hover:bg-gray-300"
+                }`}>
+                  <Settings className={`w-4 h-4 ${
+                    isActive("/settings")
+                      ? "text-white"
+                      : "text-gray-600"
+                  }`} />
+                </div>
+                <span className="font-medium text-sm">Settings</span>
+              </Link>
+            </nav>
             </div>
           </div>
-        )}
-      </div>
-    </aside>
+
+          {/* Sprints Section - Flex-1 to fill remaining space */}
+          {currentProject && (
+            <div className="border-t border-emerald-100 bg-white/50 flex-1 flex flex-col min-h-0">
+              <div className="p-3 flex flex-col h-full">
+                <div className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2 px-2 flex-shrink-0">
+                  <span className="flex items-center gap-1">
+                    <ClipboardList className="w-3 h-3" />
+                    SPRINTS
+                  </span>
+                  {sprintsLoading && (
+                    <span className="text-emerald-600 animate-pulse">•••</span>
+                  )}
+                </div>
+
+                <div className="space-y-1 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                  {sprintsLoading ? (
+                    <>
+                      {[1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="block rounded-lg px-2 py-2 border-2 border-transparent animate-pulse"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="h-3 bg-gray-200 rounded w-20"></div>
+                            <div className="h-3 bg-gray-200 rounded w-10"></div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  ) : sprintLinks.length === 0 ? (
+                    <div className="text-xs text-gray-400 px-2 py-2 text-center rounded-lg bg-gray-50">
+                      No sprints yet
+                    </div>
+                  ) : (
+                    sprintLinks.map((sprint) => {
+                      const isPast = sprint.deadline && dayjs(sprint.deadline).isBefore(dayjs(), 'day');
+                      return (
+                        <Link
+                          key={sprint.id}
+                          to={sprint.path}
+                          className={`group block rounded-lg px-2 py-2 text-sm transition-all duration-200 border-2 ${
+                            sprint.active
+                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-emerald-400 shadow-md"
+                              : "border-transparent hover:bg-emerald-50 hover:border-emerald-200 text-gray-700"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate font-medium text-xs">{sprint.name}</span>
+                            {sprint.deadline && (
+                              <span className={`text-xs whitespace-nowrap px-1.5 py-0.5 rounded-full ${
+                                sprint.active
+                                  ? "bg-white/20 text-white"
+                                  : isPast
+                                  ? "bg-red-100 text-red-600"
+                                  : "bg-emerald-100 text-emerald-700"
+                              }`}>
+                                {dayjs(sprint.deadline).format("DD/MM")}
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* Toggle Button - Fixed bên phải sidebar */}
+      <button
+        onClick={toggleSidebar}
+        className="absolute top-3 left-0 z-50 p-2 rounded-r-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+        title={collapsed ? "Open Sidebar" : "Close Sidebar"}
+      >
+        {collapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
+      </button>
+    </div>
   );
 }
 

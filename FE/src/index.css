@@ -50,3 +50,130 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Drag and Drop Smooth Animations */
+.cursor-grab {
+  cursor: grab;
+}
+
+.cursor-grabbing {
+  cursor: grabbing !important;
+}
+
+/* Dragging Over Animation */
+.dragging-over {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%) !important;
+  border-color: #10b981 !important;
+  transform: scale(1.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card Hover Lift Effect */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* React Beautiful DnD - Optimize for smooth dragging */
+
+/* Prevent backdrop-blur and transforms from creating stacking contexts */
+.isolate-auto {
+  isolation: auto !important;
+}
+
+/* Droppable areas need relative positioning but not stacking context */
+[data-rbd-droppable-id] {
+  position: relative;
+  z-index: 1;
+}
+
+/* Disable ALL transitions during drag to prevent jittering */
+[data-rbd-draggable-id] {
+  transition: none !important;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* CRITICAL: When actively dragging - highest z-index to stay above everything */
+[data-rbd-draggable-id][data-is-dragging="true"] {
+  z-index: 999999 !important;
+  cursor: grabbing !important;
+  position: relative !important;
+}
+
+/* Dragging clone/portal - must be above all elements */
+div[data-rbd-draggable-id][style*="position: fixed"],
+div[data-rbd-draggable-id][style*="position:fixed"] {
+  z-index: 999999 !important;
+  cursor: grabbing !important;
+}
+
+/* Portal container at body level - maximum z-index */
+body > div[data-rbd-drag-handle-draggable-id] {
+  z-index: 999999 !important;
+  pointer-events: none !important;
+}
+
+/* Dragging item wrapper */
+div[data-rbd-draggable-context-id] > div[data-is-dragging="true"] {
+  z-index: 999999 !important;
+}
+
+/* Any parent containers should not create stacking context */
+[data-rbd-droppable-id] {
+  isolation: auto !important;
+  position: relative;
+}
+
+/* Force all divs inside droppable to not interfere */
+[data-rbd-droppable-id] > * {
+  position: relative;
+  z-index: auto;
+}
+
+/* Specifically target sprint and backlog containers */
+[data-rbd-droppable-id="backlog"],
+[data-rbd-droppable-id^="sprint-"] {
+  position: relative !important;
+  z-index: auto !important;
+}
+
+/* Sprint card containers should not block dragging items */
+.bg-white\/80,
+.bg-white\/30 {
+  position: relative;
+  z-index: auto;
+}
+
+/* Ensure smooth GPU-accelerated rendering */
+[data-rbd-draggable-id] {
+  transform: translate3d(0, 0, 0);
+}
+
+/* Add a subtle pulse animation when dragging over droppable */
+[data-rbd-droppable-id].rbd-droppable-over {
+  animation: pulse-subtle 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* Smooth drop animation */
+[data-rbd-draggable-id]:not([data-is-dragging="true"]) {
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+/* Optimize scrolling performance during drag */
+[data-rbd-droppable-id] {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}

@@ -87,6 +87,7 @@ function TaskDetail() {
           setTask(taskData || null);
           setComments(taskData?.comments || []);
           setHashtags(taskData?.hashtags || []);
+          setSelectedAssignees(taskData?.assignees?.map(a => a.team_id) || []);
           setForm({
             name: taskData?.name || "",
             description: taskData?.description || "",
@@ -142,6 +143,8 @@ function TaskDetail() {
 
   const handleEnterEditMode = async () => {
     setEditMode(true);
+    // Set lại selectedAssignees từ task hiện tại
+    setSelectedAssignees(task?.assignees?.map(a => a.team_id) || []);
     // Load danh sách team members từ project
     if (task?.project_id) {
       try {
