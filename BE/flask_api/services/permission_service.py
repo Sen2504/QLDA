@@ -12,14 +12,14 @@ class PermissionService:
     def _allowed_actions_for_resource(resource_name: str, all_action_names: list[str]) -> list[str]:
         """Return allowed action names for a resource.
 
-        Business rule: "Comment" is only applicable to resource "Task".
+        Business rule: "Comment" is only applicable to resources "Task" and "Issue".
         All other actions apply to all resources by default.
         """
         if not all_action_names:
             return []
-        if resource_name == "Task":
+        if resource_name in {"Task", "Issue"}:
             return all_action_names
-        # exclude Comment for non-Task resources
+        # exclude Comment for non-Task/Issue resources
         return [a for a in all_action_names if a != "Comment"]
 
     @staticmethod
