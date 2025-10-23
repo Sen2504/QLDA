@@ -9,6 +9,21 @@ from flask_api.schemas.issue_comment_schemas import (
     IssueCommentSchema,
     IssueCommentCreateSchema,
 )
+from flask_api.utils.permissions import require_permission, get_project_id_from_issue
+
+
+def get_project_id_for_issue_create():
+    """Extract project_id from request for issue creation."""
+    project_id = None
+    try:
+        body = request.get_json(silent=True) or {}
+        project_id = body.get("project_id")
+    except Exception:
+        pass
+    if project_id is None and hasattr(request, "form"):
+        project_id = request.form.get("project_id")
+    return int(project_id) if project_id not in (None, "", "null") else None
+
 
 issue_bp = Blueprint("issue_bp", __name__, url_prefix="/api/issues")
 
@@ -61,6 +76,7 @@ def get_issue(issue_id):
 # ----------------- CREATE -----------------
 @issue_bp.route("/", methods=["POST"])
 @login_required
+@require_permission("Issue", "Create", project_id_getter=get_project_id_for_issue_create)
 def create_issue():
     data = request.form.to_dict(flat=True)
 
@@ -86,6 +102,7 @@ def create_issue():
 # ----------------- UPDATE ISSUE -----------------
 @issue_bp.route("/<int:issue_id>", methods=["PUT"])
 @login_required
+@require_permission("Issue", "Edit", project_id_getter=lambda issue_id: get_project_id_from_issue(issue_id))
 def update_issue(issue_id):
     data = request.form.to_dict(flat=True)
 
@@ -142,6 +159,7 @@ def list_issue_comments(issue_id):
 # ----------------- CREATE COMMENT -----------------
 @issue_bp.route("/<int:issue_id>/comments", methods=["POST"])
 @login_required
+@require_permission("Issue", "Comment", project_id_getter=lambda issue_id: get_project_id_from_issue(issue_id))
 def create_issue_comment(issue_id):
     payload = request.get_json() or {}
     try:
