@@ -16,6 +16,10 @@ function UserStoryDetail() {
   const { userStoryId } = useParams();
   const navigate = useNavigate();
   
+  // Check permissions
+  const canEditStory = usePermission("UserStory", "Edit");
+  const canCreateTask = usePermission("Task", "Create");
+  
   const [story, setStory] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -171,21 +175,26 @@ function UserStoryDetail() {
                   </span>
                 )}
 
-                {/* ✅ Disable nút Edit nếu user story đã Done */}
-                <PermissionGuard resource="UserStory" action="Edit">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/user-stories/${story.id}/edit`)}
-                    disabled={isDone}
-                    className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-                      isDone
-                        ? "border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100"
-                        : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                    }`}
-                  >
-                    ✏️ Edit Story
-                  </button>
-                </PermissionGuard>
+                {/* Edit Story Button - Always visible but disabled if no permission or if Done */}
+                <button
+                  type="button"
+                  onClick={() => navigate(`/user-stories/${story.id}/edit`)}
+                  disabled={!canEditStory || isDone}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                    !canEditStory || isDone
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100 opacity-50"
+                      : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  }`}
+                  title={
+                    !canEditStory 
+                      ? "You don't have permission to edit user stories" 
+                      : isDone 
+                      ? "Cannot edit completed user story" 
+                      : "Edit user story"
+                  }
+                >
+                  ✏️ Edit Story
+                </button>
               </div>
             </div>
 
@@ -276,6 +285,7 @@ function UserStoryDetail() {
         <TaskTable
           tasks={tasks}
           onCreateClick={() => setShowForm(true)}
+          canCreateTask={canCreateTask}
           onStatusChange={async (taskId, newStatusId) => {
             try {
               await api.put(`/tasks/${taskId}`, { status_id: Number(newStatusId) });
