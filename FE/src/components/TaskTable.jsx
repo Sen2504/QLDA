@@ -2,7 +2,14 @@ import { useState, useEffect, useMemo } from "react";
 import TaskStatusService from "../services/taskStatusService";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 
-export default function TaskTable({ tasks, onCreateClick, onStatusChange, onTaskClick, isUserStoryDone }) {
+export default function TaskTable({ 
+  tasks, 
+  onCreateClick, 
+  canCreateTask = true, 
+  onStatusChange, 
+  onTaskClick, 
+  isUserStoryDone 
+}) {
   const [statuses, setStatuses] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState({});
 
@@ -51,15 +58,22 @@ export default function TaskTable({ tasks, onCreateClick, onStatusChange, onTask
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-800">Task list</h2>
 
-        {/* ✅ Disable nút Create Task nếu UserStory đã Done */}
+        {/* Create Task Button - Disabled if no permission or UserStory is Done */}
         <button
-          onClick={!isUserStoryDone ? onCreateClick : undefined}
-          disabled={isUserStoryDone}
+          onClick={canCreateTask && !isUserStoryDone ? onCreateClick : undefined}
+          disabled={!canCreateTask || isUserStoryDone}
           className={`px-4 py-2 rounded-2xl text-white transition ${
-            isUserStoryDone
-              ? "bg-gray-300 cursor-not-allowed"
+            !canCreateTask || isUserStoryDone
+              ? "bg-gray-300 cursor-not-allowed opacity-50"
               : "bg-[var(--color-accent,#16a34a)] hover:opacity-90"
           }`}
+          title={
+            !canCreateTask 
+              ? "You don't have permission to create tasks" 
+              : isUserStoryDone 
+              ? "Cannot create task for completed user story" 
+              : "Create new task"
+          }
         >
           + Create task
         </button>

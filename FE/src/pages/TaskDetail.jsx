@@ -2,6 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
+import { 
+  ArrowLeft, 
+  ExternalLink, 
+  Edit3, 
+  Save, 
+  X, 
+  FileText, 
+  Calendar, 
+  Activity, 
+  Hash, 
+  Users, 
+  MessageCircle, 
+  Loader2,
+  Send
+} from "lucide-react";
 import TaskService from "../services/taskService";
 import TaskStatusService from "../services/taskStatusService";
 import TaskCommentService from "../services/taskCommentService";
@@ -12,6 +27,11 @@ import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 import PermissionGuard from "../components/PermissionGuard";
 import { usePermission } from "../store/PermissionContext";
 import withPermissions from "../components/withPermissions";
+import GradientCard from "../components/task/GradientCard";
+import SectionHeader from "../components/task/SectionHeader";
+import CommentItem from "../components/task/CommentItem";
+import HashtagBadge from "../components/task/HashtagBadge";
+import AssigneeItem from "../components/task/AssigneeItem";
 
 function TaskDetail() {
   const { taskId } = useParams();
@@ -315,200 +335,262 @@ function TaskDetail() {
 
   if (!task && !loading && !forbidden) {
     return (
-      <>
-        <div className="p-6">
-          <button onClick={() => navigate(-1)} className="px-3 py-2 rounded-lg border mb-4" type="button">
-            ← Back
-          </button>
-          <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-600">Task not found.</div>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-3">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="group px-3 py-1.5 rounded-lg bg-white/80 backdrop-blur-sm border border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all duration-300 flex items-center gap-2 mb-3"
+          type="button"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
+          <span className="text-sm">Back</span>
+        </button>
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-6 text-center">
+          <FileText className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+          <p className="text-gray-600 text-sm">Task not found.</p>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-3">
+      <div className="max-w-[1400px] mx-auto space-y-3">
+        {/* Header Navigation */}
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="px-3 py-2 rounded-lg border" type="button">
-            ← Back
+          <button 
+            onClick={() => navigate(-1)} 
+            className="group px-3 py-1.5 rounded-lg bg-white/80 backdrop-blur-sm border border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all duration-300 flex items-center gap-2"
+            type="button"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
+            <span className="text-sm">Back</span>
           </button>
           {task?.user_story?.id && (
             <button
               onClick={() => navigate(`/user-stories/${task.user_story.id}`)}
-              className="px-3 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2"
               type="button"
             >
-              ↗ Open user story
+              <span className="text-sm">Open user story</span>
+              <ExternalLink className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
             </button>
           )}
         </div>
 
+        {/* Loading State */}
         {loading && (
-          <div className="bg-white rounded-2xl shadow p-6 text-gray-500">Loading task information...</div>
-        )}
-
-        {forbidden && !loading && (
-          <div className="bg-white rounded-2xl shadow p-6 border border-red-200">
-            <div className="text-red-600 font-semibold mb-1">Access denied</div>
-            <div className="text-gray-700">You do not have permission to view this task.</div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-5 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+              <p className="text-gray-600 text-sm">Loading task information...</p>
+            </div>
           </div>
         )}
 
-        {task && (
-          <div className="bg-white rounded-2xl shadow p-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+        {/* Forbidden State */}
+        {forbidden && !loading && (
+          <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg shadow-lg border border-red-200 p-4">
+            <div className="flex items-start gap-2">
+              <X className="w-6 h-6 text-red-500 flex-shrink-0" />
               <div>
+                <div className="text-red-600 font-bold text-base mb-1">Access denied</div>
+                <div className="text-gray-700 text-sm">You do not have permission to view this task.</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Task Content */}
+        {task && (
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-emerald-200 p-4">
+            {/* Task Header */}
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-3 pb-3 border-b border-emerald-100">
+              <div className="flex-1 min-w-0">
                 {editMode ? (
                   <input
                     value={form.name}
                     onChange={(e) => handleChange("name", e.target.value)}
-                    className="w-full border rounded-xl px-3 py-2 text-xl font-semibold"
+                    className="w-full border-2 border-emerald-300 focus:border-emerald-500 rounded-lg px-3 py-2 text-lg font-bold bg-white/50 backdrop-blur-sm transition-all duration-300"
+                    placeholder="Task name..."
                   />
                 ) : (
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    #{task.id} {task.name}
-                  </h1>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold shadow-sm">
+                        #{task.id}
+                      </span>
+                      <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-emerald-700 via-teal-700 to-cyan-700 bg-clip-text text-transparent">
+                        {task.name}
+                      </h1>
+                    </div>
+                  </div>
                 )}
-                <div className="mt-3 text-sm flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {task.user_story && (
-                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 text-xs font-semibold">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-2.5 py-0.5 text-white text-xs font-semibold shadow-sm">
+                      <FileText className="w-3 h-3" />
                       User Story #{task.user_story.id}
                     </span>
                   )}
                   {task.status && (
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-slate-700 text-xs font-semibold">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-500 to-slate-600 px-2.5 py-0.5 text-white text-xs font-semibold shadow-sm">
+                      <Activity className="w-3 h-3" />
                       {task.status}
                     </span>
                   )}
                   {dueInfo?.dueDate && (
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${dueInfo.badgeClass}`}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-sm ${
+                        dueInfo.badgeClass.includes('red') 
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white' 
+                          : dueInfo.badgeClass.includes('yellow')
+                          ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white'
+                          : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                      }`}
                     >
+                      <Calendar className="w-3 h-3" />
                       {dueInfo.label} • {dueInfo.dueDisplay}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {editMode ? (
                   <>
-                    <PermissionGuard resource="Task" action="Edit">
-                      <button
-                        onClick={handleSave}
-                        disabled={saving || isDone}
-                        className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-                        type="button"
-                      >
-                        {saving ? "Saving..." : "Save changes"}
-                      </button>
-                    </PermissionGuard>
+                    <button
+                      onClick={handleSave}
+                      disabled={!canEdit || saving || isDone}
+                      className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm"
+                      type="button"
+                      title={
+                        !canEdit 
+                          ? "You don't have permission to edit tasks" 
+                          : isDone 
+                          ? "Cannot edit completed task" 
+                          : "Save changes"
+                      }
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Save</span>
+                        </>
+                      )}
+                    </button>
                     <button
                       onClick={handleCancelEdit}
-                      className="px-4 py-2 rounded-lg border"
+                      className="px-3 py-1.5 rounded-lg border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 font-medium transition-all duration-300 text-sm"
                       type="button"
                       disabled={isDone}
                     >
-                      Cancel
+                      <X className="w-4 h-4" />
                     </button>
                   </>
                 ) : (
-                  <PermissionGuard resource="Task" action="Edit">
-                    <button
-                      onClick={handleEnterEditMode}
-                      disabled={isDone}
-                      className={`px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 ${
-                        isDone ? "opacity-60 cursor-not-allowed" : ""
-                      }`}
-                      type="button"
-                    >
-                      ✏️ Edit
-                    </button>
-                  </PermissionGuard>
+                  <button
+                    onClick={handleEnterEditMode}
+                    disabled={!canEdit || isDone}
+                    className={`px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm ${
+                      !canEdit || isDone ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                    type="button"
+                    title={
+                      !canEdit 
+                        ? "You don't have permission to edit tasks" 
+                        : isDone 
+                        ? "Cannot edit completed task" 
+                        : "Edit task"
+                    }
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Edit</span>
+                  </button>
                 )}
               </div>
             </div>
 
-            {/* Main Content Section */}
-            <div className="space-y-5">
-              {/* Description, Due Date, Status - Full Width */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <section className="md:col-span-3">
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Description</h2>
+            {/* Main Content Grid - Compact Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {/* LEFT COLUMN - 1/3 */}
+              <div className="space-y-3">
+                {/* Description */}
+                <GradientCard gradient="from-emerald-50 to-teal-50" borderColor="border-emerald-200">
+                  <SectionHeader icon={FileText} title="Description" />
                   {editMode ? (
                     <textarea
                       value={form.description}
                       onChange={(e) => handleChange("description", e.target.value)}
-                      rows={4}
-                      className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      rows={3}
+                      className="w-full border border-emerald-300 focus:border-emerald-500 rounded-lg p-2 text-xs bg-white/50 backdrop-blur-sm focus:outline-none transition-all duration-300"
+                      placeholder="Describe the task..."
                     />
                   ) : (
-                    <p className="text-gray-700 whitespace-pre-line bg-gray-50 rounded-xl p-4">
+                    <p className="text-gray-700 text-xs whitespace-pre-line leading-relaxed">
                       {task.description?.trim() || "(No description yet)"}
                     </p>
                   )}
-                </section>
+                </GradientCard>
 
-                <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Due Date</h2>
-                  {editMode ? (
-                    <input
-                      type="date"
-                      value={form.due_date}
-                      onChange={(e) => handleChange("due_date", e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2"
-                    />
-                  ) : (
-                    <div className="bg-gray-50 rounded-lg px-4 py-3">
-                      <div className="text-gray-800 font-medium">
-                        {dueInfo?.dueDisplay || "Not set yet"}
-                      </div>
-                      {dueInfo?.diffDays !== null && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {describeDiffDays(dueInfo.diffDays)}
+                {/* Due Date & Status Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Due Date */}
+                  <GradientCard gradient="from-blue-50 to-cyan-50" borderColor="border-blue-200">
+                    <SectionHeader icon={Calendar} title="Due Date" gradient="from-blue-600 to-cyan-600" />
+                    {editMode ? (
+                      <input
+                        type="date"
+                        value={form.due_date}
+                        onChange={(e) => handleChange("due_date", e.target.value)}
+                        className="w-full border border-blue-300 focus:border-blue-500 rounded px-2 py-1 text-xs bg-white/50 backdrop-blur-sm transition-all duration-300"
+                      />
+                    ) : (
+                      <div>
+                        <div className="text-gray-800 font-semibold text-xs">
+                          {dueInfo?.dueDisplay || "Not set"}
                         </div>
-                      )}
-                    </div>
-                  )}
-                </section>
+                        {dueInfo?.diffDays !== null && (
+                          <div className="text-[10px] text-gray-600 mt-0.5">
+                            {describeDiffDays(dueInfo.diffDays)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </GradientCard>
 
-                <section>
-                  <h2 className="text-sm font-semibold uppercase text-gray-700 mb-2">Status</h2>
-                  {editMode ? (
-                    <select
-                      value={form.status_id}
-                      onChange={(e) => handleChange("status_id", e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2"
-                    >
-                      <option value="">Choose status</option>
-                      {statuses.map((status) => (
-                        <option key={status.id} value={status.id}>
-                          {status.name_status || status.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="bg-gray-50 rounded-lg px-4 py-3">
-                      <div className="text-gray-800 font-medium">
+                  {/* Status */}
+                  <GradientCard gradient="from-emerald-50 to-teal-50" borderColor="border-emerald-200">
+                    <SectionHeader icon={Activity} title="Status" />
+                    {editMode ? (
+                      <select
+                        value={form.status_id}
+                        onChange={(e) => handleChange("status_id", e.target.value)}
+                        className="w-full border border-emerald-300 focus:border-emerald-500 rounded px-2 py-1 text-xs bg-white/50 backdrop-blur-sm transition-all duration-300"
+                      >
+                        <option value="">Choose</option>
+                        {statuses.map((status) => (
+                          <option key={status.id} value={status.id}>
+                            {status.name_status || status.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-gray-800 font-semibold text-xs">
                         {task.status || "—"}
                       </div>
-                    </div>
-                  )}
-                </section>
-              </div>
+                    )}
+                  </GradientCard>
+                </div>
 
-              {/* Two Column Layout: Left 35% | Right 65% */}
-              <div className="grid grid-cols-1 lg:grid-cols-[35%_1fr] gap-5">
-                {/* LEFT COLUMN - 35% */}
-                <div className="space-y-4">
-                  {/* Hashtags Section */}
-                  <section className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-                    <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3 flex items-center gap-2">
-                      <span className="text-blue-600">#</span>
-                      Hashtags
-                    </h2>
+                {/* Hashtags */}
+                <GradientCard gradient="from-emerald-50 via-teal-50 to-cyan-50" borderColor="border-emerald-200">
+                  <SectionHeader icon={Hash} title="Hashtags" />
                   
                   {editMode ? (
                     <div className="space-y-2">
@@ -516,15 +598,15 @@ function TaskDetail() {
                         {hashtags.map((tag) => (
                           <span
                             key={tag.id}
-                            className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-700"
+                            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 px-2.5 py-1 text-xs text-white font-semibold shadow-sm"
                           >
                             #{tag.name}
                             <button
                               onClick={() => handleRemoveHashtag(tag.id)}
-                              className="hover:text-blue-900"
+                              className="hover:bg-white/20 rounded-full p-0.5 transition-colors duration-200"
                               type="button"
                             >
-                              ×
+                              <X className="w-3 h-3" />
                             </button>
                           </span>
                         ))}
@@ -539,16 +621,16 @@ function TaskDetail() {
                             handleHashtagSearch(e.target.value);
                           }}
                           onKeyDown={handleHashtagKeyDown}
-                          placeholder="Tìm kiếm hoặc tạo hashtag... (Enter để thêm)"
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
+                          placeholder="Search or create... (Enter)"
+                          className="w-full border border-blue-300 focus:border-purple-500 rounded-lg px-3 py-2 text-sm bg-white/80 backdrop-blur-sm transition-all duration-300"
                         />
                         {hashtagSuggestions.length > 0 && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-blue-200 rounded-lg shadow-lg max-h-32 overflow-y-auto">
                             {hashtagSuggestions.map((tag) => (
                               <button
                                 key={tag.id}
                                 onClick={() => handleAddHashtag(tag)}
-                                className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                                className="w-full text-left px-3 py-2 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 text-sm font-medium transition-colors duration-200"
                                 type="button"
                               >
                                 #{tag.name}
@@ -557,65 +639,62 @@ function TaskDetail() {
                           </div>
                         )}
                         {hashtagInput.trim() && hashtagSuggestions.length === 0 && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg">
-                            <div className="px-3 py-2 text-sm text-gray-500">
-                              Nhấn Enter để tạo hashtag mới: <span className="font-semibold text-blue-600">#{hashtagInput.trim()}</span>
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-blue-200 rounded-lg shadow-lg">
+                            <div className="px-3 py-2 text-xs">
+                              <span className="text-gray-600">Press Enter to create:</span>
+                              <span className="ml-1 font-bold text-blue-600">
+                                #{hashtagInput.trim()}
+                              </span>
                             </div>
                           </div>
                         )}
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                       {hashtags.length > 0 ? (
                         hashtags.map((tag) => (
-                          <span
-                            key={tag.id}
-                            className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-700"
-                          >
-                            #{tag.name}
-                          </span>
+                          <HashtagBadge key={tag.id} tag={tag} />
                         ))
                       ) : (
-                        <div className="text-sm text-gray-500">Chưa có hashtag</div>
+                        <div className="text-xs text-gray-500 italic">No hashtags</div>
                       )}
                     </div>
                   )}
-                </section>
+                </GradientCard>
 
-                  {/* Assignees Section */}
-                  <section className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-                    <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3 flex items-center gap-2">
-                      <span className="text-emerald-600">👥</span>
-                      Assignees
-                    </h2>
+                {/* Assignees */}
+                <GradientCard gradient="from-emerald-50 via-teal-50 to-cyan-50" borderColor="border-emerald-200">
+                  <SectionHeader icon={Users} title="Assignees" />
 
                   {editMode ? (
-                    <div className="border rounded-lg p-3 max-h-60 overflow-y-auto space-y-2">
+                    <div className="border border-emerald-300 rounded p-2 max-h-40 overflow-y-auto space-y-1.5 bg-white/80 backdrop-blur-sm custom-scrollbar">
                       {availableMembers.length === 0 ? (
-                        <div className="text-sm text-gray-500">Đang tải danh sách thành viên...</div>
+                        <div className="text-xs text-gray-500 italic text-center py-3">
+                          Loading members...
+                        </div>
                       ) : (
                         availableMembers.map((member) => {
-                          const userName = member.user?.name || member.user?.email || member.user_email || "Ẩn danh";
+                          const userName = member.user?.name || member.user?.email || member.user_email || "Anonymous";
                           const roleName = member.projrole?.name || member.role_name || "";
                           
                           return (
                             <label
                               key={member.id}
-                              className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                              className="flex items-center gap-2 p-1.5 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 rounded cursor-pointer transition-all duration-200 border border-transparent hover:border-emerald-200"
                             >
                               <input
                                 type="checkbox"
                                 checked={selectedAssignees.includes(member.id)}
                                 onChange={() => handleToggleAssignee(member.id)}
-                                className="w-4 h-4"
+                                className="w-3.5 h-3.5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
                               />
-                              <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-semibold text-gray-900 truncate">
                                   {userName}
                                 </div>
                                 {roleName && (
-                                  <div className="text-xs text-gray-600">
+                                  <div className="text-[10px] text-emerald-700 font-medium truncate">
                                     {roleName}
                                   </div>
                                 )}
@@ -625,145 +704,120 @@ function TaskDetail() {
                         })
                       )}
                       {selectedAssignees.length > 0 && (
-                        <div className="text-xs text-emerald-600 mt-1 px-2">
-                          Đã chọn {selectedAssignees.length} người
+                        <div className="text-[10px] font-semibold text-emerald-600 mt-1 px-1 text-center">
+                          ✓ Selected {selectedAssignees.length}
                         </div>
                       )}
                     </div>
                   ) : (
                     <>
                       {task.assignees?.length ? (
-                        <ul className="space-y-2">
+                        <ul className="space-y-1.5">
                           {task.assignees.map((assignee) => (
-                            <li
-                              key={`assignee-${assignee.team_id || assignee.user_id || assignee.user_email}`}
-                              className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 flex flex-col"
-                            >
-                              <span className="font-medium text-emerald-900">
-                                {assignee.user_name || assignee.name || assignee.user_email || assignee.email || "Ẩn danh"}
-                              </span>
-                              {assignee.role_name && (
-                                <span className="text-xs text-emerald-700">
-                                  {assignee.role_name}
-                                </span>
-                              )}
+                            <li key={`assignee-${assignee.team_id || assignee.user_id || assignee.user_email}`}>
+                              <AssigneeItem assignee={assignee} />
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <div className="text-sm text-gray-500">Not assigned yet</div>
+                        <div className="text-xs text-gray-500 italic text-center py-2">Not assigned yet</div>
                       )}
                     </>
                   )}
-                  </section>
-                </div>
+                </GradientCard>
+              </div>
 
-                {/* RIGHT COLUMN - 65% */}
-                <div>
-                  <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                    <h2 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                      <span className="text-emerald-600">💬</span>
-                      Comments
-                      {comments.length > 0 && (
-                        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
+              {/* RIGHT COLUMN - 2/3 Comments */}
+              <div className="lg:col-span-2">
+                <GradientCard gradient="from-emerald-50 via-teal-50 to-green-50" borderColor="border-emerald-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <SectionHeader 
+                      icon={MessageCircle} 
+                      title="Comments" 
+                      badge={comments.length > 0 && (
+                        <span className="text-xs bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-2 py-0.5 rounded-full font-bold">
                           {comments.length}
                         </span>
                       )}
-                    </h2>
-                    
-                    <div className="space-y-4">
-                      {/* Comments List */}
-                      <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                        {comments.length === 0 && (
-                          <div className="text-center py-8 text-gray-400">
-                            <div className="text-4xl mb-2">💭</div>
-                            <div className="text-sm">No comments yet. Be the first to comment!</div>
-                          </div>
-                        )}
-                        
-                        {comments.map((comment) => {
-                          const created = comment.created_at ? dayjs(comment.created_at) : null;
-                          const isOwner = currentUser && comment.user?.id === currentUser.id;
-                          return (
-                            <div
-                              key={comment.id}
-                              className="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow"
-                            >
-                              <div className="flex items-start justify-between mb-1">
-                                <div>
-                                  <div className="font-medium text-gray-800 text-sm">
-                                    {comment.author_name || comment.user?.name || "Ẩn danh"}
-                                  </div>
-                                  {created?.isValid() && (
-                                    <div className="text-xs text-gray-500">
-                                      {created.format("HH:mm DD/MM/YYYY")}
-                                    </div>
-                                  )}
-                                </div>
-                                {isOwner && !isDone && (
-                                  <button
-                                    onClick={() => handleDeleteComment(comment.id)}
-                                    disabled={commentSubmitting}
-                                    className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50"
-                                    type="button"
-                                  >
-                                    Delete
-                                  </button>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-700 whitespace-pre-line mt-2">
-                                {comment.content}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
+                    />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {/* Comments List */}
+                    <div className="space-y-2 max-h-[calc(100vh-420px)] overflow-y-auto pr-1 custom-scrollbar">
+                      {comments.length === 0 && (
+                        <div className="text-center py-8 rounded-lg bg-white/50 backdrop-blur-sm">
+                          <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-400" />
+                          <div className="text-xs text-gray-500 font-medium">No comments yet. Be the first!</div>
+                        </div>
+                      )}
+                      
+                      {comments.map((comment) => (
+                        <CommentItem
+                          key={comment.id}
+                          comment={comment}
+                          currentUser={currentUser}
+                          isDone={isDone}
+                          onDelete={handleDeleteComment}
+                          isDeleting={commentSubmitting}
+                        />
+                      ))}
+                    </div>
 
-                      {/* Add Comment Form */}
-                      <div className={`border-t border-gray-200 pt-4 ${isDone ? "opacity-50" : ""}`}>
-                        <PermissionGuard resource="Task" action="Comment">
-                          <div className="space-y-3">
-                            <textarea
-                              value={commentInput}
-                              onChange={(e) => setCommentInput(e.target.value)}
-                              rows={3}
-                              placeholder={
-                                isDone
-                                  ? "Task completed — cannot add comments."
-                                  : "Write a comment..."
-                              }
-                              className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-                              disabled={isDone || !canComment}
-                            />
-                            <div className="flex justify-end">
-                              <button
-                                onClick={handleSubmitComment}
-                                disabled={commentSubmitting || isDone || !canComment || !commentInput.trim()}
-                                className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                type="button"
-                              >
-                                {commentSubmitting ? (
-                                  <span className="flex items-center gap-2">
-                                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                    Posting...
-                                  </span>
-                                ) : (
-                                  "Post Comment"
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        </PermissionGuard>
+                    {/* Add Comment Form */}
+                    <div className={`border-t border-emerald-200 pt-3 ${isDone || !canComment ? "opacity-50" : ""}`}>
+                      <div className="space-y-2">
+                        <textarea
+                          value={commentInput}
+                          onChange={(e) => setCommentInput(e.target.value)}
+                          rows={2}
+                          placeholder={
+                            !canComment 
+                              ? "You don't have permission to comment" 
+                              : isDone 
+                              ? "Task completed — cannot add comments." 
+                              : "Write a comment..."
+                          }
+                          className="w-full border border-emerald-300 focus:border-emerald-500 rounded-lg p-2 text-xs bg-white/80 backdrop-blur-sm focus:outline-none transition-all duration-300 resize-none"
+                          disabled={isDone || !canComment}
+                        />
+                        <div className="flex justify-end">
+                          <button
+                            onClick={handleSubmitComment}
+                            disabled={commentSubmitting || isDone || !canComment || !commentInput.trim()}
+                            className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5"
+                            type="button"
+                            title={
+                              !canComment 
+                                ? "You don't have permission to comment" 
+                                : isDone 
+                                ? "Cannot comment on completed task" 
+                                : "Post comment"
+                            }
+                          >
+                            {commentSubmitting ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Posting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Post Comment</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </section>
-                </div>
+                  </div>
+                </GradientCard>
               </div>
             </div>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
