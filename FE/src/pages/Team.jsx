@@ -350,9 +350,6 @@ function Team() {
               </div>
             </div>
           </div>
-
-          {/* Pending Invites Section */}
-
         </div>
       </div>
 

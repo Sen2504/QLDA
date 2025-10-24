@@ -10,6 +10,17 @@ import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 import PermissionGuard from "../components/PermissionGuard";
 import withPermissions from "../components/withPermissions";
 import { usePermission } from "../store/PermissionContext";
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Target, 
+  CheckCircle2, 
+  ListTodo,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  Users2
+} from "lucide-react";
 
 const FALLBACK_STATUSES = [
   { id: "NEW", rawId: null, name_status: "NEW" },
@@ -23,14 +34,14 @@ const FALLBACK_STATUSES = [
 
 function TaskCard({ task, index, onOpenTask }) {
   const dueInfo = evaluateDueDate(task.due_date);
-  const isDone = (task.status || "").toUpperCase() === "DONE"; // ✅ kiểm tra trạng thái DONE
+  const isDone = (task.status || "").toUpperCase() === "DONE";
 
-  const accentClass = {
-    overdue: "border-l-4 border-red-500",
-    soon: "border-l-4 border-amber-500",
-    later: "border-l-4 border-sky-500",
-    none: "border-l-4 border-gray-200",
-  }[dueInfo.key] || "border-l-4 border-gray-200";
+  const accentGradient = {
+    overdue: "from-red-500 to-rose-600",
+    soon: "from-amber-500 to-orange-600",
+    later: "from-sky-500 to-blue-600",
+    none: "from-gray-400 to-gray-500",
+  }[dueInfo.key] || "from-gray-400 to-gray-500";
 
   const assignees = Array.isArray(task.assignees)
     ? task.assignees
@@ -42,71 +53,89 @@ function TaskCard({ task, index, onOpenTask }) {
     <Draggable
       draggableId={`task-${task.id}`}
       index={index}
-      isDragDisabled={isDone} // ✅ khóa drag nếu task DONE
+      isDragDisabled={isDone}
     >
-      {(provided) => (
+      {(provided, snapshot) => (
         <div
-          className={`bg-white border rounded-lg shadow p-3 mb-2 text-sm transition-all ${
-            accentClass
-          } ${isDone ? "opacity-70 cursor-not-allowed" : "cursor-grab"}`}
+          className={`group relative bg-white rounded-lg shadow-sm hover:shadow-lg border border-gray-200 
+            transition-all duration-200 mb-2 overflow-hidden cursor-pointer
+            ${isDone ? "opacity-60" : "hover:border-indigo-300"}
+            ${snapshot.isDragging ? "shadow-2xl ring-2 ring-indigo-400 rotate-2" : ""}`}
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...(!isDone ? provided.dragHandleProps : {})} // ❌ loại drag handle khi DONE
+          {...(!isDone ? provided.dragHandleProps : {})}
+          onClick={(e) => {
+            // Chỉ mở detail khi click vào card, không phải khi drag
+            if (!snapshot.isDragging && e.target.tagName !== 'BUTTON') {
+              onOpenTask?.(task.id);
+            }
+          }}
         >
-          <div className="font-medium flex justify-between items-center">
-            <span>
-              #{task.id} {task.title || task.name || "(no title)"}
-            </span>
-            {isDone && (
-              <span className="text-[10px] text-emerald-600 font-semibold ml-2">
-                ✓
-              </span>
-            )}
-          </div>
+          {/* Accent bar */}
+          <div className={`h-1 bg-gradient-to-r ${accentGradient}`} />
+          
+          <div className="p-3">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-indigo-600 mb-1">
+                  #{task.id}
+                </div>
+                <h4 className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight">
+                  {task.title || task.name || "(no title)"}
+                </h4>
+              </div>
+              {isDone && (
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              )}
+            </div>
 
-          <div className="text-[11px] text-gray-600 leading-snug">
-            {assignees.length > 0 ? (
-              assignees.map((assignee) => (
-                <div
-                  key={`card-${task.id}-assignee-${assignee.team_id || assignee.user_id || assignee.user_email}`}
-                >
-                  {assignee.user_name ||
-                    assignee.name ||
-                    assignee.user_email ||
-                    assignee.email ||
-                    "Ẩn danh"}
-                  {assignee.role_name && (
-                    <span className="ml-1 text-gray-400">
-                      ({assignee.role_name})
-                    </span>
+            {/* Assignees */}
+            <div className="mb-2">
+              {assignees.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {assignees.slice(0, 2).map((assignee, idx) => (
+                    <div
+                      key={`card-${task.id}-assignee-${idx}`}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-50 to-pink-50 
+                        rounded-full text-[10px] font-medium text-purple-700"
+                    >
+                      <Users2 className="w-3 h-3" />
+                      <span className="truncate max-w-[80px]">
+                        {assignee.user_name || assignee.name || assignee.user_email || assignee.email || "Ẩn danh"}
+                      </span>
+                    </div>
+                  ))}
+                  {assignees.length > 2 && (
+                    <div className="inline-flex items-center px-2 py-0.5 bg-gray-100 rounded-full text-[10px] font-medium text-gray-600">
+                      +{assignees.length - 2}
+                    </div>
                   )}
                 </div>
-              ))
-            ) : (
-              <span className="text-gray-400">Unassigned</span>
-            )}
-          </div>
-
-          {dueInfo.dueDate && (
-            <div className="mt-2 flex items-center gap-2 text-[11px]">
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${dueInfo.badgeClass}`}
-              >
-                {dueInfo.label}
-              </span>
-              <span className="text-gray-500">
-                {describeDiffDays(dueInfo.diffDays)} • {dueInfo.dueDisplay}
-              </span>
+              ) : (
+                <span className="text-[10px] text-gray-400 italic">Unassigned</span>
+              )}
             </div>
-          )}
 
-          <button
-            type="button"
-            onClick={() => onOpenTask?.(task.id)}
-            className="mt-3 inline-flex items-center text-[11px] text-emerald-600 hover:text-emerald-700"
-          >
-            ↗ Detail
-          </button>
+            {/* Due date */}
+            {dueInfo.dueDate && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <Clock className="w-3 h-3 text-gray-400" />
+                <span className={`text-[10px] font-semibold ${
+                  dueInfo.key === 'overdue' ? 'text-red-600' : 
+                  dueInfo.key === 'soon' ? 'text-amber-600' : 'text-gray-600'
+                }`}>
+                  {describeDiffDays(dueInfo.diffDays)}
+                </span>
+              </div>
+            )}
+
+            {/* Detail hint */}
+            <div className="text-[10px] font-medium text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              <span>Click to view detail</span>
+              <span>→</span>
+            </div>
+          </div>
         </div>
       )}
     </Draggable>
@@ -122,6 +151,8 @@ function SprintBoard() {
   const [userStories, setUserStories] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [statuses, setStatuses] = useState(FALLBACK_STATUSES);
+  const [showDoneConfirm, setShowDoneConfirm] = useState(false);
+  const [pendingDragResult, setPendingDragResult] = useState(null);
 
   useEffect(() => {
     TaskStatusService.getAll()
@@ -281,6 +312,19 @@ function SprintBoard() {
       return;
     }
 
+    // ✅ Kiểm tra nếu kéo sang DONE -> hiện popup xác nhận
+    if (statusObj.name_status.toUpperCase() === "DONE") {
+      setPendingDragResult({ result, statusObj, payloadStatusId, newUSId, taskId, task });
+      setShowDoneConfirm(true);
+      return;
+    }
+
+    // Xử lý drag thông thường (không phải DONE)
+    await performTaskUpdate(taskId, task, payloadStatusId, statusObj, newUSId);
+  };
+
+  // ✅ Hàm xử lý update task (tách riêng để tái sử dụng)
+  const performTaskUpdate = async (taskId, task, payloadStatusId, statusObj, newUSId) => {
     const prev = [...tasks];
     setTasks((p) =>
       p.map((t) =>
@@ -296,7 +340,7 @@ function SprintBoard() {
     );
 
     try {
-      await TaskService.update(taskId, {
+      const res = await TaskService.update(taskId, {
         status_id: payloadStatusId,
         user_story_id: newUSId,
       });
@@ -306,8 +350,9 @@ function SprintBoard() {
           prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
         );
       }
+      toast.success("Task updated successfully!");
     } catch (e) {
-      setTasks(previousTasks);
+      setTasks(prev);
       const status = e?.response?.status;
       if (status !== 403) {
         toast.error("Cập nhật task thất bại");
@@ -315,151 +360,324 @@ function SprintBoard() {
     }
   };
 
+  // ✅ Xác nhận đánh dấu DONE
+  const handleConfirmDone = async () => {
+    if (!pendingDragResult) return;
+    
+    const { taskId, task, payloadStatusId, statusObj, newUSId } = pendingDragResult;
+    
+    setShowDoneConfirm(false);
+    setPendingDragResult(null);
+    
+    await performTaskUpdate(taskId, task, payloadStatusId, statusObj, newUSId);
+  };
+
+  // ✅ Hủy đánh dấu DONE
+  const handleCancelDone = () => {
+    setShowDoneConfirm(false);
+    setPendingDragResult(null);
+  };
+
   if (!currentProject) {
     return (
-      <>
-        <div className="p-6">Select a project to continue.</div>
-      </>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="text-center">
+          <Sparkles className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Select a project to continue</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-semibold">
-            Sprint Taskboard — {currentProject.name} (Sprint #{sprintId})
-          </h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="px-4 py-5 max-w-[1600px] mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
+                <Target className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Sprint Taskboard
+              </h1>
+            </div>
+            <p className="text-sm text-gray-600 ml-11">
+              {currentProject.name} • Sprint #{sprintId}
+            </p>
+          </div>
           <button
-            className="px-3 py-2 rounded-lg border"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 
+              shadow-sm hover:shadow-md hover:border-indigo-300 transition-all text-sm font-medium text-gray-700"
             onClick={() => navigate(-1)}
           >
-            ← Back
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
           </button>
         </div>
 
-        {/* --- HEADER: SPRINT PROGRESS --- */}
-        <div className="bg-slate-800 text-white rounded-xl shadow mb-5 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-6 w-full">
+        {/* Sprint Progress Card */}
+        <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-2xl shadow-xl mb-5 p-6 text-white">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            {/* Progress Bar */}
             <div className="flex-1">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm font-semibold tracking-wide uppercase text-gray-300">
-                  Sprint Progress
-                </span>
-                <span className="text-sm font-semibold">
-                  {sprintSummary.percent}%
-                </span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="text-sm font-semibold tracking-wide">SPRINT PROGRESS</span>
+                </div>
+                <span className="text-2xl font-bold">{sprintSummary.percent}%</span>
               </div>
-              <div className="w-full bg-gray-700 rounded-full h-3">
+              <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden backdrop-blur-sm">
                 <div
-                  className="bg-emerald-500 h-3 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-emerald-400 to-green-400 h-3 rounded-full transition-all duration-700 ease-out shadow-lg"
                   style={{ width: `${sprintSummary.percent}%` }}
-                ></div>
+                />
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-5 text-sm mt-3 sm:mt-0">
-              <div className="flex flex-col items-center">
-                <span className="text-gray-300 text-xs">User Stories</span>
-                <span className="font-semibold text-lg">
-                  {sprintSummary.totalStories}
-                </span>
+            {/* Stats */}
+            <div className="flex flex-wrap gap-6 lg:gap-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <ListTodo className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs text-white/80 font-medium">User Stories</div>
+                  <div className="text-xl font-bold">{sprintSummary.totalStories}</div>
+                </div>
               </div>
-              <div className="flex flex-col items-center">
-                <span className="text-gray-300 text-xs">Total Points</span>
-                <span className="font-semibold text-lg">
-                  {sprintSummary.totalPoints}
-                </span>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <Target className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs text-white/80 font-medium">Total Points</div>
+                  <div className="text-xl font-bold">{sprintSummary.totalPoints}</div>
+                </div>
               </div>
-              <div className="flex flex-col items-center">
-                <span className="text-gray-300 text-xs">Tasks</span>
-                <span className="font-semibold text-lg">
-                  {sprintSummary.doneTasks}/{sprintSummary.totalTasks}
-                </span>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs text-white/80 font-medium">Tasks Done</div>
+                  <div className="text-xl font-bold">
+                    {sprintSummary.doneTasks}/{sprintSummary.totalTasks}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* --- GRID BOARD --- */}
-        <div className="grid grid-cols-6 gap-2 mb-2">
-          <div className="text-xs font-semibold px-2 py-2">USER STORY</div>
+        {/* Board Header */}
+        <div className="grid grid-cols-[280px_repeat(6,1fr)] gap-3 mb-3 px-2">
+          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+            <span>User Story</span>
+          </div>
           {statuses.map((status) => (
             <div
               key={status.id}
-              className="text-xs font-semibold px-2 py-2 text-center"
+              className="text-xs font-bold text-gray-500 uppercase tracking-wider text-center"
             >
               {status.name_status}
             </div>
           ))}
         </div>
 
+        {/* Taskboard Grid */}
         <DragDropContext onDragEnd={onDragEnd}>
-          {userStories.map((us) => (
-            <div key={us.id} className="grid grid-cols-6 gap-2 mb-4">
-              <div className="px-2">
+          <div className="space-y-3">
+            {userStories.map((us) => (
+              <div key={us.id} className="grid grid-cols-[280px_repeat(6,1fr)] gap-3">
+                {/* User Story Card */}
                 <div
                   role="button"
                   tabIndex={0}
                   onClick={() => navigate(`/user-stories/${us.id}`)}
-                  className="bg-gray-50 border rounded-xl p-3 h-full cursor-pointer hover:bg-gray-100"
+                  className="group bg-white rounded-xl border border-gray-200 p-4 cursor-pointer 
+                    hover:shadow-lg hover:border-indigo-300 transition-all duration-200 h-full"
                 >
-                  <div className="text-sm font-semibold mb-1">
-                    #{us.id} {us.title || us.name}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-indigo-600 mb-1">
+                        #{us.id}
+                      </div>
+                      <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight group-hover:text-indigo-600 transition-colors">
+                        {us.title || us.name}
+                      </h3>
+                    </div>
                   </div>
-                  <div className="text-xs opacity-70">
-                    {us.total_points ?? 0} pts
+
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg">
+                      <Target className="w-3 h-3 text-amber-600" />
+                      <span className="text-xs font-semibold text-amber-700">
+                        {us.total_points ?? 0} pts
+                      </span>
+                    </div>
                   </div>
+
                   {storyStats[us.id]?.total > 0 && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {storyStats[us.id].done}/{storyStats[us.id].total} tasks done (
-                      {storyStats[us.id].percent}%)
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] text-gray-500 font-medium">Progress</span>
+                        <span className="text-[10px] font-bold text-indigo-600">
+                          {storyStats[us.id].percent}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full transition-all duration-500"
+                          style={{ width: `${storyStats[us.id].percent}%` }}
+                        />
+                      </div>
+                      <div className="text-[10px] text-gray-500 mt-1">
+                        {storyStats[us.id].done}/{storyStats[us.id].total} tasks
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
 
-              {statuses.map((status) => {
-                const statusKey = status.id;
-                const droppableId = `${statusKey}::${us.id}`;
-                const items = grid[us.id]?.[statusKey] || [];
-                return (
-                  <Droppable
-                    droppableId={droppableId}
-                    key={droppableId}
-                    isDropDisabled={false}
-                  >
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className="bg-gray-50 border rounded-xl p-2 min-h-[120px]"
-                      >
-                        {items.map((task, idx) => (
-                          <TaskCard
-                            task={task}
-                            index={idx}
-                            key={task.id}
-                            onOpenTask={(id) => navigate(`/tasks/${id}`)}
-                          />
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                );
-              })}
-            </div>
-          ))}
+                {/* Status Columns */}
+                {statuses.map((status) => {
+                  const statusKey = status.id;
+                  const droppableId = `${statusKey}::${us.id}`;
+                  const items = grid[us.id]?.[statusKey] || [];
+                  const isDoneColumn = status.name_status.toUpperCase() === "DONE";
+                  
+                  return (
+                    <Droppable
+                      droppableId={droppableId}
+                      key={droppableId}
+                      isDropDisabled={false}
+                    >
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`rounded-xl p-2.5 min-h-[140px] transition-all duration-200
+                            ${snapshot.isDraggingOver 
+                              ? 'bg-gradient-to-br from-indigo-100 to-purple-100 ring-2 ring-indigo-400' 
+                              : isDoneColumn
+                              ? 'bg-gradient-to-br from-emerald-50 to-teal-50'
+                              : 'bg-gray-50/50'
+                            }
+                            ${items.length === 0 ? 'border-2 border-dashed border-gray-200' : 'border border-gray-200'}
+                          `}
+                        >
+                          {items.map((task, idx) => (
+                            <TaskCard
+                              task={task}
+                              index={idx}
+                              key={task.id}
+                              onOpenTask={(id) => navigate(`/tasks/${id}`)}
+                            />
+                          ))}
+                          {provided.placeholder}
+                          {items.length === 0 && !snapshot.isDraggingOver && (
+                            <div className="flex items-center justify-center h-full">
+                              <span className="text-xs text-gray-300 font-medium">Empty</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Droppable>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </DragDropContext>
 
         {userStories.length === 0 && (
-          <div className="text-sm opacity-70 mt-6">
-            This Sprint does not have a User Story yet.
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="p-4 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-4">
+              <ListTodo className="w-12 h-12 text-gray-400" />
+            </div>
+            <p className="text-gray-500 font-medium">This Sprint does not have a User Story yet</p>
           </div>
         )}
       </div>
-    </>
+
+      {/* ✅ Popup xác nhận DONE */}
+      {showDoneConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header với gradient */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <CheckCircle2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Mark Task as Done?</h3>
+                  <p className="text-sm text-emerald-50">Confirm task completion</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="mb-4">
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="p-2 bg-amber-100 rounded-lg flex-shrink-0">
+                    <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-amber-900 mb-1">
+                      ⚠️ Warning: This action is permanent
+                    </p>
+                    <p className="text-xs text-amber-700 leading-relaxed">
+                      Once marked as DONE, this task cannot be moved or modified anymore. 
+                      Please ensure the task is truly completed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {pendingDragResult?.task && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="text-xs font-semibold text-indigo-600 mb-1">
+                    Task #{pendingDragResult.task.id}
+                  </div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {pendingDragResult.task.title || pendingDragResult.task.name || "(no title)"}
+                  </div>
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelDone}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 
+                    rounded-xl font-semibold transition-all duration-200 border border-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDone}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 
+                    hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-semibold 
+                    transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Confirm Done</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

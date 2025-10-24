@@ -21,6 +21,7 @@ class UserStorySchema(Schema):
 
     # Thêm field suy diễn
     total_points = fields.Method("get_total_points", dump_only=True)
+    sprint_name = fields.Method("get_sprint_name", dump_only=True)
 
     def get_total_points(self, obj):
         """
@@ -32,6 +33,16 @@ class UserStorySchema(Schema):
         if hasattr(obj, "complexity_points"):
             return sum([(c.point or 0) for c in obj.complexity_points])
         return 0
+    
+    def get_sprint_name(self, obj):
+        """
+        Lấy tên sprint nếu có
+        """
+        if isinstance(obj, dict):
+            return obj.get("sprint_name", None)
+        if hasattr(obj, "sprint") and obj.sprint:
+            return obj.sprint.name
+        return None
 
     @validates("name")
     def validate_name(self, value):

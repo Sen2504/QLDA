@@ -192,7 +192,7 @@ function Sidebar() {
                 </button>
 
                 {dropdownOpen && (
-                  <ul className="mt-2 max-h-48 w-full overflow-y-auto rounded-lg border-2 border-emerald-200 bg-white shadow-xl focus:outline-none custom-scrollbar">
+                  <ul className="mt-2 max-h-48 w-full overflow-y-auto rounded-lg border-2 border-emerald-200 bg-white shadow-xl focus:outline-none custom-scrollbar list-none p-0">
                     {projects.length === 0 && (
                       <li className="px-3 py-2 text-sm text-gray-500 text-center">
                         No projects available
@@ -201,11 +201,11 @@ function Sidebar() {
                     {projects.map((proj) => {
                       const selected = currentProject?.id === proj.id;
                       return (
-                        <li key={proj.id}>
+                        <li key={proj.id} className="m-0 p-0">
                           <button
                             type="button"
                             onClick={() => handleProjectSelect(proj)}
-                            className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-all duration-200 ${
+                            className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-all duration-200 text-left ${
                               selected
                                 ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold"
                                 : "hover:bg-emerald-50 text-gray-700"

@@ -76,16 +76,20 @@ def get_user_stories():
     ),
 )
 def get_user_story(id):
-    story = UserStoryService.get_by_id(id)
+    from sqlalchemy.orm import joinedload
+    from flask_api.models.user_story_models import UserStory
+    
+    # Query trực tiếp với eager loading
+    story = UserStory.query.options(
+        joinedload(UserStory.sprint),
+        joinedload(UserStory.complexity_points),
+        joinedload(UserStory.hashtags)
+    ).get(id)
+    
     if not story:
         return jsonify({"error": "Not found"}), 404
 
     data = UserStorySchema().dump(story)
-
-    # comps = ComplexityPoint.query.filter_by(user_story_id=id).all()
-    # data["complexities"] = [
-    #     {"id": c.id, "role_name": c.name, "point": c.point} for c in comps
-    # ]
 
     return jsonify(data), 200
 

@@ -233,7 +233,12 @@ class UserStoryService:
 
     @staticmethod
     def get_by_id(story_id):
-        story = UserStory.query.get(story_id)
+        from sqlalchemy.orm import joinedload
+        
+        story = UserStory.query.options(
+            joinedload(UserStory.sprint)
+        ).get(story_id)
+        
         if not story:
             return None
 
