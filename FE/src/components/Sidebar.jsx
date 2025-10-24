@@ -9,15 +9,12 @@ import {
   FolderKanban,
   ChevronDown,
   Check,
-  Menu,
-  X,
   Sparkles,
   Zap,
 } from "lucide-react";
 import { useProject } from "../store/ProjectContext";
 import { useEffect, useMemo, useState, useCallback, memo } from "react";
 import ProjectService from "../services/projectService";
-import api from "../services/api";
 import SprintService from "../services/sprintService";
 import dayjs from "dayjs";
 
@@ -129,8 +126,6 @@ function Sidebar() {
     });
   }, [currentProject, sprints, location.pathname]);
 
-
-
   const toggleDropdown = useCallback(() => {
     setDropdownOpen((open) => !open);
   }, []);
@@ -154,7 +149,6 @@ function Sidebar() {
     [location.pathname]
   );
 
-  // Toggle sidebar
   const toggleSidebar = useCallback(() => {
     setCollapsed((prev) => !prev);
   }, []);
@@ -163,8 +157,9 @@ function Sidebar() {
     <div className="relative flex-shrink-0">
       {/* Sidebar */}
       <aside
-        className={` bg-gradient-to-b from-white via-emerald-50/30 to-teal-50/50 border-r border-emerald-100 transition-all duration-300 shadow-xl h-screen flex flex-col
-          ${collapsed ? "w-0" : "w-64"}`}
+        className={`relative bg-gradient-to-b from-white via-emerald-50/30 to-teal-50/50 
+          border-r border-emerald-100 transition-all duration-300 shadow-xl 
+          flex flex-col justify-between ${collapsed ? "w-0" : "w-64"}`}
       >
         {/* Sidebar Content */}
         <div
@@ -172,227 +167,165 @@ function Sidebar() {
             collapsed ? "opacity-0 invisible" : "opacity-100 visible"
           }`}
         >
-          {/* Main Content - Auto height */}
+          {/* Main Content */}
           <div className="flex-shrink-0">
             <div className="p-3 space-y-3">
-            {/* Project Selector - Compact */}
-            <div className="mb-3" tabIndex={0} onBlur={handleDropdownBlur}>
-              <label className="text-xs font-semibold text-emerald-700 mb-1.5 flex items-center gap-1">
-                <FolderKanban className="w-3 h-3" />
-                <span>PROJECT</span>
-              </label>
-              <button
-                type="button"
-                onClick={toggleDropdown}
-                className="w-full flex items-center justify-between gap-2 rounded-lg border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm hover:shadow-md hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all duration-200"
-              >
-                <span className="truncate text-left flex-1">
-                  {currentProject ? currentProject.name : "Select project"}
-                </span>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    dropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+              {/* Project Selector */}
+              <div className="mb-3" tabIndex={0} onBlur={handleDropdownBlur}>
+                <label className="text-xs font-semibold text-emerald-700 mb-1.5 flex items-center gap-1">
+                  <FolderKanban className="w-3 h-3" />
+                  <span>PROJECT</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={toggleDropdown}
+                  className="w-full flex items-center justify-between gap-2 rounded-lg border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm hover:shadow-md hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all duration-200"
+                >
+                  <span className="truncate text-left flex-1">
+                    {currentProject ? currentProject.name : "Select project"}
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform duration-200 ${
+                      dropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
 
-              {dropdownOpen && (
-                <ul className="mt-2 max-h-48 w-full overflow-y-auto rounded-lg border-2 border-emerald-200 bg-white shadow-xl focus:outline-none custom-scrollbar">
-                  {projects.length === 0 && (
-                    <li className="px-3 py-2 text-sm text-gray-500 text-center">
-                      No projects available
-                    </li>
-                  )}
-                  {projects.map((proj) => {
-                    const selected = currentProject?.id === proj.id;
-                    return (
-                      <li key={proj.id}>
-                        <button
-                          type="button"
-                          onClick={() => handleProjectSelect(proj)}
-                          className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-all duration-200 ${
-                            selected
-                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold"
-                              : "hover:bg-emerald-50 text-gray-700"
-                          }`}
-                        >
-                          <span className="truncate">{proj.name}</span>
-                          {selected && <Check className="h-3.5 w-3.5 flex-shrink-0" />}
-                        </button>
+                {dropdownOpen && (
+                  <ul className="mt-2 max-h-48 w-full overflow-y-auto rounded-lg border-2 border-emerald-200 bg-white shadow-xl focus:outline-none custom-scrollbar">
+                    {projects.length === 0 && (
+                      <li className="px-3 py-2 text-sm text-gray-500 text-center">
+                        No projects available
                       </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-
-            {/* Navigation Links - Compact */}
-            <nav className="space-y-1">
-              <div className="text-xs font-semibold text-gray-500 mb-2 px-2 flex items-center gap-1">
-                <Zap className="w-3 h-3" />
-                <span>NAVIGATION</span>
+                    )}
+                    {projects.map((proj) => {
+                      const selected = currentProject?.id === proj.id;
+                      return (
+                        <li key={proj.id}>
+                          <button
+                            type="button"
+                            onClick={() => handleProjectSelect(proj)}
+                            className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-all duration-200 ${
+                              selected
+                                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold"
+                                : "hover:bg-emerald-50 text-gray-700"
+                            }`}
+                          >
+                            <span className="truncate">{proj.name}</span>
+                            {selected && (
+                              <Check className="h-3.5 w-3.5 flex-shrink-0" />
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </div>
-              
-              <Link
-                to="/"
-                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
-                  isActive("/") && location.pathname === "/"
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
-                    : "hover:bg-emerald-50 text-gray-700"
-                }`}
-              >
-                <div className={`p-1 rounded-lg transition-colors ${
-                  isActive("/") && location.pathname === "/"
-                    ? "bg-white/20"
-                    : "bg-emerald-100 group-hover:bg-emerald-200"
-                }`}>
-                  <Home className={`w-4 h-4 ${
-                    isActive("/") && location.pathname === "/"
-                      ? "text-white"
-                      : "text-emerald-600"
-                  }`} />
-                </div>
-                <span className="font-medium text-sm">Dashboard</span>
-              </Link>
 
-              <Link
-                to="/projects"
-                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
-                  isActive("/projects") && !isActive("/projects/")
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
-                    : "hover:bg-emerald-50 text-gray-700"
-                }`}
-              >
-                <div className={`p-1 rounded-lg transition-colors ${
-                  isActive("/projects") && !isActive("/projects/")
-                    ? "bg-white/20"
-                    : "bg-emerald-100 group-hover:bg-emerald-200"
-                }`}>
-                  <FolderKanban className={`w-4 h-4 ${
-                    isActive("/projects") && !isActive("/projects/")
-                      ? "text-white"
-                      : "text-emerald-600"
-                  }`} />
+              {/* Navigation */}
+              <nav className="space-y-1">
+                <div className="text-xs font-semibold text-gray-500 mb-2 px-2 flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  <span>NAVIGATION</span>
                 </div>
-                <span className="font-medium text-sm">Projects</span>
-              </Link>
 
-              <Link
-                to="/user-stories"
-                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
-                  isActive("/user-stories")
-                    ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md"
-                    : "hover:bg-blue-50 text-gray-700"
-                }`}
-              >
-                <div className={`p-1 rounded-lg transition-colors ${
-                  isActive("/user-stories")
-                    ? "bg-white/20"
-                    : "bg-blue-100 group-hover:bg-blue-200"
-                }`}>
-                  <BookMarked className={`w-4 h-4 ${
-                    isActive("/user-stories")
-                      ? "text-white"
-                      : "text-blue-600"
-                  }`} />
-                </div>
-                <span className="font-medium text-sm">User Stories</span>
-              </Link>
-
-              <Link
-                to="/issues/list"
-                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
-                  isActive("/issues")
-                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md"
-                    : "hover:bg-amber-50 text-gray-700"
-                }`}
-              >
-                <div className={`p-1 rounded-lg transition-colors ${
-                  isActive("/issues")
-                    ? "bg-white/20"
-                    : "bg-amber-100 group-hover:bg-amber-200"
-                }`}>
-                  <BadgeAlert className={`w-4 h-4 ${
-                    isActive("/issues")
-                      ? "text-white"
-                      : "text-amber-600"
-                  }`} />
-                </div>
-                <span className="font-medium text-sm">Issues</span>
-              </Link>
-
-              <Link
-                to="/tasks"
-                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
-                  isActive("/tasks")
-                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
-                    : "hover:bg-purple-50 text-gray-700"
-                }`}
-              >
-                <div className={`p-1 rounded-lg transition-colors ${
-                  isActive("/tasks")
-                    ? "bg-white/20"
-                    : "bg-purple-100 group-hover:bg-purple-200"
-                }`}>
-                  <ClipboardList className={`w-4 h-4 ${
-                    isActive("/tasks")
-                      ? "text-white"
-                      : "text-purple-600"
-                  }`} />
-                </div>
-                <span className="font-medium text-sm">Tasks</span>
-              </Link>
-
-              {currentProject && (
                 <Link
-                  to={`/projects/${currentProject.id}/team`}
+                  to="/"
                   className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
-                    isActive(`/projects/${currentProject.id}/team`)
-                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md"
-                      : "hover:bg-teal-50 text-gray-700"
+                    isActive("/") && location.pathname === "/"
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+                      : "hover:bg-emerald-50 text-gray-700"
                   }`}
                 >
-                  <div className={`p-1 rounded-lg transition-colors ${
-                    isActive(`/projects/${currentProject.id}/team`)
-                      ? "bg-white/20"
-                      : "bg-teal-100 group-hover:bg-teal-200"
-                  }`}>
-                    <Users className={`w-4 h-4 ${
-                      isActive(`/projects/${currentProject.id}/team`)
+                  <Home
+                    className={`w-4 h-4 ${
+                      isActive("/") && location.pathname === "/"
                         ? "text-white"
-                        : "text-teal-600"
-                    }`} />
-                  </div>
-                  <span className="font-medium text-sm">Team</span>
+                        : "text-emerald-600"
+                    }`}
+                  />
+                  <span className="font-medium text-sm">Dashboard</span>
                 </Link>
-              )}
 
-              <Link
-                to="/settings"
-                className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
-                  isActive("/settings")
-                    ? "bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-md"
-                    : "hover:bg-gray-100 text-gray-700"
-                }`}
-              >
-                <div className={`p-1 rounded-lg transition-colors ${
-                  isActive("/settings")
-                    ? "bg-white/20"
-                    : "bg-gray-200 group-hover:bg-gray-300"
-                }`}>
-                  <Settings className={`w-4 h-4 ${
+                <Link
+                  to="/projects"
+                  className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                    isActive("/projects") && !isActive("/projects/")
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+                      : "hover:bg-emerald-50 text-gray-700"
+                  }`}
+                >
+                  <FolderKanban className="w-4 h-4 text-emerald-600" />
+                  <span className="font-medium text-sm">Projects</span>
+                </Link>
+
+                <Link
+                  to="/user-stories"
+                  className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                    isActive("/user-stories")
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md"
+                      : "hover:bg-blue-50 text-gray-700"
+                  }`}
+                >
+                  <BookMarked className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium text-sm">User Stories</span>
+                </Link>
+
+                <Link
+                  to="/issues/list"
+                  className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                    isActive("/issues")
+                      ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md"
+                      : "hover:bg-amber-50 text-gray-700"
+                  }`}
+                >
+                  <BadgeAlert className="w-4 h-4 text-amber-600" />
+                  <span className="font-medium text-sm">Issues</span>
+                </Link>
+
+                <Link
+                  to="/tasks"
+                  className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                    isActive("/tasks")
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
+                      : "hover:bg-purple-50 text-gray-700"
+                  }`}
+                >
+                  <ClipboardList className="w-4 h-4 text-purple-600" />
+                  <span className="font-medium text-sm">Tasks</span>
+                </Link>
+
+                {currentProject && (
+                  <Link
+                    to={`/projects/${currentProject.id}/team`}
+                    className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                      isActive(`/projects/${currentProject.id}/team`)
+                        ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md"
+                        : "hover:bg-teal-50 text-gray-700"
+                    }`}
+                  >
+                    <Users className="w-4 h-4 text-teal-600" />
+                    <span className="font-medium text-sm">Team</span>
+                  </Link>
+                )}
+
+                <Link
+                  to="/settings"
+                  className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
                     isActive("/settings")
-                      ? "text-white"
-                      : "text-gray-600"
-                  }`} />
-                </div>
-                <span className="font-medium text-sm">Settings</span>
-              </Link>
-            </nav>
+                      ? "bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-md"
+                      : "hover:bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  <Settings className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-sm">Settings</span>
+                </Link>
+              </nav>
             </div>
           </div>
 
-          {/* Sprints Section - Flex-1 to fill remaining space */}
+          {/* Sprints Section */}
           {currentProject && (
             <div className="border-t border-emerald-100 bg-white/50 flex-1 flex flex-col min-h-0">
               <div className="p-3 flex flex-col h-full">
@@ -427,7 +360,9 @@ function Sidebar() {
                     </div>
                   ) : (
                     sprintLinks.map((sprint) => {
-                      const isPast = sprint.deadline && dayjs(sprint.deadline).isBefore(dayjs(), 'day');
+                      const isPast =
+                        sprint.deadline &&
+                        dayjs(sprint.deadline).isBefore(dayjs(), "day");
                       return (
                         <Link
                           key={sprint.id}
@@ -439,15 +374,19 @@ function Sidebar() {
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="truncate font-medium text-xs">{sprint.name}</span>
+                            <span className="truncate font-medium text-xs">
+                              {sprint.name}
+                            </span>
                             {sprint.deadline && (
-                              <span className={`text-xs whitespace-nowrap px-1.5 py-0.5 rounded-full ${
-                                sprint.active
-                                  ? "bg-white/20 text-white"
-                                  : isPast
-                                  ? "bg-red-100 text-red-600"
-                                  : "bg-emerald-100 text-emerald-700"
-                              }`}>
+                              <span
+                                className={`text-xs whitespace-nowrap px-1.5 py-0.5 rounded-full ${
+                                  sprint.active
+                                    ? "bg-white/20 text-white"
+                                    : isPast
+                                    ? "bg-red-100 text-red-600"
+                                    : "bg-emerald-100 text-emerald-700"
+                                }`}
+                              >
                                 {dayjs(sprint.deadline).format("DD/MM")}
                               </span>
                             )}
@@ -461,16 +400,19 @@ function Sidebar() {
             </div>
           )}
         </div>
-      </aside>
 
-      {/* Toggle Button - Fixed bên phải sidebar */}
-      <button
-        onClick={toggleSidebar}
-        className="absolute top-3 left-0 z-50 p-2 rounded-r-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-        title={collapsed ? "Open Sidebar" : "Close Sidebar"}
-      >
-        {collapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
-      </button>
+        {/* Nút toggle dính vào sidebar và canh giữa nội dung */}
+        <div className="absolute inset-y-0 right-0 flex items-center justify-center">
+          <button
+            onClick={toggleSidebar}
+            className="translate-x-1/2 p-2 rounded-r-md bg-gradient-to-br from-emerald-500 to-teal-500 text-white 
+              shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
+            title={collapsed ? "Open Sidebar" : "Close Sidebar"}
+          >
+            <span className="text-sm font-bold">{collapsed ? "<<" : ">>"}</span>
+          </button>
+        </div>
+      </aside>
     </div>
   );
 }

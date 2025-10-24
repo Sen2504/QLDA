@@ -55,7 +55,6 @@ def confirm_email():
         # Nếu token hết hạn → hiện template redirect sang FE để nhập email gửi lại
         if error == "invalid or expired token":
             return render_template("auth/email_confirm_expired.html"), 400
-        return render_template("auth/email_confirm_failed.html", error=error), 400
 
     # Nếu xác nhận thành công → hiện trang HTML đẹp
     return render_template("auth/email_confirm_success.html"), 200

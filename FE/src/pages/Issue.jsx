@@ -7,7 +7,6 @@ import IssueService from "../services/issueService";
 import IssueTypeService from "../services/issueTypeService";
 import ComponentUpload from "../components/ComponentUpload";
 
-
 function useDebounce(value, delay = 250) {
   const [v, setV] = useState(value);
   useEffect(() => {
@@ -43,14 +42,12 @@ export default function IssueCreate() {
   const SEVERITY_OPTIONS = ["Wishlist", "Minor", "Normal", "Important", "Critical"];
   const PRIORITY_OPTIONS = ["Low", "Normal", "High"];
 
-  // Load issue types
   useEffect(() => {
     IssueTypeService.getAll()
       .then((res) => setTypes(res.data || []))
       .catch(() => setTypes([]));
   }, []);
 
-  // Hashtag gợi ý
   useEffect(() => {
     const q = debouncedTagInput.trim();
     if (!q) return setTagSuggestions([]);
@@ -59,7 +56,6 @@ export default function IssueCreate() {
       .catch(() => setTagSuggestions([]));
   }, [debouncedTagInput]);
 
-  // Đóng popup hashtag khi click ra ngoài
   useEffect(() => {
     const onDocClick = (e) => {
       if (tagBoxRef.current && !tagBoxRef.current.contains(e.target)) setShowSuggest(false);
@@ -78,150 +74,154 @@ export default function IssueCreate() {
   const removeTag = (t) => setSelectedTags((prev) => prev.filter((x) => x !== t));
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!currentProject) {
-    toast.error("Please select a project before creating an issue.");
-    return;
-  }
-
-  try {
-    const formData = new FormData();
-
-    formData.append("project_id", currentProject.id);
-    formData.append("type_id", typeId);
-    formData.append("name", name.trim());
-    formData.append("description", description);
-    formData.append("hashtag", selectedTags.join(","));
-    formData.append("status", status);
-    formData.append("severity", severity);
-    formData.append("priority", priority);
-    formData.append("expire_date", expireDate);
-
-    if (files.length > 0) {
-      files.forEach((f) => formData.append("files", f));
+    e.preventDefault();
+    if (!currentProject) {
+      toast.error("Please select a project before creating an issue.");
+      return;
     }
 
-    const res = await IssueService.create(formData);
-    if (res.status === 201 || res.status === 200) {
-      toast.success(res?.data?.message || "Issue created successfully!");
-      setTimeout(() => navigate("/issues/list"), 1500);
+    try {
+      const formData = new FormData();
+      formData.append("project_id", currentProject.id);
+      formData.append("type_id", typeId);
+      formData.append("name", name.trim());
+      formData.append("description", description);
+      formData.append("hashtag", selectedTags.join(","));
+      formData.append("status", status);
+      formData.append("severity", severity);
+      formData.append("priority", priority);
+      formData.append("expire_date", expireDate);
+      if (files.length > 0) files.forEach((f) => formData.append("files", f));
+
+      const res = await IssueService.create(formData);
+      if (res.status === 201 || res.status === 200) {
+        toast.success(res?.data?.message || "Issue created successfully!");
+        setTimeout(() => navigate("/issues/list"), 1500);
+      }
+    } catch (err) {
+      console.error("Error creating issue:", err);
     }
-  } catch (err) {
-    console.error("Error creating issue:", err);
-  }
-};
+  };
 
   return (
-    <>
-        <form
-          onSubmit={handleSubmit}
-          className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-200"
-        >
-          <h1 className="text-3xl font-bold text-emerald-700 mb-8 text-center">
-            Create New Issue
-          </h1>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* LEFT */}
-            <div className="space-y-6">
-              {/* Title */}
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-white">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        <div className="rounded-2xl shadow-2xl border border-amber-100 overflow-hidden bg-white backdrop-blur-sm">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <div className="flex items-start justify-between">
               <div>
-                <label className="text-gray-700 font-medium">Issue Title</label>
-                <input
-                  type="text"
-                  placeholder="Enter issue title..."
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-2 w-full border-gray-300 rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Hashtags */}
-              <HashtagBox
-                tagBoxRef={tagBoxRef}
-                selectedTags={selectedTags}
-                tagInput={tagInput}
-                setTagInput={setTagInput}
-                addTag={addTag}
-                removeTag={removeTag}
-                tagSuggestions={tagSuggestions}
-                showSuggest={showSuggest}
-                setShowSuggest={setShowSuggest}
-              />
-
-              {/* Description */}
-              <div>
-                <label className="text-gray-700 font-medium">Description</label>
-                <textarea
-                  rows={4}
-                  placeholder="Describe the issue briefly..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="mt-2 w-full border-gray-300 rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-500 bg-clip-text text-transparent">
+                  Create New Issue
+                </h1>
+                <p className="mt-1 text-xs text-slate-600">
+                  Fill out the information below to create a new issue.
+                </p>
               </div>
             </div>
 
-            {/* RIGHT */}
-            <div className="space-y-6">
-              {/* Type */}
-              <div>
-                <label className="text-gray-700 font-medium">Issue Type</label>
-                <select
-                  value={typeId}
-                  onChange={(e) => setTypeId(e.target.value)}
-                  className="mt-2 w-full border-gray-300 rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="">-- Select Type --</option>
-                  {types.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* LEFT */}
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-semibold text-orange-700 mb-1">
+                    Issue Title
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter issue title..."
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full rounded-lg border border-amber-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white transition"
+                  />
+                </div>
 
-              {/* Dropdowns */}
-              <div className="grid grid-cols-3 gap-3">
-                <Dropdown label="Status" options={STATUS_OPTIONS} value={status} onChange={setStatus} />
-                <Dropdown label="Severity" options={SEVERITY_OPTIONS} value={severity} onChange={setSeverity} />
-                <Dropdown label="Priority" options={PRIORITY_OPTIONS} value={priority} onChange={setPriority} />
-              </div>
-
-              {/* Due Date */}
-              <div>
-                <label className="text-gray-700 font-medium">Due Date</label>
-                <input
-                  type="date"
-                  value={expireDate}
-                  onChange={(e) => setExpireDate(e.target.value)}
-                  className="mt-2 w-full border-gray-300 rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-emerald-500"
+                <HashtagBox
+                  tagBoxRef={tagBoxRef}
+                  selectedTags={selectedTags}
+                  tagInput={tagInput}
+                  setTagInput={setTagInput}
+                  addTag={addTag}
+                  removeTag={removeTag}
+                  tagSuggestions={tagSuggestions}
+                  showSuggest={showSuggest}
+                  setShowSuggest={setShowSuggest}
                 />
+
+                <div>
+                  <label className="block text-xs font-semibold text-orange-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Describe the issue briefly..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full rounded-lg border border-amber-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white transition"
+                  />
+                </div>
               </div>
 
-              {/* Upload file component */}
-              <ComponentUpload files={files} setFiles={setFiles} label="Attached Files" />
+              {/* RIGHT */}
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-semibold text-orange-700 mb-1">
+                    Issue Type
+                  </label>
+                  <select
+                    value={typeId}
+                    onChange={(e) => setTypeId(e.target.value)}
+                    className="w-full rounded-lg border border-amber-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white transition"
+                  >
+                    <option value="">-- Select Type --</option>
+                    {types.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className="pt-4 flex gap-3">
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold py-2 rounded-lg shadow hover:from-emerald-600 hover:to-green-700 transition"
-                >
-                  Create Issue
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate("/issues/list")}
-                  className="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
+                <div className="grid grid-cols-3 gap-3">
+                  <Dropdown label="Status" options={STATUS_OPTIONS} value={status} onChange={setStatus} />
+                  <Dropdown label="Severity" options={SEVERITY_OPTIONS} value={severity} onChange={setSeverity} />
+                  <Dropdown label="Priority" options={PRIORITY_OPTIONS} value={priority} onChange={setPriority} />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-orange-700 mb-1">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={expireDate}
+                    onChange={(e) => setExpireDate(e.target.value)}
+                    className="w-full rounded-lg border border-amber-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white transition"
+                  />
+                </div>
+
+                <ComponentUpload files={files} setFiles={setFiles} label="Attached Files" />
+
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-gradient-to-r from-orange-600 to-amber-500 text-white font-semibold py-2 rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                  >
+                    Create Issue
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/issues/list')}
+                    className="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:text-orange-600 hover:bg-orange-50 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </form>
-    </>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -229,11 +229,13 @@ export default function IssueCreate() {
 
 const Dropdown = ({ label, options, value, onChange }) => (
   <div>
-    <label className="text-gray-700 font-medium">{label}</label>
+    <label className="block text-xs font-semibold text-orange-700 mb-1">
+      {label}
+    </label>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="mt-2 w-full border-gray-300 rounded-lg shadow-sm px-3 py-2 focus:ring-2 focus:ring-emerald-500"
+      className="w-full rounded-lg border border-amber-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white transition"
     >
       {options.map((opt) => (
         <option key={opt}>{opt}</option>
@@ -254,17 +256,19 @@ const HashtagBox = ({
   setShowSuggest,
 }) => (
   <div ref={tagBoxRef} className="relative">
-    <label className="text-gray-700 font-medium">Hashtags</label>
-    <div className="mt-2 border border-gray-300 rounded-lg shadow-sm px-3 py-2 flex flex-wrap gap-2 bg-white">
+    <label className="block text-xs font-semibold text-orange-700 mb-1">
+      Hashtags
+    </label>
+    <div className="w-full min-h-[40px] rounded-lg border border-amber-200 bg-gradient-to-r from-white to-amber-50/30 px-2 py-1.5 flex flex-wrap items-center gap-1.5 shadow-sm">
       {selectedTags.map((t) => (
         <span
           key={t}
-          className="inline-flex items-center bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-sm font-medium"
+          className="inline-flex items-center bg-gradient-to-r from-orange-500 to-amber-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-sm"
         >
           #{t}
           <button
             type="button"
-            className="ml-1 text-emerald-600 hover:text-red-500"
+            className="ml-1 text-white hover:text-red-200 font-bold"
             onClick={() => removeTag(t)}
           >
             ✕
@@ -282,19 +286,19 @@ const HashtagBox = ({
           }
         }}
         placeholder="Add a tag..."
-        className="flex-1 border-none outline-none text-gray-700 placeholder-gray-400"
+        className="flex-1 border-none outline-none text-slate-700 placeholder-amber-400 bg-transparent text-sm"
       />
     </div>
     {showSuggest && tagSuggestions.length > 0 && (
-      <div className="absolute mt-1 w-full border border-gray-200 rounded-lg bg-white shadow-lg z-20 max-h-40 overflow-auto">
+      <div className="absolute mt-1 w-full border border-amber-100 rounded-lg bg-white shadow-2xl z-30 max-h-40 overflow-auto">
         {tagSuggestions.map((h) => (
           <button
             key={h.id}
             type="button"
-            className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-emerald-50"
+            className="block w-full text-left px-3 py-1.5 text-sm text-slate-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition"
             onClick={() => addTag(h.name)}
           >
-            #{h.name}
+            <span className="font-medium text-orange-600">#{h.name}</span>
           </button>
         ))}
       </div>

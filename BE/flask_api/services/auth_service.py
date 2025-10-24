@@ -7,7 +7,7 @@ from email_validator import validate_email, EmailNotValidError
 
 from flask_api.extensions import db
 from flask_api.models.user_models import User
-from flask_api.utils.tokens import generate_reset_token, confirm_reset_token
+from flask_api.utils.tokens import generate_reset_token, confirm_reset_token, generate_confirmation_token, confirm_token
 
 
 class AuthService:

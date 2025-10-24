@@ -221,16 +221,18 @@ function Navbar() {
         <div className="px-4 py-3">
           <div className="flex justify-between items-center">
             {/* Left - Logo & Brand */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 shadow-md">
-                <Sparkles className="w-5 h-5 text-white" />
-                <h1 className="text-lg font-bold text-white tracking-wide">
-                  QLDA
-                </h1>
-              </div>
-              <div className="hidden md:block">
-                <p className="text-sm font-semibold text-gray-700">Project Management</p>
-                <p className="text-xs text-gray-500">Streamline your workflow</p>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-auto flex items-center">
+                <img
+                  src="/images/logo.png"
+                  alt="QLDA Logo"
+                  className="max-h-10 w-auto object-contain"
+                  style={{
+                    objectFit: "contain",
+                    transform: "scale(4.0)", // phóng to hợp lý mà ko vỡ
+                    marginLeft: "90px",
+                  }}
+                />
               </div>
             </div>
 
@@ -246,19 +248,17 @@ function Navbar() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition-all duration-200 border-2 border-transparent hover:border-emerald-200"
                 >
                   <div className="text-right hidden md:block">
-                    <p className="text-sm font-semibold text-gray-700">
-                      {user ? user.name : "Loading..."}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {user?.email || ""}
-                    </p>
+                    <span className="block">{user ? user.name : "Loading..."}</span>
+                    <span className="block">{user?.email || ""}</span>
                   </div>
+
                   <div className="relative">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold shadow-md text-sm">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold shadow-md text-base">
                       {user?.name?.charAt(0).toUpperCase() || "U"}
                     </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full"></div>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
                   </div>
+
                   <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
                     userMenuOpen ? 'rotate-180' : ''
                   }`} />

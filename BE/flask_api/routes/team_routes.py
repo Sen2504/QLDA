@@ -18,7 +18,7 @@ def get_team(project_id):
     if PermissionService._projrole_for_user_project(current_user.id, project_id) is None:
         return jsonify({"error": "Bạn không thuộc project này."}), 403
     members = TeamService.get_team_by_project(project_id)
-    return jsonify(teams_schema.dump(members)), 200
+    return jsonify(members), 200
 
 # ----------------- INVITE user to project -----------------
 @team_bp.route("/invite/<int:project_id>", methods=["POST"])

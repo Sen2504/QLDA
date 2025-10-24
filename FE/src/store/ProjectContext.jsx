@@ -20,7 +20,7 @@ export function ProjectProvider({ children }) {
 
   const [storageKey, setStorageKey] = useState(getStorageKey);
 
-  // ✅ Hydrate từ localStorage (lazy init)
+  // Hydrate từ localStorage (lazy init)
   const [currentProject, setCurrentProjectState] = useState(() => {
     try {
       const raw = localStorage.getItem(storageKey);
