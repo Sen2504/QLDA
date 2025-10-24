@@ -8,16 +8,22 @@ permission_bp = Blueprint("permission", __name__, url_prefix="/api/permissions")
 
 
 def _is_project_owner(user_id, project_id):
-    # reuse ProjectService.change_status owner check logic pattern
-    owner_projrole = (
-        ProjectService.get_by_id(project_id)
-    )
     # simple check: find if current user has a Team entry with Role Project Owner
+    # Hỗ trợ cả role custom (role_id = NULL)
     from flask_api.models import ProjectRole, Role, Team
+    from flask_api.extensions import db
     owner = (
-        ProjectRole.query.join(Role, ProjectRole.role_id == Role.id)
+        ProjectRole.query
         .join(Team, Team.projrole_id == ProjectRole.id)
-        .filter(ProjectRole.project_id == project_id, Role.name == "Project Owner", Team.user_id == user_id)
+        .outerjoin(Role, ProjectRole.role_id == Role.id)
+        .filter(
+            ProjectRole.project_id == project_id,
+            db.or_(
+                Role.name == "Project Owner",
+                db.and_(ProjectRole.role_id.is_(None), ProjectRole.name == "Project Owner")
+            ),
+            Team.user_id == user_id
+        )
         .first()
     )
     return bool(owner)

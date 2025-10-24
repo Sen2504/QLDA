@@ -29,13 +29,16 @@ class PermissionService:
             return False
         pr = (
             db.session.query(ProjectRole)
-            .join(Role, ProjectRole.role_id == Role.id)
+            .outerjoin(Role, ProjectRole.role_id == Role.id)
             .filter(ProjectRole.id == projrole_id)
             .first()
         )
-        if not pr or not pr.role:
+        if not pr:
             return False
-        return (pr.role.name == PermissionService.OWNER_ROLE_NAME) or (pr.name == PermissionService.OWNER_ROLE_NAME)
+        # Kiểm tra cả global role và project role name
+        if pr.role and pr.role.name == PermissionService.OWNER_ROLE_NAME:
+            return True
+        return pr.name == PermissionService.OWNER_ROLE_NAME
     @staticmethod
     def check_permission(user_id, project_id, resource_name, action_name):
         """Return True if user has permission for action on resource in project."""
