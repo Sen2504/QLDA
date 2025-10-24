@@ -94,101 +94,199 @@ function Team() {
 
   return (
     <>
-      <>
-        <div className="p-6 space-y-8">
-          <h2 className="text-2xl font-bold text-green-700">
-            Team của project{" "}
-            {currentProject ? currentProject.name : `#${projectId}`}
-          </h2>
+      {/* Main Container with Gradient Background */}
+      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-100 p-4 md:p-6">
+        <div className="max-w-7xl mx-auto space-y-5">
+          
+          {/* Header Section */}
+                <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Team Management
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Project: <span className="font-semibold text-blue-700">
+                    {currentProject ? currentProject.name : `#${projectId}`}
+                  </span>
+                </p>
 
-          {/* Form mời thành viên */}
-          <InviteForm
-            projectId={projectId}
-            roles={roles}
-            onInvited={(invite) => {
-              setPending([...pending, invite]);
-              showPopup("Invitation sent successfully!", "success");
-            }}
-            onError={(errorMsg) => {
-              showPopup(errorMsg, "error");
-            }}
-          />
+          {/* Two Column Layout for Above the Fold */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            
+            {/* Left Column: Invite Form */}
+            <div className="lg:col-span-1">
+              <InviteForm
+                projectId={projectId}
+                roles={roles}
+                onInvited={(invite) => {
+                  setPending([...pending, invite]);
+                  showPopup("Invitation sent successfully!", "success");
+                }}
+                onError={(errorMsg) => {
+                  showPopup(errorMsg, "error");
+                }}
+              />
+            </div>
 
-          {/* Danh sách thành viên */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Member list</h3>
-            {members.length > 0 ? (
-              <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {members.map((m) => {
-                  const isOwner = m.role_name === "Project Owner";
-                  const isCurrentUser = m.user_id === currentUser?.id;
+            {/* Right Column: Member List */}
+            <div className="lg:col-span-2">
+              <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-blue-100 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                    Team Members
+                  </h3>
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-4 py-2 rounded-full shadow-md">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                    </svg>
+                    <span className="text-sm font-semibold">{members.length} Members</span>
+                  </div>
+                </div>
 
-                  const liClass = [
-                    "flex justify-between items-center p-3 rounded-lg shadow-sm border text-sm transition",
-                    isOwner
-                      ? "bg-yellow-50 border-yellow-300"
-                      : "bg-gray-50 hover:bg-gray-100 border-gray-200",
-                    isCurrentUser ? "ring-2 ring-green-400 bg-green-50" : ""
-                  ]
-                    .filter(Boolean)
-                    .join(" ");
+                {members.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[calc(100vh-400px)] overflow-y-auto pr-2 custom-scrollbar">
+                    {members.map((m) => {
+                      const isOwner = m.role_name === "Project Owner";
+                      const isCurrentUser = m.user_id === currentUser?.id;
 
-                  const nameClass = [
-                    "font-semibold",
-                    isOwner ? "text-yellow-800" : "text-gray-800",
-                    isCurrentUser ? "text-green-700 font-bold" : ""
-                  ]
-                    .filter(Boolean)
-                    .join(" ");
+                      return (
+                        <div
+                          key={m.id}
+                          className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
+                            isOwner
+                              ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-300 shadow-amber-100"
+                              : isCurrentUser
+                              ? "bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-300 shadow-emerald-100"
+                              : "bg-gradient-to-br from-white to-blue-50 border-blue-200 hover:border-blue-300"
+                          }`}
+                        >
+                          {/* Decorative gradient bar */}
+                          <div className={`absolute top-0 left-0 right-0 h-1 ${
+                            isOwner
+                              ? "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500"
+                              : isCurrentUser
+                              ? "bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500"
+                              : "bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400"
+                          }`}></div>
 
-                  return (
-                    <li key={m.id} className={liClass}>
-                      <div>
-                        <p className={nameClass}>
-                          {m.user_name || "(Chưa có tên)"}
-                          {isCurrentUser && (
-                            <span className="ml-2 text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold">
-                              You
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {m.user_email}
-                        </p>
-                        <p className="text-xs text-gray-500 italic">
-                          {m.role_name}
-                        </p>
-                      </div>
+                          <div className="p-4 pt-5">
+                            <div className="flex items-start justify-between gap-3">
+                              {/* Avatar & Info */}
+                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                {/* Avatar with gradient */}
+                                <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg ${
+                                  isOwner
+                                    ? "bg-gradient-to-br from-amber-400 to-yellow-600"
+                                    : isCurrentUser
+                                    ? "bg-gradient-to-br from-emerald-400 to-teal-600"
+                                    : "bg-gradient-to-br from-cyan-400 to-blue-600"
+                                }`}>
+                                  {(m.user_name || "?").charAt(0).toUpperCase()}
+                                </div>
 
-                      {currentProject?.role_name === "Project Owner" &&
-                        m.role_name !== "Project Owner" &&
-                        m.user_id !== currentUser?.id && (
-                            <button
-                              onClick={() => handleRemove(m.user_id)}
-                              className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 transition"
-                            >
-                              Delete
-                            </button>
-                        )}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-gray-500">There are no members yet.</p>
-            )}
+                                {/* User Details */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className={`font-bold text-sm truncate ${
+                                      isOwner
+                                        ? "text-amber-800"
+                                        : isCurrentUser
+                                        ? "text-emerald-800"
+                                        : "text-gray-800"
+                                    }`}>
+                                      {m.user_name || "(No name)"}
+                                    </p>
+                                    {isCurrentUser && (
+                                      <span className="text-[10px] bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">
+                                        YOU
+                                      </span>
+                                    )}
+                                    {isOwner && (
+                                      <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  
+                                  <p className="text-xs text-gray-600 truncate mt-1" title={m.user_email}>
+                                    {m.user_email}
+                                  </p>
+                                  
+                                  <div className="mt-2">
+                                    <span className={`inline-block text-[11px] font-semibold px-3 py-1 rounded-full ${
+                                      isOwner
+                                        ? "bg-amber-200 text-amber-800"
+                                        : "bg-blue-100 text-blue-700"
+                                    }`}>
+                                      {m.role_name}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Delete Button */}
+                              {currentProject?.role_name === "Project Owner" &&
+                                m.role_name !== "Project Owner" &&
+                                m.user_id !== currentUser?.id && (
+                                  <button
+                                    onClick={() => handleRemove(m.user_id)}
+                                    className="flex-shrink-0 p-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-500 text-white hover:from-red-600 hover:to-rose-600 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110 group"
+                                    title="Remove member"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                      <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 font-medium">No members yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Start by inviting team members</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Danh sách lời mời đang chờ */}
-          <PendingInvites
-            pending={pending}
-            onRevoked={(inviteId) => {
-              setPending(pending.filter((i) => i.id !== inviteId));
-              showPopup("Invitation has been revoked!", "warning");
-            }}
-          />
+          {/* Pending Invites Section */}
+          <div className="pb-4">
+            <PendingInvites
+              pending={pending}
+              onRevoked={(inviteId) => {
+                setPending(pending.filter((i) => i.id !== inviteId));
+                showPopup("Invitation has been revoked!", "warning");
+              }}
+            />
+          </div>
         </div>
-      </>
+      </div>
+
+      {/* Custom Scrollbar Styles */}
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #06b6d4, #3b82f6);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #0891b2, #2563eb);
+        }
+      `}</style>
 
       {popup.visible && (
         <PopupMessage
@@ -198,64 +296,122 @@ function Team() {
         />
       )}
 
-      {/* Dialog xác nhận xóa thành viên có task */}
+      {/* Dialog xác nhận xóa thành viên có task - Modern Gradient Style */}
       {confirmDialog.visible && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4">
-            <h3 className="text-lg font-bold text-red-600 mb-4"> Warning</h3>
-            <p className="text-gray-700 mb-4">{confirmDialog.message}</p>
-            
-            <div className="mb-6 max-h-64 overflow-y-auto">
-              <ul className="space-y-2">
-                {confirmDialog.tasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="p-3 bg-gray-50 rounded-lg border border-gray-200"
-                  >
-                    <p className="font-semibold text-sm text-gray-800">
-                      #{task.id} {task.name}
-                    </p>
-                    {task.description && (
-                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                        {task.description}
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ul>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-slideUp">
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 p-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Warning!</h3>
+                  <p className="text-sm text-white/90 mt-0.5">Member has assigned tasks</p>
+                </div>
+              </div>
             </div>
 
-            <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to delete this member?? <br />
-              <span className="font-semibold text-red-600">
-                All task assignments will be canceled!
-              </span>
-            </p>
+            {/* Content */}
+            <div className="p-6">
+              <p className="text-gray-700 mb-4 leading-relaxed">{confirmDialog.message}</p>
+              
+              {/* Task List */}
+              <div className="mb-5 max-h-64 overflow-y-auto custom-scrollbar">
+                <p className="text-sm font-semibold text-gray-600 mb-3">Affected Tasks:</p>
+                <ul className="space-y-2">
+                  {confirmDialog.tasks.map((task) => (
+                    <li
+                      key={task.id}
+                      className="p-3 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl border-2 border-red-100 hover:border-red-200 transition-colors"
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-red-500 to-rose-500 text-white rounded-lg flex items-center justify-center text-xs font-bold">
+                          {task.id}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-gray-800 truncate">
+                            {task.name}
+                          </p>
+                          {task.description && (
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                              {task.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() =>
-                  setConfirmDialog({
-                    visible: false,
-                    message: "",
-                    tasks: [],
-                    onConfirm: null,
-                  })
-                }
-                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition"
-              >
-                Cancle
-              </button>
-              <button
-                onClick={confirmDialog.onConfirm}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
-              >
-                Confirm deletion
-              </button>
+              {/* Warning Message */}
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                <p className="text-sm text-gray-700">
+                  Are you sure you want to remove this member?
+                </p>
+                <p className="text-sm font-bold text-red-600 mt-2">
+                  ⚠️ All task assignments will be permanently canceled!
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() =>
+                    setConfirmDialog({
+                      visible: false,
+                      message: "",
+                      tasks: [],
+                      onConfirm: null,
+                    })
+                  }
+                  className="flex-1 px-5 py-3 rounded-xl border-2 border-gray-300 hover:bg-gray-50 font-medium text-gray-700 transition-all hover:scale-[1.02]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDialog.onConfirm}
+                  className="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-red-500 to-rose-500 text-white font-bold shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 transition-all hover:scale-[1.02]"
+                >
+                  Confirm Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Animations */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        @keyframes slideUp {
+          from {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+      `}</style>
     </>
   );
 }
