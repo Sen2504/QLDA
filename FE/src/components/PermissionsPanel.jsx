@@ -168,24 +168,23 @@ export default function PermissionsPanel() {
                   }
                   className="w-full flex items-center justify-between px-5 py-3 bg-gradient-to-r from-gray-50 to-slate-50 hover:from-gray-100 hover:to-gray-100 transition"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start gap-3">
                     {/* Resource icon */}
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center shadow">
                       <Lock className="w-5 h-5 text-white" />
                     </div>
 
                     {/* Resource name + count */}
-                    <div>
+                    <div className="flex flex-col items-start">
                       <span className="font-bold text-gray-800 block">{res}</span>
 
-                      {/* 🔹 Hiển thị số quyền được bật */}
                       {(() => {
                         const resActions = localMatrix[res] || {};
                         const total = Object.keys(resActions).length || matrixData.actions.length;
                         const enabled = Object.values(resActions).filter(Boolean).length;
 
                         return (
-                          <span className="text-xs text-gray-500 font-medium">
+                          <span className="text-xs text-gray-500 font-medium leading-tight text-left w-full">
                             {enabled}/{total}
                           </span>
                         );

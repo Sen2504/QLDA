@@ -50,6 +50,7 @@ class TeamService:
     def get_team_by_project(project_id):
         """
         Lấy danh sách thành viên chính thức của project (đã accept).
+        Hỗ trợ cả role custom (role_id = NULL).
         """
         team_members = (
             db.session.query(
@@ -62,7 +63,6 @@ class TeamService:
             )
             .join(ProjectRole, Team.projrole_id == ProjectRole.id)
             .join(User, Team.user_id == User.id)
-            .join(Role, ProjectRole.role_id == Role.id)
             .filter(ProjectRole.project_id == project_id)
             .all()
         )
@@ -83,6 +83,7 @@ class TeamService:
     def get_pending_invites_by_project(project_id):
         """
         Lấy danh sách invite chưa được accept trong project.
+        Hỗ trợ cả role custom (role_id = NULL).
         """
         invites = (
             db.session.query(
@@ -92,7 +93,7 @@ class TeamService:
                 TeamInvite.status,
                 TeamInvite.created_at
             )
-            .join(Role, TeamInvite.role_id == Role.id)
+            .join(ProjectRole, TeamInvite.projrole_id == ProjectRole.id)
             .filter(TeamInvite.project_id == project_id, TeamInvite.status == "pending")
             .all()
         )
@@ -121,11 +122,14 @@ class TeamService:
         # Kiểm tra current_user có phải Owner không
         owner_projrole = (
             db.session.query(ProjectRole)
-            .join(Role, ProjectRole.role_id == Role.id)
             .join(Team, Team.projrole_id == ProjectRole.id)
+            .outerjoin(Role, ProjectRole.role_id == Role.id)
             .filter(
                 ProjectRole.project_id == project_id,
-                Role.name == "Project Owner",
+                db.or_(
+                    Role.name == "Project Owner",
+                    db.and_(ProjectRole.role_id.is_(None), ProjectRole.name == "Project Owner")
+                ),
                 Team.user_id == current_user_id
             )
             .first()

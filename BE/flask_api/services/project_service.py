@@ -107,12 +107,13 @@ class ProjectService:
         Lấy danh sách project mà user tham gia.
         - Owner: thấy cả active + archived.
         - Member: chỉ thấy active.
+        Hỗ trợ cả role custom (role_id = NULL).
         """
         query = (
-            db.session.query(Project, Role.name.label("role_name"))
+            db.session.query(Project, ProjectRole.name.label("role_name"))
             .join(ProjectRole, ProjectRole.project_id == Project.id)
             .join(Team, Team.projrole_id == ProjectRole.id)
-            .join(Role, Role.id == ProjectRole.role_id)
+            .outerjoin(Role, Role.id == ProjectRole.role_id)
             .filter(Team.user_id == user_id, Project.status != "deleted")
         )
 
@@ -138,11 +139,14 @@ class ProjectService:
         # Kiểm tra user có phải Owner không
         owner_projrole = (
             db.session.query(ProjectRole)
-            .join(Role, ProjectRole.role_id == Role.id)
             .join(Team, Team.projrole_id == ProjectRole.id)
+            .outerjoin(Role, ProjectRole.role_id == Role.id)
             .filter(
                 ProjectRole.project_id == project_id,
-                Role.name == "Project Owner",
+                db.or_(
+                    Role.name == "Project Owner",
+                    db.and_(ProjectRole.role_id.is_(None), ProjectRole.name == "Project Owner")
+                ),
                 Team.user_id == user_id
             )
             .first()
