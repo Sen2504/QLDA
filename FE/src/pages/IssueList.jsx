@@ -6,6 +6,7 @@ import IssueService from "../services/issueService";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 import PermissionGuard from "../components/PermissionGuard";
 import withPermissions from "../components/withPermissions";
+import { TableSkeleton } from "../components/LoadingSkeleton";
 
 function IssueList() {
   const navigate = useNavigate();
@@ -199,7 +200,7 @@ function IssueList() {
         </div>
 
         {loading ? (
-          <p className="text-gray-500 text-sm">Loading data...</p>
+          <TableSkeleton rows={5} columns={8} />
         ) : (
           <div className="overflow-hidden">
             <table className="min-w-full w-full text-sm text-left text-gray-700 border-collapse">

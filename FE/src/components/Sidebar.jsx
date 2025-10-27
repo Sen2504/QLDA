@@ -401,8 +401,8 @@ function Sidebar() {
           )}
         </div>
 
-        {/* Nút toggle dính vào sidebar và canh giữa nội dung */}
-        <div className="absolute inset-y-0 right-0 flex items-center justify-center">
+        {/* Nút toggle cố định ở góc trên bên phải sidebar */}
+        <div className="absolute top-4 right-0">
           <button
             onClick={toggleSidebar}
             className="translate-x-1/2 p-2 rounded-r-md bg-gradient-to-br from-emerald-500 to-teal-500 text-white 

@@ -5,6 +5,7 @@ import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 import { useProject } from "../store/ProjectContext";
 import TaskService from "../services/taskService";
 import TaskStatusService from "../services/taskStatusService";
+import { TableSkeleton } from "../components/LoadingSkeleton";
 
 export default function Tasks() {
   const navigate = useNavigate();
@@ -346,7 +347,7 @@ export default function Tasks() {
             </div>
 
             {loading ? (
-              <div className="text-gray-500">Loading task list...</div>
+              <TableSkeleton rows={5} columns={7} />
             ) : tasks.length === 0 ? (
               <div className="text-gray-500">This project does not have any tasks yet.</div>
             ) : (
@@ -410,7 +411,17 @@ export default function Tasks() {
                               </button>
                             </td>
                             <td className="px-4 py-2">
-                              {task.user_story?.name || task.user_story?.title || "—"}
+                              {task.user_story?.id ? (
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/user-stories/${task.user_story.id}`)}
+                                  className="text-left text-gray-900 hover:text-emerald-600 hover:underline"
+                                >
+                                  {task.user_story.name || task.user_story.title}
+                                </button>
+                              ) : (
+                                <span className="text-gray-400">—</span>
+                              )}
                             </td>
                             <td className="px-4 py-2">
                               {task.assigneeList.length > 0 ? (

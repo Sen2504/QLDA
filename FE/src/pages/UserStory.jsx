@@ -25,6 +25,7 @@ export default function UserStory() {
   const [name, setName] = useState("");
   const [expireDate, setExpireDate] = useState("");
   const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // hashtags
   const [tagInput, setTagInput] = useState("");
@@ -107,6 +108,9 @@ export default function UserStory() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isSubmitting) return; // Prevent double submission
+    
     if (!currentProject) {
       toast.error("Please select a project.");
       return;
@@ -119,6 +123,8 @@ export default function UserStory() {
       toast.error("Please select an expiration date.");
       return;
     }
+
+    setIsSubmitting(true);
 
     const formData = new FormData();
     formData.append("Name_story", name.trim());
@@ -137,13 +143,16 @@ export default function UserStory() {
 
     try {
       const res = await UserStoryService.create(formData);
-      if (res?.error || res?.message) {
-        return;
+      
+      // Kiểm tra response - chỉ hiển thị success toast
+      if (res?.data) {
+        toast.success("User Story created successfully!");
+        setTimeout(() => navigate("/user-stories"), 1500);
       }
-      toast.success("User Story created successfully!");
-      setTimeout(() => navigate("/user-stories"), 1500);
     } catch (err) {
+      // API interceptor đã hiển thị toast.error, chỉ cần log và reset state
       console.error("Failed to create user story:", err);
+      setIsSubmitting(false);
     }
   };
 
@@ -356,9 +365,25 @@ export default function UserStory() {
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm"
+                    disabled={isSubmitting}
+                    onClick={handleSubmit}
+                    className={`inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg transition-all duration-200 text-sm ${
+                      isSubmitting 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:shadow-xl hover:scale-[1.02]'
+                    }`}
                   >
-                    Create Story
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Story'
+                    )}
                   </button>
                   <button
                     type="button"

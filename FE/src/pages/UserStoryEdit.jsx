@@ -24,6 +24,7 @@ export default function UserStoryEdit() {
   const [name, setName] = useState("");
   const [expireDate, setExpireDate] = useState("");
   const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [tagInput, setTagInput] = useState("");
   const debouncedTagInput = useDebounce(tagInput, 200);
@@ -142,6 +143,9 @@ export default function UserStoryEdit() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isSubmitting) return; // Prevent double submission
+    
     if (!currentProject) {
       toast.error("Chưa chọn Project.");
       return;
@@ -150,6 +154,8 @@ export default function UserStoryEdit() {
       toast.error("Vui lòng nhập tên User Story.");
       return;
     }
+
+    setIsSubmitting(true);
 
     const formData = new FormData();
     formData.append("Name_story", name.trim());
@@ -170,11 +176,17 @@ export default function UserStoryEdit() {
     formData.append("deleted_files", JSON.stringify(deleted));
 
     try {
-      await UserStoryService.update(id, formData);
-      toast.success("User Story updated successfully!");
-      setTimeout(() => navigate("/user-stories"), 1500);
+      const res = await UserStoryService.update(id, formData);
+      
+      // Kiểm tra response - chỉ hiển thị success toast
+      if (res?.data) {
+        toast.success("User Story updated successfully!");
+        setTimeout(() => navigate("/user-stories"), 1500);
+      }
     } catch (err) {
+      // API interceptor đã hiển thị toast.error, chỉ cần log và reset state
       console.error("Failed to update user story:", err);
+      setIsSubmitting(false);
     }
   };
 
@@ -377,9 +389,25 @@ export default function UserStoryEdit() {
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm"
+                    disabled={isSubmitting}
+                    onClick={handleSubmit}
+                    className={`inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg transition-all duration-200 text-sm ${
+                      isSubmitting 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:shadow-xl hover:scale-[1.02]'
+                    }`}
                   >
-                    Save Changes
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
                   </button>
                   <button
                     type="button"

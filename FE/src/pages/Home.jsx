@@ -145,7 +145,11 @@ function Home() {
 
   const handleCreateSprint = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return toast.warn("Tên sprint không được trống");
+    if (!form.name.trim()) {
+      toast.warn("Tên sprint không được trống");
+      return;
+    }
+    
     try {
       const payload = {
         project_id: projectId,
@@ -153,15 +157,19 @@ function Home() {
         deadline: form.deadline,
       };
       const res = await SprintService.create(payload);
-      setSprints((prev) => [...prev, res.data]);
-      toast.success("Tạo sprint thành công");
-      setShowAddModal(false);
-      setForm({
-        name: "",
-        deadline: dayjs().add(14, "day").format("YYYY-MM-DD"),
-      });
-    } catch {
-      toast.error("Tạo sprint thất bại");
+      
+      if (res?.data) {
+        setSprints((prev) => [...prev, res.data]);
+        toast.success("Tạo sprint thành công");
+        setShowAddModal(false);
+        setForm({
+          name: "",
+          deadline: dayjs().add(14, "day").format("YYYY-MM-DD"),
+        });
+      }
+    } catch (err) {
+      // API interceptor đã hiển thị toast.error
+      console.error("Failed to create sprint:", err);
     }
   };
 
@@ -388,6 +396,72 @@ function Home() {
         </DragDropContext>
       ) : (
         <MyTaskCalendar tasks={myTasks} />
+      )}
+
+      {/* Modal Create Sprint */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Create New Sprint</h3>
+                  <p className="text-sm text-emerald-50">Add a sprint to your project</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <form onSubmit={handleCreateSprint} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Sprint Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g. Sprint 1, Q4 Sprint..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Deadline
+                </label>
+                <input
+                  type="date"
+                  value={form.deadline}
+                  onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Create Sprint
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

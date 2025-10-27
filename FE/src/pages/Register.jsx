@@ -112,7 +112,7 @@ export default function Register() {
               }
               className="basic-multi-select"
               classNamePrefix="select"
-              placeholder="Chọn hoặc gõ skill mới..."
+              placeholder="Chose or type your skills..."
             />
           </div>
 
