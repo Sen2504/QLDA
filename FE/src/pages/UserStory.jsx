@@ -257,22 +257,6 @@ export default function UserStory() {
                     label="Attachments"
                   />
                 </div>
-
-                <div className="flex items-center gap-2 pt-1">
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm"
-                  >
-                    Create Story
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/user-stories")}
-                    className="text-sm text-slate-600 hover:text-blue-600 font-medium hover:underline transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
               </form>
             </main>
 
@@ -367,6 +351,22 @@ export default function UserStory() {
                       </div>
                     ))}
                   </div>
+                </div>
+                
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm"
+                  >
+                    Create Story
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/user-stories")}
+                    className="text-sm text-slate-600 hover:text-blue-600 font-medium hover:underline transition"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             </aside>

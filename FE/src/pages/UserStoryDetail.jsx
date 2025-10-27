@@ -79,7 +79,7 @@ const attachments = useMemo(() => {
   }));
 }, [story]);
 
-  // 📦 Load toàn bộ dữ liệu
+  // Load toàn bộ dữ liệu
   useEffect(() => {
     let mounted = true;
 

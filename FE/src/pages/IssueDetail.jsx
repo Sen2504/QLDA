@@ -244,7 +244,8 @@ export default function IssueDetail() {
                   {issue.evidence_file?.length ? (
                     <ul className="space-y-1.5">
                       {issue.evidence_file.map((f) => {
-                        const fileUrl = `${import.meta.env.VITE_API_URL}/uploads/issues/${issue.id}/${f}`;
+                        const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
+                        const fileUrl = `${baseUrl}/uploads/issues/${issue.id}/${encodeURIComponent(f)}`;
                         return (
                           <li key={f} className="flex items-start gap-1.5 text-xs">
                             <Paperclip className="w-3 h-3 text-amber-600 flex-shrink-0 mt-0.5" />
