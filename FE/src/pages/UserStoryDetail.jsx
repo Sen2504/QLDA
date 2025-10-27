@@ -76,7 +76,7 @@ function UserStoryDetail() {
     }));
   }, [story]);
 
-  // 📦 Load toàn bộ dữ liệu
+  // Load toàn bộ dữ liệu
   useEffect(() => {
     let mounted = true;
 
