@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { useProject } from "../store/ProjectContext";
 import PermissionService from "../services/permissionService";
-import PopupMessage from "../components/Popup_message";
 import {
   Eye,
   Plus,
@@ -16,7 +16,6 @@ export default function PermissionsPanel() {
   const [matrixData, setMatrixData] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
   const [localMatrix, setLocalMatrix] = useState({});
-  const [message, setMessage] = useState(null);
   const [openSections, setOpenSections] = useState(() => new Set());
 
   // Load permission matrix
@@ -32,9 +31,9 @@ export default function PermissionsPanel() {
           setLocalMatrix(data.matrix[firstRole.id] || {});
         }
       })
-      .catch(() =>
-        setMessage({ text: "Không thể tải phân quyền.", type: "error" })
-      );
+      .catch(() => {
+        toast.error("Cannot load permissions");
+      });
   }, [currentProject]);
 
   // Update when switching role
@@ -73,7 +72,7 @@ export default function PermissionsPanel() {
         selectedRole,
         localMatrix
       );
-      setMessage({ text: "Update successful", type: "success" });
+      toast.success("Permissions updated successfully");
       setMatrixData((prev) => {
         if (!prev) return prev;
         const updated = { ...prev, matrix: { ...prev.matrix } };
@@ -81,7 +80,7 @@ export default function PermissionsPanel() {
         return updated;
       });
     } catch {
-      setMessage({ text: "Lỗi khi lưu phân quyền.", type: "error" });
+      toast.error("Failed to save permissions");
     }
   };
 
@@ -304,14 +303,6 @@ export default function PermissionsPanel() {
             );
           })}
         </div>
-      )}
-
-      {message && (
-        <PopupMessage
-          message={message.text}
-          type={message.type}
-          onClose={() => setMessage(null)}
-        />
       )}
     </div>
   );
