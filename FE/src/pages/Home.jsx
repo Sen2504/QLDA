@@ -199,9 +199,13 @@ function Home() {
         applyLocalChange(sprintId);
         await SprintService.addUserStory(sprintId, usId);
       }
-    } catch {
+    } catch (err) {
       setUserStories(prev);
-      toast.error("Update sprint for User Story failed");
+      // Chỉ hiển thị toast nếu không phải lỗi 403 (API interceptor đã xử lý)
+      const status = err?.response?.status;
+      if (status !== 403) {
+        toast.error("Update sprint for User Story failed");
+      }
     }
   };
 
