@@ -213,28 +213,19 @@ const attachments = useMemo(() => {
                       </span>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/user-stories/${story.id}/edit`)}
-                      disabled={!canEditStory || isDone}
-                      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-                        !canEditStory || isDone
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                          : "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
-                      }`}
-                      title={
-                        !canEditStory 
-                          ? "No permission" 
-                          : isDone 
-                          ? "Cannot edit completed story" 
-                          : "Edit story"
-                      }
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit
-                    </button>
+                    {canEditStory && !isDone && (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/user-stories/${story.id}/edit`)}
+                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
+                        title="Edit story"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                    )}
                   </div>
                 </div>
 

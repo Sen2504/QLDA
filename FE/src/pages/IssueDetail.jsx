@@ -147,12 +147,11 @@ export default function IssueDetail() {
           </button>
 
           {/* Edit Button */}
-          {issue && (
+          {issue && canEdit && (
             <button
               onClick={() => navigate(`/issues/${issue.id}/edit`)}
-              disabled={!canEdit}
-              className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-              title={!canEdit ? "You don't have permission to edit this issue" : "Edit issue"}
+              className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm font-semibold"
+              title="Edit issue"
             >
               <Edit3 className="w-4 h-4" />
               <span>Edit</span>
@@ -305,38 +304,45 @@ export default function IssueDetail() {
                     </div>
 
                     {/* Add Comment Form */}
-                    <div className={`border-t border-emerald-200 pt-3 ${!canComment ? "opacity-50" : ""}`}>
-                      <div className="space-y-2">
-                        <textarea
-                          value={commentInput}
-                          onChange={(e) => setCommentInput(e.target.value)}
-                          rows={2}
-                          placeholder={!canComment ? "You don't have permission to comment" : "Write a comment..."}
-                          className="w-full border border-emerald-300 focus:border-emerald-500 rounded-lg p-2 text-xs bg-white/80 backdrop-blur-sm focus:outline-none transition-all duration-300 resize-none"
-                          disabled={!canComment}
-                        />
-                        <div className="flex justify-end">
-                          <button
-                            onClick={handleSubmitComment}
-                            disabled={commentSubmitting || !canComment || !commentInput.trim()}
-                            className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5"
-                            title={!canComment ? "You don't have permission to comment" : "Post comment"}
-                          >
-                            {commentSubmitting ? (
-                              <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                <span>Posting...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Send className="w-3.5 h-3.5" />
-                                <span>Post Comment</span>
-                              </>
-                            )}
-                          </button>
+                    {canComment ? (
+                      <div className="border-t border-emerald-200 pt-3">
+                        <div className="space-y-2">
+                          <textarea
+                            value={commentInput}
+                            onChange={(e) => setCommentInput(e.target.value)}
+                            rows={2}
+                            placeholder="Write a comment..."
+                            className="w-full border border-emerald-300 focus:border-emerald-500 rounded-lg p-2 text-xs bg-white/80 backdrop-blur-sm focus:outline-none transition-all duration-300 resize-none"
+                          />
+                          <div className="flex justify-end">
+                            <button
+                              onClick={handleSubmitComment}
+                              disabled={commentSubmitting || !commentInput.trim()}
+                              className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5"
+                              title="Post comment"
+                            >
+                              {commentSubmitting ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Posting...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Send className="w-3.5 h-3.5" />
+                                  <span>Post Comment</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="border-t border-gray-200 pt-3">
+                        <div className="text-center py-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-gray-500">You don't have permission to comment on this issue</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </GradientCard>
               </div>

@@ -464,16 +464,10 @@ function TaskDetail() {
                   <>
                     <button
                       onClick={handleSave}
-                      disabled={!canEdit || saving || isDone}
+                      disabled={saving || isDone}
                       className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm"
                       type="button"
-                      title={
-                        !canEdit 
-                          ? "You don't have permission to edit tasks" 
-                          : isDone 
-                          ? "Cannot edit completed task" 
-                          : "Save changes"
-                      }
+                      title={isDone ? "Cannot edit completed task" : "Save changes"}
                     >
                       {saving ? (
                         <>
@@ -497,24 +491,17 @@ function TaskDetail() {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={handleEnterEditMode}
-                    disabled={!canEdit || isDone}
-                    className={`px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm ${
-                      !canEdit || isDone ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                    type="button"
-                    title={
-                      !canEdit 
-                        ? "You don't have permission to edit tasks" 
-                        : isDone 
-                        ? "Cannot edit completed task" 
-                        : "Edit task"
-                    }
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    <span>Edit</span>
-                  </button>
+                  canEdit && !isDone && (
+                    <button
+                      onClick={handleEnterEditMode}
+                      className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm"
+                      type="button"
+                      title="Edit task"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      <span>Edit</span>
+                    </button>
+                  )
                 )}
               </div>
             </div>
@@ -768,51 +755,56 @@ function TaskDetail() {
                     </div>
 
                     {/* Add Comment Form */}
-                    <div className={`border-t border-emerald-200 pt-3 ${isDone || !canComment ? "opacity-50" : ""}`}>
-                      <div className="space-y-2">
-                        <textarea
-                          value={commentInput}
-                          onChange={(e) => setCommentInput(e.target.value)}
-                          rows={2}
-                          placeholder={
-                            !canComment 
-                              ? "You don't have permission to comment" 
-                              : isDone 
-                              ? "Task completed — cannot add comments." 
-                              : "Write a comment..."
-                          }
-                          className="w-full border border-emerald-300 focus:border-emerald-500 rounded-lg p-2 text-xs bg-white/80 backdrop-blur-sm focus:outline-none transition-all duration-300 resize-none"
-                          disabled={isDone || !canComment}
-                        />
-                        <div className="flex justify-end">
-                          <button
-                            onClick={handleSubmitComment}
-                            disabled={commentSubmitting || isDone || !canComment || !commentInput.trim()}
-                            className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5"
-                            type="button"
-                            title={
-                              !canComment 
-                                ? "You don't have permission to comment" 
-                                : isDone 
-                                ? "Cannot comment on completed task" 
-                                : "Post comment"
-                            }
-                          >
-                            {commentSubmitting ? (
-                              <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                <span>Posting...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Send className="w-3.5 h-3.5" />
-                                <span>Post Comment</span>
-                              </>
-                            )}
-                          </button>
+                    {canComment && !isDone && (
+                      <div className="border-t border-emerald-200 pt-3">
+                        <div className="space-y-2">
+                          <textarea
+                            value={commentInput}
+                            onChange={(e) => setCommentInput(e.target.value)}
+                            rows={2}
+                            placeholder="Write a comment..."
+                            className="w-full border border-emerald-300 focus:border-emerald-500 rounded-lg p-2 text-xs bg-white/80 backdrop-blur-sm focus:outline-none transition-all duration-300 resize-none"
+                          />
+                          <div className="flex justify-end">
+                            <button
+                              onClick={handleSubmitComment}
+                              disabled={commentSubmitting || !commentInput.trim()}
+                              className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5"
+                              type="button"
+                              title="Post comment"
+                            >
+                              {commentSubmitting ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Posting...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Send className="w-3.5 h-3.5" />
+                                  <span>Post Comment</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
+                    
+                    {!canComment && (
+                      <div className="border-t border-gray-200 pt-3">
+                        <div className="text-center py-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-gray-500">You don't have permission to comment on this task</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {isDone && canComment && (
+                      <div className="border-t border-gray-200 pt-3">
+                        <div className="text-center py-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-gray-500">Task completed — cannot add comments</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </GradientCard>
               </div>

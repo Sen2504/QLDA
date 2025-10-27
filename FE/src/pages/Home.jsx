@@ -232,14 +232,15 @@ function Home() {
             <p className="text-xs text-gray-500">{currentProject.name}</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          disabled={!canCreateSprint}
-          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold hover:from-emerald-600 hover:to-teal-600 shadow-sm transition-all disabled:opacity-50"
-        >
-          <PlusCircle className="w-4 h-4 inline mr-1" />
-          New Sprint
-        </button>
+        {canCreateSprint && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold hover:from-emerald-600 hover:to-teal-600 shadow-sm transition-all"
+          >
+            <PlusCircle className="w-4 h-4 inline mr-1" />
+            New Sprint
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -281,14 +282,15 @@ function Home() {
                     {backlog.length}
                   </span>
                 </div>
-                <button
-                  onClick={() => navigate("/user-stories/new")}
-                  disabled={!canCreateUserStory}
-                  className="px-2 py-1 rounded-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-semibold hover:from-emerald-600 hover:to-teal-600"
-                >
-                  <PlusCircle className="w-3.5 h-3.5 inline mr-1" />
-                  New User Story
-                </button>
+                {canCreateUserStory && (
+                  <button
+                    onClick={() => navigate("/user-stories/new")}
+                    className="px-2 py-1 rounded-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-semibold hover:from-emerald-600 hover:to-teal-600"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 inline mr-1" />
+                    New User Story
+                  </button>
+                )}
               </div>
               <Droppable droppableId="backlog">
                 {(provided, snapshot) => (
