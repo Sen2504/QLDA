@@ -141,6 +141,17 @@ def update_issue(issue_id):
     }), 200
 
 
+# ----------------- DELETE ISSUE -----------------
+@issue_bp.route("/<int:issue_id>", methods=["DELETE"])
+@login_required
+@require_permission("Issue", "Delete", project_id_getter=lambda issue_id: get_project_id_from_issue(issue_id))
+def delete_issue(issue_id):
+    error = IssueService.delete(issue_id)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify({"message": "Issue deleted successfully"}), 200
+
+
 # ============================================================
 #                     ISSUE COMMENTS
 # ============================================================

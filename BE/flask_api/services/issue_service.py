@@ -254,3 +254,38 @@ class IssueService:
         except Exception as e:
             db.session.rollback()
             return None, str(e)
+
+    @staticmethod
+    def delete(issue_id):
+        """
+        Delete an issue and all related data.
+        This will cascade delete:
+        - All comments on this issue
+        - All resolve assignments (issue_resolve table)
+        - All uploaded files
+        """
+        try:
+            issue = Issue.query.get(issue_id)
+            if not issue:
+                return "Issue not found."
+            
+            # Delete all comments first
+            IssueComment.query.filter_by(issue_id=issue_id).delete()
+            
+            # Delete all resolve assignments
+            IssueResolve.query.filter_by(issue_id=issue_id).delete()
+            
+            # Delete uploaded files
+            issue_folder = IssueService._issue_folder(issue_id)
+            if os.path.exists(issue_folder):
+                import shutil
+                shutil.rmtree(issue_folder)
+            
+            # Delete the issue itself
+            db.session.delete(issue)
+            db.session.commit()
+            return None
+            
+        except Exception as e:
+            db.session.rollback()
+            return str(e)

@@ -15,7 +15,8 @@ import {
   Users, 
   MessageCircle, 
   Loader2,
-  Send
+  Send,
+  Trash2
 } from "lucide-react";
 import TaskService from "../services/taskService";
 import TaskStatusService from "../services/taskStatusService";
@@ -27,6 +28,8 @@ import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 import PermissionGuard from "../components/PermissionGuard";
 import { usePermission } from "../store/PermissionContext";
 import withPermissions from "../components/withPermissions";
+import ConfirmDialog from "../components/ConfirmDialog";
+
 import GradientCard from "../components/task/GradientCard";
 import SectionHeader from "../components/task/SectionHeader";
 import CommentItem from "../components/task/CommentItem";
@@ -39,6 +42,7 @@ function TaskDetail() {
 
   const canEdit = usePermission("Task", "Edit");
   const canComment = usePermission("Task", "Comment");
+  const canDelete = usePermission("Task", "Delete");
 
   const [task, setTask] = useState(null);
   const [form, setForm] = useState({ name: "", description: "", status_id: "", due_date: "" });
@@ -62,6 +66,9 @@ function TaskDetail() {
   const [editingAssignees, setEditingAssignees] = useState(false);
   const [availableMembers, setAvailableMembers] = useState([]);
   const [selectedAssignees, setSelectedAssignees] = useState([]);
+  
+  // Confirm dialog state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // ✅ Kiểm tra nếu task đã Done thì khóa hành động
   const isDone = useMemo(() => {
@@ -336,6 +343,17 @@ function TaskDetail() {
     }
   };
 
+  const handleDeleteTask = async () => {
+    try {
+      await TaskService.delete(taskId);
+      toast.success("Task deleted successfully");
+      navigate(-1);
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+      // API interceptor will show the error toast
+    }
+  };
+
   if (!task && !loading && !forbidden) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-3">
@@ -368,16 +386,29 @@ function TaskDetail() {
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
             <span className="text-sm">Back</span>
           </button>
-          {task?.user_story?.id && (
-            <button
-              onClick={() => navigate(`/user-stories/${task.user_story.id}`)}
-              className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2"
-              type="button"
-            >
-              <span className="text-sm">Open user story</span>
-              <ExternalLink className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {task?.user_story?.id && (
+              <button
+                onClick={() => navigate(`/user-stories/${task.user_story.id}`)}
+                className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                type="button"
+              >
+                <span className="text-sm">Open user story</span>
+                <ExternalLink className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+              </button>
+            )}
+            {canDelete && task && !isDone && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                type="button"
+                title="Delete task"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="text-sm">Delete</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Loading State */}
@@ -812,6 +843,17 @@ function TaskDetail() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteTask}
+        title="Delete Task"
+        message={`Are you sure you want to delete task "${task?.name}"?`}
+        warningMessage="This action cannot be undone. All comments and data associated with this task will be permanently deleted."
+        confirmText="Delete Task"
+      />
     </div>
   );
 }

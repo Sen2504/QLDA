@@ -423,6 +423,39 @@ class UserStoryService:
         if not story:
             return False, "User Story not found."
         try:
+            # Import các model cần thiết
+            from flask_api.models.user_story_hashtag_models import UserStoryHashtag
+            from flask_api.models.complexity_point_models import ComplexityPoint
+            from flask_api.models.task_models import Task
+            from flask_api.models.task_hashtag_models import TaskHashtag
+            from flask_api.models.phan_cong_models import PhanCong
+            from flask_api.models.task_comment_models import TaskComment
+            
+            # Lấy danh sách task IDs trước khi xóa
+            task_ids = [task.id for task in Task.query.filter_by(user_story_id=story_id).all()]
+            
+            # Xóa các bản ghi liên quan đến tasks theo thứ tự
+            if task_ids:
+                # 1. Xóa task comments
+                TaskComment.query.filter(TaskComment.task_id.in_(task_ids)).delete(synchronize_session=False)
+                
+                # 2. Xóa task hashtags
+                TaskHashtag.query.filter(TaskHashtag.task_id.in_(task_ids)).delete(synchronize_session=False)
+                
+                # 3. Xóa phan_cong (assignments)
+                PhanCong.query.filter(PhanCong.task_id.in_(task_ids)).delete(synchronize_session=False)
+                
+                # 4. Xóa tasks
+                Task.query.filter_by(user_story_id=story_id).delete()
+            
+            # Xóa các bản ghi liên quan trực tiếp đến user story
+            # 5. Xóa user_story_hashtags
+            UserStoryHashtag.query.filter_by(user_story_id=story_id).delete()
+            
+            # 6. Xóa complexity_points
+            ComplexityPoint.query.filter_by(user_story_id=story_id).delete()
+            
+            # 7. Cuối cùng xóa user story
             db.session.delete(story)
             db.session.commit()
             return True, None

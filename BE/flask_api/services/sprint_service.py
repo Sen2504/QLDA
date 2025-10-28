@@ -32,3 +32,25 @@ class SprintService:
         user_story.sprint_id = None
         db.session.commit()
         return user_story, None
+
+    @staticmethod
+    def delete(sprint_id):
+        """
+        Delete a sprint. 
+        All user stories in this sprint will have their sprint_id set to NULL.
+        """
+        try:
+            sprint = Sprint.query.get(sprint_id)
+            if not sprint:
+                return "Sprint not found."
+            
+            # Remove sprint association from all user stories
+            UserStory.query.filter_by(sprint_id=sprint_id).update({UserStory.sprint_id: None})
+            
+            # Delete the sprint
+            db.session.delete(sprint)
+            db.session.commit()
+            return None
+        except Exception as e:
+            db.session.rollback()
+            return str(e)

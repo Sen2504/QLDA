@@ -66,3 +66,14 @@ def remove_user_story_from_sprint(user_story_id):
     if error:
         return jsonify({"error": error}), 400
     return jsonify({"message": "Bỏ user story khỏi sprint thành công"}), 200
+
+# ----------------- DELETE SPRINT -----------------
+@sprint_bp.route("/<int:sprint_id>", methods=["DELETE"])
+@login_required
+@require_permission("Sprint", "Delete", project_id_getter=lambda sprint_id: get_project_id_from_sprint(sprint_id))
+def delete_sprint(sprint_id):
+    error = SprintService.delete(sprint_id)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify({"message": "Sprint deleted successfully"}), 200
+

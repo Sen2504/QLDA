@@ -11,7 +11,8 @@ import {
   MessageCircle,
   Send,
   Loader2,
-  Tag
+  Tag,
+  Trash2
 } from "lucide-react";
 import IssueService from "../services/issueService";
 import IssueTypeService from "../services/issueTypeService";
@@ -22,6 +23,7 @@ import GradientCard from "../components/task/GradientCard";
 import SectionHeader from "../components/task/SectionHeader";
 import CommentItem from "../components/task/CommentItem";
 import { usePermission } from "../store/PermissionContext";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 export default function IssueDetail() {
   const { id } = useParams();
@@ -30,6 +32,7 @@ export default function IssueDetail() {
   // Permission checks
   const canEdit = usePermission("Issue", "Edit");
   const canComment = usePermission("Issue", "Comment");
+  const canDelete = usePermission("Issue", "Delete");
 
   const [issue, setIssue] = useState(null);
   const [types, setTypes] = useState([]);
@@ -38,6 +41,7 @@ export default function IssueDetail() {
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // ==================== FETCH DATA ====================
   useEffect(() => {
@@ -114,6 +118,17 @@ export default function IssueDetail() {
     }
   };
 
+  const handleDeleteIssue = async () => {
+    try {
+      await IssueService.delete(id);
+      toast.success("Issue deleted successfully");
+      navigate("/issues/list"); // Navigate to issues list
+    } catch (error) {
+      console.error("Failed to delete issue:", error);
+      // API interceptor will show the error toast
+    }
+  };
+
   // ==================== RENDER ====================
   if (!issue && !loading) {
     return (
@@ -146,17 +161,31 @@ export default function IssueDetail() {
             <span className="text-sm">Back</span>
           </button>
 
-          {/* Edit Button */}
-          {issue && canEdit && (
-            <button
-              onClick={() => navigate(`/issues/${issue.id}/edit`)}
-              className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm font-semibold"
-              title="Edit issue"
-            >
-              <Edit3 className="w-4 h-4" />
-              <span>Edit</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Edit Button */}
+            {issue && canEdit && (
+              <button
+                onClick={() => navigate(`/issues/${issue.id}/edit`)}
+                className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm font-semibold"
+                title="Edit issue"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Edit</span>
+              </button>
+            )}
+
+            {/* Delete Button */}
+            {issue && canDelete && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600 shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm font-semibold"
+                title="Delete issue"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Loading State */}
@@ -350,6 +379,17 @@ export default function IssueDetail() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteIssue}
+        title="Delete Issue"
+        message={`Are you sure you want to delete issue "${issue?.name}"?`}
+        warningMessage="This action cannot be undone. All comments and data associated with this issue will be permanently deleted."
+        confirmText="Delete Issue"
+      />
     </div>
   );
 }

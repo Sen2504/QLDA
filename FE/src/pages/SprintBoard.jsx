@@ -5,11 +5,13 @@ import { useProject } from "../store/ProjectContext";
 import UserStoryService from "../services/userStoryService";
 import TaskService from "../services/taskService";
 import TaskStatusService from "../services/taskStatusService";
+import SprintService from "../services/sprintService";
 import { toast } from "react-toastify";
 import { evaluateDueDate, describeDiffDays } from "../utils/dueDate";
 import PermissionGuard from "../components/PermissionGuard";
 import withPermissions from "../components/withPermissions";
 import { usePermission } from "../store/PermissionContext";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { 
   ArrowLeft, 
   Calendar, 
@@ -19,7 +21,8 @@ import {
   Sparkles,
   TrendingUp,
   Clock,
-  Users2
+  Users2,
+  Trash2
 } from "lucide-react";
 
 const FALLBACK_STATUSES = [
@@ -147,11 +150,13 @@ function SprintBoard() {
   const navigate = useNavigate();
   const { currentProject } = useProject();
   const canEditTask = usePermission('Task', 'Edit');
+  const canDeleteSprint = usePermission('Sprint', 'Delete');
 
   const [userStories, setUserStories] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [statuses, setStatuses] = useState(FALLBACK_STATUSES);
   const [showDoneConfirm, setShowDoneConfirm] = useState(false);
+  const [showDeleteSprintConfirm, setShowDeleteSprintConfirm] = useState(false);
   const [pendingDragResult, setPendingDragResult] = useState(null);
 
   useEffect(() => {
@@ -378,6 +383,18 @@ function SprintBoard() {
     setPendingDragResult(null);
   };
 
+  // 🗑️ Xóa sprint
+  const handleDeleteSprint = async () => {
+    try {
+      await SprintService.delete(sprintId);
+      toast.success("Sprint deleted successfully");
+      navigate("/"); // Navigate back to home
+    } catch (error) {
+      console.error("Failed to delete sprint:", error);
+      // API interceptor will show the error toast
+    }
+  };
+
   if (!currentProject) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -407,14 +424,28 @@ function SprintBoard() {
               {currentProject.name} • Sprint #{sprintId}
             </p>
           </div>
-          <button
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 
-              shadow-sm hover:shadow-md hover:border-indigo-300 transition-all text-sm font-medium text-gray-700"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back</span>
-          </button>
+          
+          <div className="flex items-center gap-2">
+            {canDeleteSprint && (
+              <button
+                onClick={() => setShowDeleteSprintConfirm(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg 
+                  shadow-md hover:shadow-lg hover:from-red-600 hover:to-pink-600 transition-all text-sm font-semibold"
+                title="Delete sprint"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Sprint</span>
+              </button>
+            )}
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 
+                shadow-sm hover:shadow-md hover:border-indigo-300 transition-all text-sm font-medium text-gray-700"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back</span>
+            </button>
+          </div>
         </div>
 
         {/* Sprint Progress Card */}
@@ -677,6 +708,17 @@ function SprintBoard() {
           </div>
         </div>
       )}
+
+      {/* Delete Sprint Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteSprintConfirm}
+        onClose={() => setShowDeleteSprintConfirm(false)}
+        onConfirm={handleDeleteSprint}
+        title="Delete Sprint"
+        message={`Are you sure you want to delete Sprint #${sprintId}?`}
+        warningMessage="All user stories in this sprint will be unassigned (moved back to backlog). Tasks will remain but will need to be reassigned to other sprints."
+        confirmText="Delete Sprint"
+      />
     </div>
   );
 }

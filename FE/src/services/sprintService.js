@@ -13,6 +13,9 @@ const SprintService = {
   removeUserStory(userStoryId) {
     return api.put(`/sprints/remove_user_story/${userStoryId}`);
   },
+  delete(sprintId) {
+    return api.delete(`/sprints/${sprintId}`);
+  },
 };
 
 export default SprintService;

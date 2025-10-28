@@ -6,11 +6,15 @@ import api from "../services/api";
 import TaskService from "../services/taskService";
 import TeamService from "../services/teamService";
 import WorkflowStatusService from "../services/workflowStatusService";
+import UserStoryService from "../services/userStoryService";
 import TaskTable from "../components/TaskTable";
 import TaskFormModal from "../components/TaskFormModal";
 import PermissionGuard from "../components/PermissionGuard";
 import { usePermission } from "../store/PermissionContext";
 import withPermissions from "../components/withPermissions";
+import { Trash2 } from "lucide-react";
+import ConfirmDialog from "../components/ConfirmDialog";
+
 
 function UserStoryDetail() {
   const { userStoryId } = useParams();
@@ -19,6 +23,7 @@ function UserStoryDetail() {
   // Check permissions
   const canEditStory = usePermission("UserStory", "Edit");
   const canCreateTask = usePermission("Task", "Create");
+  const canDeleteStory = usePermission("UserStory", "Delete");
   
   const [story, setStory] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -26,6 +31,8 @@ function UserStoryDetail() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statuses, setStatuses] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
 
   const formatDate = (value) => {
     if (!value) return "—";
@@ -148,22 +155,47 @@ const attachments = useMemo(() => {
     return result;
   };
 
+  // 🗑️ Xóa user story
+  const handleDeleteStory = async () => {
+    try {
+      await UserStoryService.delete(userStoryId);
+      toast.success("User story deleted successfully");
+      navigate("/user-stories"); // Navigate to user stories list
+    } catch (error) {
+      console.error("Failed to delete user story:", error);
+      // API interceptor will show the error toast
+    }
+  };
+
   return (
     <>
       {/* Modern Gradient Background */}
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           
-          {/* Back Button */}
-          <button
-            className="group mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-sm border border-blue-200 text-blue-700 font-medium shadow-sm hover:shadow-md hover:bg-white transition-all duration-200 hover:scale-105"
-            onClick={() => navigate("/")}
-          >
-            <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back
-          </button>
+          {/* Back Button and Actions */}
+          <div className="mb-4 flex items-center justify-between">
+            <button
+              className="group inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-sm border border-blue-200 text-blue-700 font-medium shadow-sm hover:shadow-md hover:bg-white transition-all duration-200 hover:scale-105"
+              onClick={() => navigate("/")}
+            >
+              <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back
+            </button>
+
+            {canDeleteStory && story && !isDone && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="group inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 transition-all duration-200"
+                title="Delete user story"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Story
+              </button>
+            )}
+          </div>
 
           {/* Loading State */}
           {loading && (
@@ -379,6 +411,17 @@ const attachments = useMemo(() => {
             />
           )}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDeleteStory}
+          title="Delete User Story"
+          message={`Are you sure you want to delete user story "${story?.name}"?`}
+          warningMessage="All associated tasks will also be permanently deleted. This action cannot be undone."
+          confirmText="Delete User Story"
+        />
       </div>
     </>
   );
