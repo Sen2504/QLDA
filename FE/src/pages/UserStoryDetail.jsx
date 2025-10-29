@@ -95,7 +95,6 @@ const attachments = useMemo(() => {
         const results = await Promise.allSettled([
           WorkflowStatusService.getAll(),
           api.get(`/user_stories/${userStoryId}`),
-          TaskService.getByUserStory(userStoryId),
         ]);
 
         if (!mounted) return;
@@ -116,11 +115,27 @@ const attachments = useMemo(() => {
           setStory(null);
         }
 
-        // tasks under story (may be 403 if lacking Task.View)
-        if (results[2].status === "fulfilled") {
-          setTasks(results[2].value?.data || []);
-        } else {
-          setTasks([]);
+        // Load tasks - try with permission first, fallback to user's tasks
+        try {
+          const tasksRes = await TaskService.getByUserStory(userStoryId);
+          if (!mounted) return;
+          setTasks(tasksRes.data || []);
+        } catch (err) {
+          const status = err?.response?.status;
+          if (status === 403) {
+            // User doesn't have Task.View permission, load only their tasks
+            try {
+              const mineRes = await TaskService.getMineByUserStory(userStoryId);
+              if (!mounted) return;
+              setTasks(mineRes.data || []);
+            } catch (e2) {
+              console.error("Failed to load user's tasks:", e2);
+              setTasks([]);
+            }
+          } else {
+            console.error("Failed to load tasks:", err);
+            setTasks([]);
+          }
         }
 
         // load team members separately if we have project_id

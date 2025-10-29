@@ -78,6 +78,17 @@ class TaskService:
         )
 
     @staticmethod
+    def get_by_user_story_and_user(user_story_id, user_id):
+        """Get tasks for a specific user story that are assigned to a specific user"""
+        return (
+            Task.query
+            .join(PhanCong, Task.id == PhanCong.task_id)
+            .join(Team, PhanCong.team_id == Team.id)
+            .filter(Task.user_story_id == user_story_id, Team.user_id == user_id)
+            .all()
+        )
+
+    @staticmethod
     def create(data):
         name = (data.get("name") or "").strip()
         description = (data.get("description") or "").strip()

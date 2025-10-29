@@ -13,6 +13,10 @@ const TaskService = {
     return api.get(`/tasks/user-story/${userStoryId}`);
   },
 
+  getMineByUserStory(userStoryId) {
+    return api.get(`/tasks/user-story/${userStoryId}/mine`);
+  },
+
   getMyTasks() {
     return api.get(`/tasks/my-tasks`);
   },

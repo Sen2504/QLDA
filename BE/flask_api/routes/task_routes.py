@@ -67,6 +67,25 @@ def tasks_by_user_story(user_story_id):
     return jsonify(tasks_schema.dump(tasks)), 200
 
 
+@task_bp.route("/user-story/<int:user_story_id>/mine", methods=["GET"])
+@login_required
+def my_tasks_in_user_story(user_story_id):
+    """Get tasks assigned to current user in a specific user story"""
+    from flask_api.services.permission_service import PermissionService as _PS
+    from flask_api.models.user_story_models import UserStory
+    
+    user_story = UserStory.query.get(user_story_id)
+    if not user_story:
+        return jsonify({"error": "User story not found."}), 404
+    
+    # Check if user is member of the project
+    if _PS._projrole_for_user_project(current_user.id, user_story.project_id) is None:
+        return jsonify({"error": "Bạn không thuộc project này."}), 403
+    
+    tasks = TaskService.get_by_user_story_and_user(user_story_id, current_user.id)
+    return jsonify(tasks_schema.dump(tasks)), 200
+
+
 @task_bp.route("/<int:task_id>", methods=["GET"])
 @login_required
 @require_permission(
