@@ -1,12 +1,36 @@
 from functools import lru_cache
 from flask_api.extensions import db
 from flask_api.models import Permission, Resource, Action, ProjectRole, Team, Role
+import time
 
 
 class PermissionService:
     # Constants for locked rules
     FORCED_VIEW_RESOURCES = {"UserStory", "Sprint", "Issue"}
     OWNER_ROLE_NAME = "Project Owner"
+    
+    # TTL Cache storage
+    _cache = {}
+    _cache_ttl = 60  # Cache duration in seconds (1 minute)
+
+    @staticmethod
+    def _get_cache_key(func_name, *args):
+        """Generate cache key from function name and arguments"""
+        return f"{func_name}:{':'.join(map(str, args))}"
+    
+    @staticmethod
+    def _get_from_cache(key):
+        """Get value from cache if not expired"""
+        if key in PermissionService._cache:
+            value, timestamp = PermissionService._cache[key]
+            if time.time() - timestamp < PermissionService._cache_ttl:
+                return value, True
+        return None, False
+    
+    @staticmethod
+    def _set_to_cache(key, value):
+        """Store value in cache with current timestamp"""
+        PermissionService._cache[key] = (value, time.time())
 
     @staticmethod
     def _allowed_actions_for_resource(resource_name: str, all_action_names: list[str]) -> list[str]:
@@ -23,10 +47,16 @@ class PermissionService:
         return [a for a in all_action_names if a != "Comment"]
 
     @staticmethod
-    @lru_cache(maxsize=4096)
     def _is_owner_projrole(projrole_id: int) -> bool:
         if not projrole_id:
             return False
+        
+        # Check cache first
+        cache_key = PermissionService._get_cache_key("is_owner", projrole_id)
+        cached_value, found = PermissionService._get_from_cache(cache_key)
+        if found:
+            return cached_value
+        
         pr = (
             db.session.query(ProjectRole)
             .outerjoin(Role, ProjectRole.role_id == Role.id)
@@ -34,11 +64,17 @@ class PermissionService:
             .first()
         )
         if not pr:
-            return False
-        # Kiểm tra cả global role và project role name
-        if pr.role and pr.role.name == PermissionService.OWNER_ROLE_NAME:
-            return True
-        return pr.name == PermissionService.OWNER_ROLE_NAME
+            result = False
+        else:
+            # Kiểm tra cả global role và project role name
+            if pr.role and pr.role.name == PermissionService.OWNER_ROLE_NAME:
+                result = True
+            else:
+                result = pr.name == PermissionService.OWNER_ROLE_NAME
+        
+        # Store in cache
+        PermissionService._set_to_cache(cache_key, result)
+        return result
     @staticmethod
     def check_permission(user_id, project_id, resource_name, action_name):
         """Return True if user has permission for action on resource in project."""
@@ -48,8 +84,13 @@ class PermissionService:
         return PermissionService._check_by_projrole(projrole_id, resource_name, action_name)
 
     @staticmethod
-    @lru_cache(maxsize=4096)
     def _projrole_for_user_project(user_id, project_id):
+        # Check cache first
+        cache_key = PermissionService._get_cache_key("projrole", user_id, project_id)
+        cached_value, found = PermissionService._get_from_cache(cache_key)
+        if found:
+            return cached_value
+        
         # Return the first matching ProjectRole id for this user in this project
         row = (
             db.session.query(Team.projrole_id)
@@ -57,36 +98,51 @@ class PermissionService:
             .filter(Team.user_id == user_id, ProjectRole.project_id == project_id)
             .first()
         )
-        return row[0] if row else None
+        result = row[0] if row else None
+        
+        # Store in cache
+        PermissionService._set_to_cache(cache_key, result)
+        return result
 
     @staticmethod
-    @lru_cache(maxsize=4096)
     def _check_by_projrole(projrole_id, resource_name, action_name):
+        # Check cache first
+        cache_key = PermissionService._get_cache_key("check_perm", projrole_id, resource_name, action_name)
+        cached_value, found = PermissionService._get_from_cache(cache_key)
+        if found:
+            return cached_value
+        
         # Owner: full access, locked true
         if PermissionService._is_owner_projrole(projrole_id):
-            return True
+            result = True
         # Forced view permissions: always true for everyone
-        if action_name == "View" and resource_name in PermissionService.FORCED_VIEW_RESOURCES:
-            return True
-        # join permission -> resource & action
-        perm = (
-            Permission.query.join(Resource)
-            .join(Action)
-            .filter(
-                Permission.projrole_id == projrole_id,
-                Resource.name == resource_name,
-                Action.name == action_name,
+        elif action_name == "View" and resource_name in PermissionService.FORCED_VIEW_RESOURCES:
+            result = True
+        else:
+            # join permission -> resource & action
+            perm = (
+                Permission.query.join(Resource)
+                .join(Action)
+                .filter(
+                    Permission.projrole_id == projrole_id,
+                    Resource.name == resource_name,
+                    Action.name == action_name,
+                )
+                .first()
             )
-            .first()
-        )
-        if not perm:
-            return False
-        return bool(perm.is_allowed)
+            if not perm:
+                result = False
+            else:
+                result = bool(perm.is_allowed)
+        
+        # Store in cache
+        PermissionService._set_to_cache(cache_key, result)
+        return result
 
     @staticmethod
     def invalidate_cache():
-        PermissionService._check_by_projrole.cache_clear()
-        PermissionService._projrole_for_user_project.cache_clear()
+        """Clear all cached permission data"""
+        PermissionService._cache.clear()
 
     @staticmethod
     def get_matrix_for_project(project_id):

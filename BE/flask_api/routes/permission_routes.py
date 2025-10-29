@@ -76,3 +76,24 @@ def update_role_permissions(project_id, projrole_id):
         return jsonify({"error": str(e)}), 400
 
     return jsonify({"message": "Cập nhật thành công."}), 200
+
+
+@permission_bp.route("/cache/clear", methods=["POST"])
+@login_required
+def clear_cache():
+    """Clear permission cache. Useful for debugging or forcing immediate permission updates."""
+    PermissionService.invalidate_cache()
+    return jsonify({"message": "Permission cache cleared successfully."}), 200
+
+
+@permission_bp.route("/cache/info", methods=["GET"])
+@login_required
+def cache_info():
+    """Get cache statistics"""
+    cache_size = len(PermissionService._cache)
+    ttl = PermissionService._cache_ttl
+    return jsonify({
+        "cache_size": cache_size,
+        "cache_ttl_seconds": ttl,
+        "message": f"Cache contains {cache_size} entries with {ttl}s TTL"
+    }), 200
