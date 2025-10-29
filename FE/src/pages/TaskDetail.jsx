@@ -56,7 +56,7 @@ function TaskDetail() {
   const [editMode, setEditMode] = useState(false);
   const [forbidden, setForbidden] = useState(false);
   
-  // Hashtag states
+  // Hashtag
   const [hashtags, setHashtags] = useState([]);
   const [hashtagInput, setHashtagInput] = useState("");
   const [hashtagSuggestions, setHashtagSuggestions] = useState([]);
